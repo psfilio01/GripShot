@@ -1,0 +1,17 @@
+{
+  "name": "fashionmentum-image-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -C packages/workflow-core build",
+    "lint": "pnpm -C packages/workflow-core lint",
+    "test": "pnpm -C packages/workflow-core test"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}
