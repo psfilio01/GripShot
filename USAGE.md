@@ -31,15 +31,41 @@ Ensure a `.env` file exists (see below). The script starts an image job for `pil
   ```
   The job will then “generate” by copying the first reference image into the neutral output folder so you can verify folders, metadata, and `getJob` behaviour.
 
+## Data folder structure
+
+- **Products:** `data/products/<productId>/reference/` — place one or more product reference images (e.g. Pilates mini ball from different angles). The job randomly uses 1 to 3 of them for lifestyle shots.
+- **Brand DNA:** `data/brand/aurelea/dna.md` — AuréLéa brand DNA text used in lifestyle prompts (minimal, calm, premium, etc.).
+- **Golden background:** `data/brand/aurelea/backgrounds/golden.jpg` (or `.png`) — optional. Used when `useGoldenBackground: true` for `AMAZON_LIFESTYLE_SHOT`.
+- **Models (people):** `data/models/<modelId>/reference/` — reference images for the person/model. If you pass `modelId` the job uses that model; otherwise a random one is chosen. Omit or leave empty to generate without a specific model reference.
+
+## Workflow types and job options
+
+- **NEUTRAL_PRODUCT_SHOT** — One product reference, neutral e‑commerce shot.
+- **AMAZON_LIFESTYLE_SHOT** — Lifestyle product image: model + product in use (e.g. Pilates exercise), AuréLéa style. Options:
+  - `modelId` — use this model’s references; if omitted, a random model from `data/models/` is chosen (or none if no models exist).
+  - `useGoldenBackground` — use the golden background reference image from `data/brand/aurelea/backgrounds/`.
+  - `sceneOptions` — override defaults: `outfit`, `barefoot`, `mat` (defaults: short black Pilates outfit, barefoot, black mat).
+  - `creativeFreedom` — allow the AI to adapt styling within brand DNA.
+
 ## Programmatic API (for OpenClaw)
 
 ```ts
 import { startImageJob, getJob, handleFeedback } from "@fashionmentum/workflow-core";
 
-// Start a job
+// Neutral product shot (existing)
 const { jobId, status } = await startImageJob({
   productId: "pilates-mini-ball",
   workflowType: "NEUTRAL_PRODUCT_SHOT",
+});
+
+// Amazon-style lifestyle shot (AuréLéa)
+const { jobId: jobId2 } = await startImageJob({
+  productId: "pilates-mini-ball",
+  workflowType: "AMAZON_LIFESTYLE_SHOT",
+  useGoldenBackground: true,
+  sceneOptions: { outfit: "short Pilates outfit in neutral black", barefoot: true, mat: "black exercise mat" },
+  // modelId: "model-1",  // optional; omit to pick a random model
+  // creativeFreedom: true,
 });
 
 // Get job and image variants

@@ -11,6 +11,9 @@ import { getEnv } from "../config/env";
 import { buildProductFromId } from "../domain/product";
 import { loadReferenceImages } from "../services/referenceImageLoader";
 import { loadBrandRules } from "../services/brandRuleLoader";
+import { loadBrandDna } from "../services/brandDnaLoader";
+import { listModels, loadModelReferences, pickRandomModelId } from "../services/modelLoader";
+import { loadGoldenBackground } from "../services/backgroundLoader";
 import { buildPrompt } from "../services/promptBuilder";
 import { generateImagesWithNanoBanana } from "../services/imageGenerator";
 import { storeImage } from "../services/resultStorage";
@@ -19,9 +22,18 @@ import type { ImageJob } from "../domain/imageJob";
 import type { ImageVariant } from "../domain/imageVariant";
 import { handleFeedbackInternal } from "../services/feedbackHandler";
 
+/** Randomly pick between 1 and maxCount items from array (or all if array is smaller). */
+function pickRandomSubset<T>(arr: T[], maxCount: number): T[] {
+  if (arr.length === 0) return [];
+  const count = Math.min(arr.length, Math.max(1, Math.floor(Math.random() * maxCount) + 1));
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
 export async function startImageJob(input: StartImageJobInput): Promise<StartImageJobResult> {
   const env = getEnv();
-  const product = buildProductFromId(input.productId, env.WORKFLOW_DATA_ROOT);
+  const dataRoot = env.WORKFLOW_DATA_ROOT;
+  const product = buildProductFromId(input.productId, dataRoot);
 
   const jobId = nanoid();
   const now = new Date().toISOString();
@@ -39,27 +51,65 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
 
   try {
     const references = await loadReferenceImages(product);
-    const brandRules = await loadBrandRules(product);
-    const prompt = buildPrompt({
-      workflowType: input.workflowType,
-      product,
-      brandRules,
-      references
-    });
-
     if (references.length === 0) {
       throw new Error(
-        `No reference images found for product ${product.id}. At least one reference is required for Nano Banana editing.`
+        `No reference images found for product ${product.id}. At least one reference is required.`
       );
     }
 
-    // For MVP, use the first reference image as the base for editing.
-    const baseReference = references[0];
+    const brandRules = await loadBrandRules(product);
+    let prompt;
+    let referencePaths: string[];
 
-    const generatedImages = await generateImagesWithNanoBanana(prompt, baseReference.path);
+    if (input.workflowType === "AMAZON_LIFESTYLE_SHOT") {
+      const brandDna = await loadBrandDna(dataRoot);
+      const useGoldenBackground = input.useGoldenBackground === true;
+      const goldenBg = useGoldenBackground ? await loadGoldenBackground(dataRoot) : null;
+
+      const modelIds = await listModels(dataRoot);
+      const chosenModelId = input.modelId ?? pickRandomModelId(modelIds);
+      const modelRefs = chosenModelId ? await loadModelReferences(dataRoot, chosenModelId) : [];
+
+      const maxProductRefs = 3;
+      const selectedProductRefs = pickRandomSubset(references, maxProductRefs);
+      const productPaths = selectedProductRefs.map((r) => r.path);
+
+      const imagePaths: string[] = [...productPaths];
+      if (goldenBg) imagePaths.push(goldenBg.path);
+      modelRefs.forEach((r) => imagePaths.push(r.path));
+
+      const hasModelRefs = modelRefs.length > 0;
+      const hasBackgroundRef = goldenBg != null;
+      prompt = buildPrompt({
+        workflowType: "AMAZON_LIFESTYLE_SHOT",
+        product,
+        brandRules,
+        references: selectedProductRefs,
+        brandDna: brandDna.text ? brandDna : null,
+        sceneOptions: input.sceneOptions,
+        useGoldenBackground,
+        creativeFreedom: input.creativeFreedom,
+        imageLayout: {
+          hasProductRefs: true,
+          hasBackgroundRef,
+          hasModelRefs
+        }
+      });
+      referencePaths = imagePaths;
+    } else {
+      const baseReference = references[0];
+      prompt = buildPrompt({
+        workflowType: input.workflowType,
+        product,
+        brandRules,
+        references
+      });
+      referencePaths = [baseReference.path];
+    }
+
+    const generatedImages = await generateImagesWithNanoBanana(prompt, referencePaths);
 
     const variants: ImageVariant[] = [];
-
     for (const generated of generatedImages) {
       const imageId = nanoid();
       const filePath = await storeImage({
@@ -70,7 +120,6 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         extension: generated.extension,
         buffer: generated.buffer
       });
-
       const variant: ImageVariant = {
         id: imageId,
         jobId,
@@ -80,17 +129,12 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         colorVariant: null,
         createdAt: new Date().toISOString()
       };
-
       await metadataStore.insertVariant(variant);
       variants.push(variant);
     }
 
     await metadataStore.updateJobStatus(jobId, "completed");
-
-    return {
-      jobId,
-      status: "completed"
-    };
+    return { jobId, status: "completed" };
   } catch (err) {
     await metadataStore.updateJobStatus(jobId, "failed");
     throw err;

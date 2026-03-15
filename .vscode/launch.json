@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Debug test-start-job",
+        "runtimeExecutable": "pnpm",
+        "runtimeArgs": ["exec", "ts-node", "test-start-job.ts"],
+        "cwd": "${workspaceFolder}",
+        "sourceMaps": true,
+        "env": {
+          "NODE_ENV": "development"
+        },
+        "console": "integratedTerminal"
+      }
+    ]
+  }

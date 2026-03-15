@@ -1,7 +1,24 @@
-export type WorkflowType = "NEUTRAL_PRODUCT_SHOT";
+export type WorkflowType = "NEUTRAL_PRODUCT_SHOT" | "AMAZON_LIFESTYLE_SHOT";
+/** Scene options for lifestyle shots (defaults: black Pilates outfit, barefoot, black mat). */
+export interface SceneOptions {
+    /** e.g. "short Pilates outfit in neutral black" */
+    outfit?: string;
+    /** Default true: model barefoot */
+    barefoot?: boolean;
+    /** e.g. "black exercise mat" */
+    mat?: string;
+}
 export interface StartImageJobInput {
     productId: string;
     workflowType: WorkflowType;
+    /** If not set, a random model from available references is chosen. */
+    modelId?: string;
+    /** Use the golden background reference image (AuréLéa). */
+    useGoldenBackground?: boolean;
+    /** Override defaults for outfit, barefoot, mat. Omitted = use AuréLéa defaults. */
+    sceneOptions?: SceneOptions;
+    /** If true, allow AI to adapt styling within brand DNA. */
+    creativeFreedom?: boolean;
 }
 export interface StartImageJobResult {
     jobId: string;

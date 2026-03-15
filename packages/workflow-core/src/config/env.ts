@@ -11,7 +11,7 @@ const EnvSchema = z.object({
     .default(process.cwd() + "/data"),
   NANOBANANA_API_KEY: z.string().nonempty().optional(),
   NANOBANANA_BASE_URL: z.string().url().default("https://generativelanguage.googleapis.com/v1beta"),
-  NANOBANANA_MODEL: z.string().default("gemini-2.0-flash"),
+  NANOBANANA_MODEL: z.string().default("gemini-3.1-flash-image-preview"),
   /** When "true", skip the real API call and use the reference image as output (for local testing when API is unreachable). */
   NANOBANANA_DRY_RUN: z
     .string()

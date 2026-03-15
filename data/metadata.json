@@ -87,6 +87,110 @@
       "status": "completed",
       "createdAt": "2026-03-14T17:17:13.509Z",
       "updatedAt": "2026-03-14T17:18:35.894Z"
+    },
+    {
+      "id": "sUqESDZTtGxi6r4UVNYMy",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "failed",
+      "createdAt": "2026-03-14T18:20:55.693Z",
+      "updatedAt": "2026-03-14T18:22:55.744Z"
+    },
+    {
+      "id": "EXva0OT60yfAylfX5h-tH",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "failed",
+      "createdAt": "2026-03-14T18:24:20.677Z",
+      "updatedAt": "2026-03-14T18:24:21.292Z"
+    },
+    {
+      "id": "fkDXCSKPV_D0rKNl4gcQ1",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "failed",
+      "createdAt": "2026-03-14T18:24:59.004Z",
+      "updatedAt": "2026-03-14T18:24:59.584Z"
+    },
+    {
+      "id": "h4Hi2FSPTCnY0C5LOcLsz",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-14T18:28:05.081Z",
+      "updatedAt": "2026-03-14T18:28:29.684Z"
+    },
+    {
+      "id": "xRQlkK226ehUt81PXRub-",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "failed",
+      "createdAt": "2026-03-15T09:23:18.367Z",
+      "updatedAt": "2026-03-15T09:23:20.776Z"
+    },
+    {
+      "id": "yIVkvbMvBPFq26RORTW1o",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T09:25:13.481Z",
+      "updatedAt": "2026-03-15T09:25:27.989Z"
+    },
+    {
+      "id": "2Hu_xclkyfB0oKfxTdmg4",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "running",
+      "createdAt": "2026-03-15T09:34:35.455Z",
+      "updatedAt": "2026-03-15T09:34:35.455Z"
+    },
+    {
+      "id": "DBUCZQfgYTA42Y1cYU8nH",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "running",
+      "createdAt": "2026-03-15T09:35:25.076Z",
+      "updatedAt": "2026-03-15T09:35:25.076Z"
+    },
+    {
+      "id": "bYHALhr5OPMAEqemw-oik",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "running",
+      "createdAt": "2026-03-15T09:35:43.284Z",
+      "updatedAt": "2026-03-15T09:35:43.284Z"
+    },
+    {
+      "id": "uaDHbYFAlwnUIcvU5xjNN",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T09:39:18.681Z",
+      "updatedAt": "2026-03-15T09:39:37.368Z"
+    },
+    {
+      "id": "xlAeBnRTQ7sylCrYm9JDM",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T09:40:55.499Z",
+      "updatedAt": "2026-03-15T09:41:14.486Z"
+    },
+    {
+      "id": "J-RQ__vZs8l6QJ69V9O2j",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "failed",
+      "createdAt": "2026-03-15T10:20:31.662Z",
+      "updatedAt": "2026-03-15T10:20:33.854Z"
+    },
+    {
+      "id": "Fu2M8W-HLnUwCCusxO6Uu",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T10:56:42.461Z",
+      "updatedAt": "2026-03-15T10:57:12.480Z"
     }
   ],
   "variants": [
@@ -107,6 +211,51 @@
       "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/nIhfqVUrB82VzmWraTswP/neutral/489_IsKPNa3JCvRl-aeLX.png",
       "colorVariant": null,
       "createdAt": "2026-03-14T17:18:35.894Z"
+    },
+    {
+      "id": "bQKFEPYmwPALX2NP7GRDS",
+      "jobId": "h4Hi2FSPTCnY0C5LOcLsz",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/h4Hi2FSPTCnY0C5LOcLsz/neutral/bQKFEPYmwPALX2NP7GRDS.png",
+      "colorVariant": null,
+      "createdAt": "2026-03-14T18:28:29.683Z"
+    },
+    {
+      "id": "WGnfzEgK30_l3wYoHUGTB",
+      "jobId": "yIVkvbMvBPFq26RORTW1o",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/yIVkvbMvBPFq26RORTW1o/neutral/WGnfzEgK30_l3wYoHUGTB.png",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T09:25:27.989Z"
+    },
+    {
+      "id": "ssylqCRMyK16PJda_AI9I",
+      "jobId": "uaDHbYFAlwnUIcvU5xjNN",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/uaDHbYFAlwnUIcvU5xjNN/neutral/ssylqCRMyK16PJda_AI9I.png",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T09:39:37.367Z"
+    },
+    {
+      "id": "aRR2Ct70F0wQVvDCmUHgB",
+      "jobId": "xlAeBnRTQ7sylCrYm9JDM",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/xlAeBnRTQ7sylCrYm9JDM/neutral/aRR2Ct70F0wQVvDCmUHgB.png",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T09:41:14.485Z"
+    },
+    {
+      "id": "zJw2iM5dHXAUjjbE3Jk8s",
+      "jobId": "Fu2M8W-HLnUwCCusxO6Uu",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/Fu2M8W-HLnUwCCusxO6Uu/neutral/zJw2iM5dHXAUjjbE3Jk8s.jpeg",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T10:57:12.479Z"
     }
   ]
 }
