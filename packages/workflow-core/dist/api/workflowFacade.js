@@ -47,10 +47,11 @@ async function startImageJob(input) {
             throw new Error(`No reference images found for product ${product.id}. At least one reference is required.`);
         }
         const brandRules = await (0, brandRuleLoader_1.loadBrandRules)(product);
-        // Grip Shot layers: runtime input + hard rules (loaded for all workflow types)
-        const runtimeInput = await (0, runtimeInputLoader_1.loadRuntimeInput)(dataRoot);
+        // Grip Shot layers: runtime input + hard rules + generation settings
+        const { input: runtimeInput, generationSettings } = await (0, runtimeInputLoader_1.loadRuntimeInput)(dataRoot);
         const globalHardRules = await (0, hardRulesLoader_1.loadGlobalHardRules)(dataRoot);
         const productHardRules = await (0, hardRulesLoader_1.loadProductHardRules)(product);
+        console.log(`Grip Shot: generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}`);
         if (runtimeInput) {
             console.log("Grip Shot: runtime input loaded", Object.keys(runtimeInput));
         }
@@ -105,7 +106,7 @@ async function startImageJob(input) {
             });
             referencePaths = [baseReference.path];
         }
-        const generatedImages = await (0, imageGenerator_1.generateImagesWithNanoBanana)(prompt, referencePaths);
+        const generatedImages = await (0, imageGenerator_1.generateImagesWithNanoBanana)(prompt, referencePaths, generationSettings);
         const variants = [];
         for (const generated of generatedImages) {
             const imageId = (0, nanoid_1.nanoid)();

@@ -23,7 +23,7 @@ function mimeFromPath(filePath) {
  * Generate images via Gemini. Reference images are sent in order (product refs, optional background, optional model).
  * Single path or array of paths supported.
  */
-async function generateImagesWithNanoBanana(prompt, referenceImagePaths) {
+async function generateImagesWithNanoBanana(prompt, referenceImagePaths, generationSettings) {
     const paths = Array.isArray(referenceImagePaths) ? referenceImagePaths : [referenceImagePaths];
     const { NANOBANANA_API_KEY, NANOBANANA_BASE_URL, NANOBANANA_MODEL, NANOBANANA_DRY_RUN } = (0, env_1.getEnv)();
     if (NANOBANANA_DRY_RUN) {
@@ -50,11 +50,15 @@ async function generateImagesWithNanoBanana(prompt, referenceImagePaths) {
         });
     }
     const url = `${NANOBANANA_BASE_URL}/models/${NANOBANANA_MODEL}:generateContent?key=${NANOBANANA_API_KEY}`;
+    const imageConfig = generationSettings
+        ? { aspectRatio: generationSettings.aspectRatio, imageSize: generationSettings.resolution }
+        : undefined;
     try {
         const response = await axios_1.default.post(url, {
             contents: [{ parts }],
             generationConfig: {
-                responseModalities: ["TEXT", "IMAGE"]
+                responseModalities: ["TEXT", "IMAGE"],
+                ...(imageConfig && { imageConfig })
             }
         }, {
             headers: { "Content-Type": "application/json" },

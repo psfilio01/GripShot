@@ -1,0 +1,14 @@
+{
+  "pose": "seated pilates twist, one arm extended",
+  "gaze": "slightly away from camera, calm expression",
+  "outfit": "minimal beige activewear, cropped top and high-waist leggings",
+  "feet_style": "barefoot on mat",
+  "background_style": "warm golden studio light with soft shadow",
+  "composition_goal": "product clearly visible in model's hands, centered composition",
+  "mood": "serene, focused, elegant movement",
+  "framing": "full body, slightly elevated camera angle",
+  "generation": {
+    "resolution": "2K",
+    "aspectRatio": "4:5"
+  }
+}

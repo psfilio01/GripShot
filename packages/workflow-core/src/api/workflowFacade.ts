@@ -61,11 +61,12 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
 
     const brandRules = await loadBrandRules(product);
 
-    // Grip Shot layers: runtime input + hard rules (loaded for all workflow types)
-    const runtimeInput = await loadRuntimeInput(dataRoot);
+    // Grip Shot layers: runtime input + hard rules + generation settings
+    const { input: runtimeInput, generationSettings } = await loadRuntimeInput(dataRoot);
     const globalHardRules = await loadGlobalHardRules(dataRoot);
     const productHardRules = await loadProductHardRules(product);
 
+    console.log(`Grip Shot: generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}`);
     if (runtimeInput) {
       console.log("Grip Shot: runtime input loaded", Object.keys(runtimeInput));
     }
@@ -125,7 +126,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       referencePaths = [baseReference.path];
     }
 
-    const generatedImages = await generateImagesWithNanoBanana(prompt, referencePaths);
+    const generatedImages = await generateImagesWithNanoBanana(prompt, referencePaths, generationSettings);
 
     const variants: ImageVariant[] = [];
     for (const generated of generatedImages) {

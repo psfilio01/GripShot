@@ -113,6 +113,26 @@ Before each run, OpenClaw (or you manually) can write a JSON file with creative 
 
 Any field can be omitted. Only present fields are used. See `runtime/run_input.example.json` for a complete example.
 
+### Generation settings
+
+The runtime JSON can also include a `generation` object to control image resolution and aspect ratio:
+
+```json
+{
+  "generation": {
+    "resolution": "4K",
+    "aspectRatio": "1:1"
+  }
+}
+```
+
+| Setting | Default | Allowed values |
+|---------|---------|----------------|
+| `resolution` | `2K` | `512`, `1K`, `2K`, `4K` |
+| `aspectRatio` | `4:5` | `1:1`, `1:4`, `1:8`, `2:3`, `3:2`, `3:4`, `4:1`, `4:3`, `4:5`, `5:4`, `8:1`, `9:16`, `16:9`, `21:9` |
+
+These are **generation settings**, not prompt text — they are passed directly to the Gemini API's `imageConfig`. If omitted or invalid, the defaults apply. You can override just one (e.g. only `resolution`) and the other keeps its default.
+
 ### Where OpenClaw writes it
 
 OpenClaw writes `runtime/run_input.json` in the project root (next to `data/`). The loader looks for it at `<project_root>/runtime/run_input.json`.
@@ -148,7 +168,7 @@ Brand-wide rules live at `data/brand/aurelea/hard-rules.md` and are enforced in 
 
 | What's missing | What happens |
 |----------------|--------------|
-| No `runtime/run_input.json` | Grip Shot uses built-in defaults (black outfit, barefoot, random pose) |
+| No `runtime/run_input.json` | Grip Shot uses built-in defaults (black outfit, barefoot, random pose, 2K @ 4:5) |
 | No `hard-rules.md` for a product | No product-specific rules appended; global rules still apply |
 | No `data/brand/aurelea/hard-rules.md` | No global rules appended; prompt still works |
 | No `data/brand/aurelea/dna.md` | Fallback brand DNA text is used inline |

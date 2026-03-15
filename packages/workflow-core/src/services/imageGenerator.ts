@@ -3,6 +3,7 @@ import fs from "fs-extra";
 import path from "node:path";
 import { getEnv } from "../config/env";
 import type { BuiltPrompt } from "../domain/prompt";
+import type { GenerationSettings } from "./runtimeInputLoader";
 
 export interface GeneratedImage {
   buffer: Buffer;
@@ -31,7 +32,8 @@ function mimeFromPath(filePath: string): string {
  */
 export async function generateImagesWithNanoBanana(
   prompt: BuiltPrompt,
-  referenceImagePaths: ReferenceImageInput
+  referenceImagePaths: ReferenceImageInput,
+  generationSettings?: GenerationSettings
 ): Promise<GeneratedImage[]> {
   const paths = Array.isArray(referenceImagePaths) ? referenceImagePaths : [referenceImagePaths];
   const { NANOBANANA_API_KEY, NANOBANANA_BASE_URL, NANOBANANA_MODEL, NANOBANANA_DRY_RUN } = getEnv();
@@ -64,13 +66,18 @@ export async function generateImagesWithNanoBanana(
 
   const url = `${NANOBANANA_BASE_URL}/models/${NANOBANANA_MODEL}:generateContent?key=${NANOBANANA_API_KEY}`;
 
+  const imageConfig = generationSettings
+    ? { aspectRatio: generationSettings.aspectRatio, imageSize: generationSettings.resolution }
+    : undefined;
+
   try {
     const response = await axios.post(
       url,
       {
         contents: [{ parts }],
         generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
+          responseModalities: ["TEXT", "IMAGE"],
+          ...(imageConfig && { imageConfig })
         }
       },
       {
