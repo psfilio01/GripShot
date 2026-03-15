@@ -14,6 +14,8 @@ import { loadBrandRules } from "../services/brandRuleLoader";
 import { loadBrandDna } from "../services/brandDnaLoader";
 import { listModels, loadModelReferences, pickRandomModelId } from "../services/modelLoader";
 import { loadGoldenBackground } from "../services/backgroundLoader";
+import { loadRuntimeInput } from "../services/runtimeInputLoader";
+import { loadGlobalHardRules, loadProductHardRules } from "../services/hardRulesLoader";
 import { buildPrompt } from "../services/promptBuilder";
 import { generateImagesWithNanoBanana } from "../services/imageGenerator";
 import { storeImage } from "../services/resultStorage";
@@ -58,6 +60,16 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     }
 
     const brandRules = await loadBrandRules(product);
+
+    // Grip Shot layers: runtime input + hard rules (loaded for all workflow types)
+    const runtimeInput = await loadRuntimeInput(dataRoot);
+    const globalHardRules = await loadGlobalHardRules(dataRoot);
+    const productHardRules = await loadProductHardRules(product);
+
+    if (runtimeInput) {
+      console.log("Grip Shot: runtime input loaded", Object.keys(runtimeInput));
+    }
+
     let prompt;
     let referencePaths: string[];
 
@@ -93,7 +105,10 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
           hasProductRefs: true,
           hasBackgroundRef,
           hasModelRefs
-        }
+        },
+        runtimeInput,
+        globalHardRules,
+        productHardRules
       });
       referencePaths = imagePaths;
     } else {
@@ -102,7 +117,10 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         workflowType: input.workflowType,
         product,
         brandRules,
-        references
+        references,
+        runtimeInput,
+        globalHardRules,
+        productHardRules
       });
       referencePaths = [baseReference.path];
     }

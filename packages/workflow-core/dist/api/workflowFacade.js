@@ -11,6 +11,8 @@ const brandRuleLoader_1 = require("../services/brandRuleLoader");
 const brandDnaLoader_1 = require("../services/brandDnaLoader");
 const modelLoader_1 = require("../services/modelLoader");
 const backgroundLoader_1 = require("../services/backgroundLoader");
+const runtimeInputLoader_1 = require("../services/runtimeInputLoader");
+const hardRulesLoader_1 = require("../services/hardRulesLoader");
 const promptBuilder_1 = require("../services/promptBuilder");
 const imageGenerator_1 = require("../services/imageGenerator");
 const resultStorage_1 = require("../services/resultStorage");
@@ -45,6 +47,13 @@ async function startImageJob(input) {
             throw new Error(`No reference images found for product ${product.id}. At least one reference is required.`);
         }
         const brandRules = await (0, brandRuleLoader_1.loadBrandRules)(product);
+        // Grip Shot layers: runtime input + hard rules (loaded for all workflow types)
+        const runtimeInput = await (0, runtimeInputLoader_1.loadRuntimeInput)(dataRoot);
+        const globalHardRules = await (0, hardRulesLoader_1.loadGlobalHardRules)(dataRoot);
+        const productHardRules = await (0, hardRulesLoader_1.loadProductHardRules)(product);
+        if (runtimeInput) {
+            console.log("Grip Shot: runtime input loaded", Object.keys(runtimeInput));
+        }
         let prompt;
         let referencePaths;
         if (input.workflowType === "AMAZON_LIFESTYLE_SHOT") {
@@ -76,7 +85,10 @@ async function startImageJob(input) {
                     hasProductRefs: true,
                     hasBackgroundRef,
                     hasModelRefs
-                }
+                },
+                runtimeInput,
+                globalHardRules,
+                productHardRules
             });
             referencePaths = imagePaths;
         }
@@ -86,7 +98,10 @@ async function startImageJob(input) {
                 workflowType: input.workflowType,
                 product,
                 brandRules,
-                references
+                references,
+                runtimeInput,
+                globalHardRules,
+                productHardRules
             });
             referencePaths = [baseReference.path];
         }

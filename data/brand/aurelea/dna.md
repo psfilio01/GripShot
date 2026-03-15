@@ -9,7 +9,6 @@ The design language favors clean compositions, soft neutral tones, warm lighting
 - Minimal, uncluttered compositions
 - Soft natural lighting with warm highlights
 - Calm color palette with sand, cream, peach, muted blues, olive, and cocoa tones
-- Premium textures such as knit fabric, matte rubber, soft textiles, and natural materials
 - Elegant negative space
 - Subtle shadows and gentle gradients
 

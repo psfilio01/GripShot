@@ -191,6 +191,38 @@
       "status": "completed",
       "createdAt": "2026-03-15T10:56:42.461Z",
       "updatedAt": "2026-03-15T10:57:12.480Z"
+    },
+    {
+      "id": "oGV3C1uKZA5f0enriB2Fm",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T12:54:59.555Z",
+      "updatedAt": "2026-03-15T12:55:28.254Z"
+    },
+    {
+      "id": "7wP141zMj5jNreyuHdI6W",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "failed",
+      "createdAt": "2026-03-15T12:56:17.445Z",
+      "updatedAt": "2026-03-15T12:56:19.292Z"
+    },
+    {
+      "id": "492di73tkJVtbU5ORHzVd",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T13:05:37.588Z",
+      "updatedAt": "2026-03-15T13:05:58.424Z"
+    },
+    {
+      "id": "ex2uy03gwbNNxiwKykxqO",
+      "productId": "pilates-mini-ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-15T13:15:49.051Z",
+      "updatedAt": "2026-03-15T13:16:24.894Z"
     }
   ],
   "variants": [
@@ -256,6 +288,33 @@
       "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/Fu2M8W-HLnUwCCusxO6Uu/neutral/zJw2iM5dHXAUjjbE3Jk8s.jpeg",
       "colorVariant": null,
       "createdAt": "2026-03-15T10:57:12.479Z"
+    },
+    {
+      "id": "PLmebeOEEu5J82bY02rgA",
+      "jobId": "oGV3C1uKZA5f0enriB2Fm",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/oGV3C1uKZA5f0enriB2Fm/neutral/PLmebeOEEu5J82bY02rgA.jpeg",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T12:55:28.253Z"
+    },
+    {
+      "id": "-82mkQwakmY5Vn4w6783n",
+      "jobId": "492di73tkJVtbU5ORHzVd",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/492di73tkJVtbU5ORHzVd/neutral/-82mkQwakmY5Vn4w6783n.jpeg",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T13:05:58.423Z"
+    },
+    {
+      "id": "mwhJCMNQOpDk9hOwo2-09",
+      "jobId": "ex2uy03gwbNNxiwKykxqO",
+      "productId": "pilates-mini-ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/pilates-mini-ball/ex2uy03gwbNNxiwKykxqO/neutral/mwhJCMNQOpDk9hOwo2-09.jpeg",
+      "colorVariant": null,
+      "createdAt": "2026-03-15T13:16:24.893Z"
     }
   ]
 }
