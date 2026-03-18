@@ -5,7 +5,7 @@ async function main() {
   const workflowType = (process.env.WORKFLOW_TYPE as "NEUTRAL_PRODUCT_SHOT" | "AMAZON_LIFESTYLE_SHOT") ?? "AMAZON_LIFESTYLE_SHOT";
 
   const job = await startImageJob({
-    productId: "Pilates Block",
+    productId: "Pilates Mini Ball",
     workflowType,
     ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && {
       useGoldenBackground: true, // set true if data/brand/aurelea/backgrounds/golden.jpg exists

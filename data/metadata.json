@@ -495,6 +495,22 @@
       "status": "completed",
       "createdAt": "2026-03-16T20:26:29.692Z",
       "updatedAt": "2026-03-16T20:27:34.412Z"
+    },
+    {
+      "id": "P0bN5yjsbjVAvb4CTVR1Q",
+      "productId": "Pilates Block",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-18T20:41:15.795Z",
+      "updatedAt": "2026-03-18T20:42:01.322Z"
+    },
+    {
+      "id": "hvY_ugeUaeEjb1uQkshNl",
+      "productId": "Pilates Mini Ball",
+      "workflowType": "AMAZON_LIFESTYLE_SHOT",
+      "status": "completed",
+      "createdAt": "2026-03-18T20:43:53.555Z",
+      "updatedAt": "2026-03-18T20:44:53.254Z"
     }
   ],
   "variants": [
@@ -794,6 +810,24 @@
       "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/Pilates Block/J_Q_MP334csnuaiXXZw3P/neutral/no3HVLuP5N_vI-tLgZxwh.jpeg",
       "colorVariant": null,
       "createdAt": "2026-03-16T20:27:34.412Z"
+    },
+    {
+      "id": "IsxQ9P8k8jygh5iItsuSs",
+      "jobId": "P0bN5yjsbjVAvb4CTVR1Q",
+      "productId": "Pilates Block",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/Pilates Block/P0bN5yjsbjVAvb4CTVR1Q/neutral/IsxQ9P8k8jygh5iItsuSs.jpeg",
+      "colorVariant": null,
+      "createdAt": "2026-03-18T20:42:01.320Z"
+    },
+    {
+      "id": "wxiOMvaXiHFFPQuWoYRz2",
+      "jobId": "hvY_ugeUaeEjb1uQkshNl",
+      "productId": "Pilates Mini Ball",
+      "status": "neutral",
+      "filePath": "/Users/techmentum/Library/CloudStorage/OneDrive-TechMentumConsultingLTD/CoupleMentum/FashionMentum/Apps/data/generated/Pilates Mini Ball/hvY_ugeUaeEjb1uQkshNl/neutral/wxiOMvaXiHFFPQuWoYRz2.jpeg",
+      "colorVariant": null,
+      "createdAt": "2026-03-18T20:44:53.254Z"
     }
   ]
 }
