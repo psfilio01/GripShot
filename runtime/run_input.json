@@ -1,10 +1,13 @@
 {
-  "pose": "seated pilates twist, one arm extended",
-  "gaze": "slightly away from camera, calm expression",
-  "outfit": "minimal beige activewear, cropped top and high-waist leggings",
-  "feet_style": "barefoot on mat",
-  "background_style": "warm golden studio light with soft shadow",
-  "composition_goal": "product clearly visible in model's hands, centered composition",
-  "mood": "serene, focused, elegant movement",
-  "framing": "full body, slightly elevated camera angle"
+  "pose": "high plank position (top of a push-up) facing the camera, arms fully extended and shoulders stacked over the wrists, body in a straight line from shoulders to heels while both hands press onto the Pilates block placed directly in front of the chest",
+  "gaze": "model looking directly into the camera with a calm, confident expression",
+  "outfit": "minimal elegant beige activewear, fitted sports top and high-waist leggings",
+  "feet_style": "barefoot on a pilates mat with feet extended behind and toes grounded",
+  "composition_goal": "Pilates block positioned very close to the camera in the foreground so the block and logo are clearly visible and occupy a significant portion of the frame",
+  "mood": "strong, controlled pilates movement with an elegant premium studio aesthetic",
+  "framing": "frontal camera angle aligned with the model's body, slightly low perspective so the block appears prominently in the foreground while the full body remains visible",
+  "generation": {
+    "resolution": "4K",
+    "aspectRatio": "16:9"
+  }
 }

@@ -27,9 +27,9 @@ export interface BuildPromptArgs {
   productHardRules?: HardRules | null;
 }
 
-const AURELEA_DEFAULT_OUTFIT = "short Pilates outfit in neutral black";
+const AURELEA_DEFAULT_OUTFIT = "minimal beige activewear, cropped top and short leggings";
 const AURELEA_DEFAULT_BAREFOOT = true;
-const AURELEA_DEFAULT_MAT = "black exercise mat";
+const AURELEA_DEFAULT_MAT = "black exercise mat (the mat should befully visible in the photo)";
 
 export function buildPrompt(args: BuildPromptArgs): BuiltPrompt {
   const { workflowType, product, brandRules, references } = args;
@@ -61,10 +61,13 @@ export function buildPrompt(args: BuildPromptArgs): BuiltPrompt {
 // ---------------------------------------------------------------------------
 // Layered Lifestyle Prompt Assembly
 //
-// Layer 1: Defaults (hardcoded AuréLéa style + brand DNA file)
-// Layer 2: Runtime JSON (creative overrides from OpenClaw)
-// Layer 3: Global hard rules (brand guardrails)
-// Layer 4: Product hard rules (product-specific constraints)
+// Layer 1: Product Identity Anchor
+// Layer 2: Product hard rules (product-specific constraints)
+// Layer 3: Scene defaults (may be overridden by runtime
+// Layer 4: Background
+// Layer 5: Runtime creative hints
+// Layer 6: Global hard rules (brand guardrails)
+// Layer 7: Brand DNA file
 // ---------------------------------------------------------------------------
 
 function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
@@ -92,16 +95,18 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
     blocks.push(`You receive ${imageOrder.length} image group(s) in this order: ${imageOrder.join("; ")}.`);
   }
 
-  // --- Layer 1: Brand DNA ---
-  if (brandDna?.text) {
-    blocks.push(`Brand DNA (follow this visual style):\n${brandDna.text}`);
-  } else {
-    blocks.push(
-      "Brand: AuréLéa. Visual style: calm, minimal, feminine, premium; soft natural lighting, warm tones, elegant negative space."
-    );
+  // --- Layer 1: Product Identity Anchor ---
+  blocks.push(
+    `Generate an ultra-realistic professional Amazon-style product image featuring a ${product.name} product with a model (she looks exactly like the model in the reference image) performing an exercise or pose with the ${productName}. The ${productName} must be clearly visible and recognisable from the reference(s). Output only the generated image, no text. The ${product.name} must appear physically realistic in size relative to the human body.
+     The ${product.name} must not appear oversized or exaggerated in the frame.`
+  );
+  
+  // --- Layer 2: Product hard rules ---
+  if (productHardRules?.text) {
+    blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
   }
 
-  // --- Layer 1 continued: Scene defaults (may be overridden by runtime) ---
+  // --- Layer 3: Scene defaults (may be overridden by runtime) ---
   const rt = runtimeInput ?? {};
   const outfit = rt.outfit ?? sceneOptions?.outfit ?? AURELEA_DEFAULT_OUTFIT;
   const feetStyle = rt.feet_style ?? (sceneOptions?.barefoot ?? AURELEA_DEFAULT_BAREFOOT ? "barefoot" : "with appropriate footwear");
@@ -111,7 +116,7 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
 
   if (creativeFreedom === true && !runtimeInput) {
     blocks.push(
-      "Choose a sporty, elegant pose and styling that fits the brand; outfit and setting can vary within the brand DNA."
+      "Choose a sporty, elegant Pilates exercise pose that naturally integrates the ${product.name} and styling that fits the brand; outfit and setting can vary within the brand DNA."
     );
   } else {
     const sceneLines: string[] = [
@@ -120,7 +125,7 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
     if (pose) {
       sceneLines.push(`Pose: ${pose}.`);
     } else {
-      sceneLines.push("Choose a single sporty, elegant pose (e.g. Pilates exercise) that shows the product in use.");
+      sceneLines.push(`Choose a sporty, elegant Pilates exercise pose that naturally integrates the ${product.name} and shows the product in use.`);
     }
     if (gaze) {
       sceneLines.push(`Gaze: ${gaze}.`);
@@ -128,36 +133,33 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
     blocks.push(`Scene requirements:\n${sceneLines.join("\n")}`);
   }
 
-  // --- Layer 1 continued: Background ---
+  // --- Layer 4: Background ---
   if (rt.background_style) {
     blocks.push(`Background: ${rt.background_style}.`);
   } else if (useGoldenBackground && imageLayout.hasBackgroundRef) {
-    blocks.push("Use the provided background reference image as the exact background of the generated scene.");
+    blocks.push("Use the background reference image as the visual environment and composition guide for the scene. The floor should be smooth warm golden exposed concrete with a subtle soft reflection, creating a clean and minimal studio look.");
   } else if (useGoldenBackground) {
     blocks.push("Use a warm golden / sand-toned background consistent with the brand.");
   } else {
     blocks.push("Use a calm, minimal background consistent with the brand DNA (soft neutral, warm light).");
   }
 
-  // --- Layer 2: Runtime creative hints ---
+  // --- Layer 5: Runtime creative hints ---
   const runtimeExtras = buildRuntimeExtras(rt);
   if (runtimeExtras) {
     blocks.push(`Creative direction (from runtime input):\n${runtimeExtras}`);
   }
 
-  // --- Task line ---
-  blocks.push(
-    `Generate exactly one high-quality Amazon-style lifestyle product image: a model performing an exercise or pose with the ${productName}. The product must be clearly visible and recognisable from the reference(s). The image should be suitable for e-commerce (product listing). Output only the generated image, no text.`
-  );
 
-  // --- Layer 3: Global hard rules ---
+  // --- Layer 6: Global hard rules ---
   if (globalHardRules?.text) {
     blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
   }
 
-  // --- Layer 4: Product hard rules ---
-  if (productHardRules?.text) {
-    blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+
+   // --- Layer 7: Brand DNA file ---
+   if (brandDna?.text) {
+    blocks.push(`Brand DNA (follow this visual style):\n${brandDna.text}`);
   }
 
   const text = blocks.join("\n\n");
