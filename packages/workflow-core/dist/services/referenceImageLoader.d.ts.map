@@ -1,1 +1,0 @@
-{"version":3,"file":"referenceImageLoader.d.ts","sourceRoot":"","sources":["../../src/services/referenceImageLoader.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,OAAO,EAAE,MAAM,mBAAmB,CAAC;AAEjD,MAAM,WAAW,cAAc;IAC7B,IAAI,EAAE,MAAM,CAAC;CACd;AAED,wBAAsB,mBAAmB,CAAC,OAAO,EAAE,OAAO,GAAG,OAAO,CAAC,cAAc,EAAE,CAAC,CAKrF"}

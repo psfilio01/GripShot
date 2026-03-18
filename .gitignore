@@ -1,2 +1,10 @@
 .env
+.env.local
 data/generated/
+node_modules/
+dist/
+.next/
+.pnpm-store/
+playwright-report/
+test-results/
+*.tsbuildinfo

@@ -7,9 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "pnpm -C packages/workflow-core build",
-    "lint": "pnpm -C packages/workflow-core lint",
-    "test": "pnpm -C packages/workflow-core test"
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "dev": "pnpm -C packages/web dev",
+    "build:core": "pnpm -C packages/workflow-core build",
+    "build:web": "pnpm -C packages/web build",
+    "test:web": "pnpm -C packages/web test",
+    "test:e2e": "pnpm -C packages/web test:e2e"
   },
   "devDependencies": {
     "ts-node": "^10.9.2"

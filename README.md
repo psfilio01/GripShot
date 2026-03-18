@@ -1,23 +1,30 @@
-# Grip Shot
+# Grip Shot — Amazon Seller SaaS
 
-> *You hand it your product photos, whisper a few creative ideas, and it comes back with an Amazon-ready lifestyle image that looks like it was shot in a Mediterranean Pilates studio at golden hour. No photographer required — just vibes, rules, and a very opinionated AI.*
+> *You hand it your product photos, whisper a few creative ideas, and it comes back with Amazon-ready lifestyle images that look like they were shot in a Mediterranean Pilates studio at golden hour. No photographer required — just vibes, rules, and a very opinionated AI.*
 
-Grip Shot is the image generation engine behind **AuréLéa**, a premium Pilates accessories brand. It takes product reference images, brand DNA, creative direction, and non-negotiable guardrails, then assembles a layered prompt and sends it to the Google Gemini image generation API. The result: high-quality lifestyle product images ready for e-commerce listings.
+Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image generation, listing copy, A+ content, and a results dashboard in one workflow — built on Next.js, Firebase, Stripe, and Google Gemini.
 
 ---
 
-## How it works
+## Current status
 
-Grip Shot builds every image prompt from **four layers**, merged in order:
-
-| Layer | Source | Purpose |
-|-------|--------|---------|
-| **1. Defaults** | Hardcoded values + `data/brand/aurelea/dna.md` | Base visual style (AuréLéa identity), default outfit, barefoot, mat |
-| **2. Runtime JSON** | `runtime/run_input.json` | Per-run creative direction from OpenClaw (pose, gaze, outfit, mood, etc.) |
-| **3. Global hard rules** | `data/brand/aurelea/hard-rules.md` | Non-negotiable brand guardrails enforced in every image |
-| **4. Product hard rules** | `data/products/<id>/hard-rules.md` | Product-specific constraints (visibility, accuracy, context) |
-
-**The mental model:** defaults provide the base, runtime JSON adds creative flair, hard rules enforce what must never be violated. They are **additive**, not mutually exclusive.
+| Milestone | Status |
+|-----------|--------|
+| Monorepo + workflow-core engine | Done |
+| Next.js app shell | Done |
+| Firebase Auth (email + Google) | Done |
+| Protected dashboard with sidebar | Done |
+| Vitest unit tests | Done |
+| Playwright smoke test config | Done |
+| Firestore data model | Planned |
+| Onboarding flow | Planned |
+| Listing copy generation | Planned |
+| Product upload + categorization | Planned |
+| Generation job UI | Planned |
+| Results dashboard | Planned |
+| Stripe billing + quotas | Planned |
+| A+ content workflows | Planned |
+| Cloud Run deployment | Planned |
 
 ---
 
@@ -25,197 +32,121 @@ Grip Shot builds every image prompt from **four layers**, merged in order:
 
 ```
 .
-├── data/
-│   ├── brand/aurelea/
-│   │   ├── dna.md                  # AuréLéa brand DNA (visual style guide)
-│   │   ├── hard-rules.md           # Global hard rules (non-negotiable)
-│   │   └── backgrounds/            # Background reference images (e.g. golden.jpg)
-│   ├── models/<modelId>/reference/ # Human model reference images
-│   ├── products/<productId>/
-│   │   ├── reference/              # Product reference images (multiple angles)
-│   │   ├── brand/brand-rules.json  # Legacy brand rules (brand name, etc.)
-│   │   └── hard-rules.md           # Product-specific hard rules
-│   └── generated/                  # Output: generated images sorted by product/job
-├── runtime/
-│   ├── run_input.json              # Runtime creative input (written by OpenClaw)
-│   └── run_input.example.json      # Example file showing all available fields
-├── packages/workflow-core/         # Core TypeScript application
-│   └── src/
-│       ├── api/workflowFacade.ts   # Main entry point (startImageJob, getJob, handleFeedback)
-│       ├── services/
-│       │   ├── promptBuilder.ts    # Layered prompt assembly
-│       │   ├── imageGenerator.ts   # Gemini API integration
-│       │   ├── runtimeInputLoader.ts   # Loads runtime/run_input.json
-│       │   ├── hardRulesLoader.ts      # Loads global + product hard rules
-│       │   ├── brandDnaLoader.ts       # Loads brand DNA markdown
-│       │   ├── modelLoader.ts          # Lists and loads human model references
-│       │   ├── backgroundLoader.ts     # Loads background reference images
-│       │   └── ...
-│       ├── domain/                 # Domain types (Product, Prompt, ImageJob, etc.)
-│       ├── types/api.ts            # Public API types
-│       └── config/env.ts           # Environment variable schema
-├── test-start-job.ts               # Quick test script
-├── .env                            # Environment configuration
-└── README.md                       # This file
+├── packages/
+│   ├── web/                    # Next.js App Router — the SaaS UI
+│   │   ├── src/app/            # Pages and layouts
+│   │   ├── src/lib/            # Firebase, auth, shared utilities
+│   │   ├── e2e/                # Playwright tests
+│   │   └── vitest.config.ts    # Unit test config
+│   └── workflow-core/          # Image generation engine (Grip Shot)
+│       └── src/
+│           ├── api/            # workflowFacade — main entry point
+│           ├── services/       # Prompt builder, Gemini API, loaders
+│           ├── domain/         # Product, Job, Prompt types
+│           └── config/         # Environment schema
+├── data/                       # Local data (products, models, brand DNA)
+├── runtime/                    # Runtime JSON for OpenClaw / manual runs
+├── docs/                       # Architecture and deployment docs
+└── .env                        # Environment variables (not committed)
 ```
 
 ---
 
-## Running the script
+## Quick start
 
 ### Prerequisites
 
 - Node.js 18+
 - pnpm
 
-### Setup
+### Install
 
 ```bash
 pnpm install
 ```
 
-### Configure `.env`
+### Configure environment
+
+Copy the example and fill in your credentials:
 
 ```bash
-WORKFLOW_DATA_ROOT=/path/to/data
-NANOBANANA_API_KEY=your-gemini-api-key
-NANOBANANA_MODEL=gemini-3.1-flash-image-preview   # or gemini-3-pro-image-preview
-NANOBANANA_DRY_RUN=false                           # true = skip API, use reference image
+cp packages/web/.env.local.example packages/web/.env.local
 ```
 
-### Run
+Required variables for the web app:
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase client SDK |
+| `FIREBASE_ADMIN_PROJECT_ID` | Firebase Admin (server) |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase Admin (server) |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase Admin (server) |
+
+For the workflow engine, also set variables in the root `.env` (see `.env.example`).
+
+### Run the web app
 
 ```bash
-pnpm exec ts-node test-start-job.ts
+pnpm dev
 ```
 
-By default this runs an `AMAZON_LIFESTYLE_SHOT` for `pilates-mini-ball`. Set `WORKFLOW_TYPE=NEUTRAL_PRODUCT_SHOT` for a plain product shot.
+Opens at [http://localhost:3000](http://localhost:3000). Unauthenticated users are redirected to `/login`.
+
+### Run tests
+
+```bash
+pnpm test              # All unit tests (Vitest)
+pnpm test:web          # Web package unit tests
+pnpm test:e2e          # Playwright E2E tests
+```
+
+### Build
+
+```bash
+pnpm build             # Build all packages
+pnpm build:web         # Build web only
+pnpm build:core        # Build workflow-core only
+```
 
 ---
 
-## Runtime JSON (`runtime/run_input.json`)
+## Grip Shot image engine
 
-Before each run, OpenClaw (or you manually) can write a JSON file with creative direction. The file is **optional** — if it doesn't exist, Grip Shot uses its defaults.
+The workflow-core package builds every image prompt from four layers:
 
-### Supported fields
+| Layer | Source | Purpose |
+|-------|--------|---------|
+| Defaults | Hardcoded + `data/brand/aurelea/dna.md` | Base visual style |
+| Runtime JSON | `runtime/run_input.json` | Per-run creative direction |
+| Global hard rules | `data/brand/aurelea/hard-rules.md` | Brand guardrails |
+| Product hard rules | `data/products/<id>/hard-rules.md` | Product constraints |
 
-| Field | Example | What it does |
-|-------|---------|--------------|
-| `pose` | `"seated pilates twist"` | Specific model pose (overrides random pose selection) |
-| `gaze` | `"slightly away from camera"` | Model's gaze direction |
-| `outfit` | `"minimal beige activewear"` | Overrides default black Pilates outfit |
-| `feet_style` | `"barefoot on mat"` | Overrides default barefoot setting |
-| `background_style` | `"warm golden studio"` | Overrides default/golden background logic |
-| `composition_goal` | `"product centered in frame"` | Composition guidance for the AI |
-| `mood` | `"serene, focused"` | Mood/atmosphere hint |
-| `framing` | `"full body, eye-level"` | Camera framing guidance |
-| `extra` | `"add soft lens flare"` | Any additional prompt hint |
-
-Any field can be omitted. Only present fields are used. See `runtime/run_input.example.json` for a complete example.
-
-### Generation settings
-
-The runtime JSON can also include a `generation` object to control image resolution and aspect ratio:
-
-```json
-{
-  "generation": {
-    "resolution": "4K",
-    "aspectRatio": "1:1"
-  }
-}
-```
-
-| Setting | Default | Allowed values |
-|---------|---------|----------------|
-| `resolution` | `2K` | `512`, `1K`, `2K`, `4K` |
-| `aspectRatio` | `4:5` | `1:1`, `1:4`, `1:8`, `2:3`, `3:2`, `3:4`, `4:1`, `4:3`, `4:5`, `5:4`, `8:1`, `9:16`, `16:9`, `21:9` |
-
-These are **generation settings**, not prompt text — they are passed directly to the Gemini API's `imageConfig`. If omitted or invalid, the defaults apply. You can override just one (e.g. only `resolution`) and the other keeps its default.
-
-### Where OpenClaw writes it
-
-OpenClaw writes `runtime/run_input.json` in the project root (next to `data/`). The loader looks for it at `<project_root>/runtime/run_input.json`.
+See `USAGE.md` for full details on the image generation CLI workflow.
 
 ---
 
-## Product hard rules
+## Auth
 
-Each product can have a `hard-rules.md` file in its product directory:
-
-```
-data/products/pilates-mini-ball/hard-rules.md
-data/products/grip-socks/hard-rules.md
-```
-
-These define **non-negotiable constraints** that are always appended to the prompt. Example:
-
-```markdown
-# Pilates Mini Ball – Hard Rules
-
-- The mini ball must always be clearly visible and recognisable in the image.
-- The ball's shape must remain round and undistorted.
-- The ball's color and texture must accurately match the reference images.
-```
-
-### Global hard rules
-
-Brand-wide rules live at `data/brand/aurelea/hard-rules.md` and are enforced in **every** image regardless of product.
+- **Email/password** and **Google sign-in** via Firebase Authentication
+- Session cookies managed server-side via `/api/auth/session`
+- Middleware redirects unauthenticated users to `/login`
 
 ---
 
-## Fallback behavior
+## Tech stack
 
-| What's missing | What happens |
-|----------------|--------------|
-| No `runtime/run_input.json` | Grip Shot uses built-in defaults (black outfit, barefoot, random pose, 2K @ 4:5) |
-| No `hard-rules.md` for a product | No product-specific rules appended; global rules still apply |
-| No `data/brand/aurelea/hard-rules.md` | No global rules appended; prompt still works |
-| No `data/brand/aurelea/dna.md` | Fallback brand DNA text is used inline |
-| No model references in `data/models/` | Image generated without a specific model reference |
-
-The system is designed to work with **any combination** of present/absent files. Everything degrades gracefully.
-
----
-
-## OpenClaw integration (future)
-
-Grip Shot is designed to be triggered by OpenClaw:
-
-1. OpenClaw writes `runtime/run_input.json` with creative direction for the run
-2. OpenClaw calls `startImageJob()` with the desired product and workflow type
-3. Grip Shot loads all layers, builds the prompt, generates the image
-4. OpenClaw reads the result via `getJob()` and sends the preview via WhatsApp
-5. User reacts (heart = favorite, thumbs down = reject)
-6. OpenClaw calls `handleFeedback()` to move the image to the appropriate folder
-
-The `runtime/run_input.json` file is the handoff point between OpenClaw's planning and Grip Shot's execution.
-
----
-
-## Supported Gemini models
-
-| Model | ID | Use case |
-|-------|----|----------|
-| Nano Banana 2 | `gemini-3.1-flash-image-preview` | Fast, high-volume generation |
-| Nano Banana Pro | `gemini-3-pro-image-preview` | Higher quality, professional assets |
-
-Set `NANOBANANA_MODEL` in `.env` to switch between them.
-
----
-
-## Programmatic API
-
-```typescript
-import { startImageJob, getJob, handleFeedback } from "@fashionmentum/workflow-core";
-
-const { jobId } = await startImageJob({
-  productId: "pilates-mini-ball",
-  workflowType: "AMAZON_LIFESTYLE_SHOT",
-  useGoldenBackground: true,
-});
-
-const job = await getJob(jobId);
-
-await handleFeedback({ imageId: "<id>", action: "favorite" });
-```
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15 App Router, Tailwind CSS 4 |
+| Auth | Firebase Authentication |
+| Database | Firestore (planned) |
+| Storage | Cloud Storage for Firebase (planned) |
+| Billing | Stripe (planned) |
+| Image generation | Google Gemini API |
+| Unit tests | Vitest |
+| E2E tests | Playwright |
+| Deployment | Cloud Run (planned) |

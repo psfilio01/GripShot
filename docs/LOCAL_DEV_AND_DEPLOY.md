@@ -1,89 +1,124 @@
 # Local Development and Deployment
 
 ## Local development goals
-The project must always support two modes:
-1. local developer mode for fast iteration and testing
-2. production mode for Cloud Run deployment
 
-## Recommended local stack
-- Node.js LTS
-- pnpm
-- Docker
-- Firebase project for auth and storage
-- Firebase emulators where practical
-- Playwright browsers installed locally or in CI
+The project supports two modes:
 
-## Environment variable groups
-### App and auth
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `FIREBASE_ADMIN_PROJECT_ID`
-- `FIREBASE_ADMIN_CLIENT_EMAIL`
-- `FIREBASE_ADMIN_PRIVATE_KEY`
+1. **Local developer mode** — fast iteration with `pnpm dev`
+2. **Production mode** — Cloud Run deployment (planned)
 
-### Gemini
-- `GEMINI_API_KEY`
-- `GEMINI_TEXT_MODEL`
-- `GEMINI_IMAGE_MODEL_FAST`
-- `GEMINI_IMAGE_MODEL_PRO`
-- `GEMINI_DRY_RUN`
+---
 
-### Stripe
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_ID_STARTER`
-- `STRIPE_PRICE_ID_PRO`
-- `STRIPE_PRICE_ID_CREDIT_TOPUP`
+## Setup
 
-### Storage and app URLs
-- `APP_BASE_URL`
-- `PUBLIC_ASSET_BASE_URL`
-- `WORKFLOW_DATA_ROOT`
+### Prerequisites
 
-## Docker guidance
-Containerize the app from the start, but do not assume Docker alone solves auth, storage, billing, or domains.
-Use Docker to ensure runtime parity and easier deployment to Cloud Run.
+- Node.js 18+
+- pnpm 9+
 
-Recommended direction:
-- one app container for the Next.js app
-- external managed services for auth, storage, billing, and databases
-- no durable user state stored on the container filesystem
+### Install dependencies
 
-## Cloud Run deployment guidance
-### Keep the app stateless
-All durable data must live outside the container:
+```bash
+pnpm install
+```
+
+### Environment variables
+
+#### Web app (`packages/web/.env.local`)
+
+Copy from the example:
+
+```bash
+cp packages/web/.env.local.example packages/web/.env.local
+```
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes | Firebase client SDK |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes | Firebase client SDK |
+| `FIREBASE_ADMIN_PROJECT_ID` | Yes | Firebase Admin (server-side auth) |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Yes | Firebase Admin |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Yes | Firebase Admin |
+| `STRIPE_SECRET_KEY` | Later | Stripe billing |
+| `STRIPE_WEBHOOK_SECRET` | Later | Stripe webhooks |
+
+#### Workflow engine (root `.env`)
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `WORKFLOW_DATA_ROOT` | Yes | Path to the `data/` directory |
+| `NANOBANANA_API_KEY` | Yes | Google Gemini API key |
+| `NANOBANANA_MODEL` | No | Gemini model ID (default: `gemini-3.1-flash-image-preview`) |
+| `NANOBANANA_DRY_RUN` | No | Set `true` to skip API calls |
+
+---
+
+## Running locally
+
+### Web app
+
+```bash
+pnpm dev
+```
+
+Opens at http://localhost:3000.
+
+### CLI workflow (image generation)
+
+```bash
+pnpm exec ts-node test-start-job.ts
+```
+
+---
+
+## Testing
+
+### Unit tests (Vitest)
+
+```bash
+pnpm test              # All packages
+pnpm test:web          # Web package only
+```
+
+### E2E tests (Playwright)
+
+```bash
+pnpm test:e2e
+```
+
+Playwright auto-starts the dev server on port 3000.
+
+---
+
+## Building
+
+```bash
+pnpm build             # All packages
+pnpm build:web         # Next.js production build
+pnpm build:core        # workflow-core TypeScript build
+```
+
+---
+
+## Docker guidance (planned)
+
+Containerize from a single Dockerfile at the repo root:
+
+- One container for the Next.js app
+- External services: Firebase Auth, Firestore, Cloud Storage, Stripe
+
+No durable state on the container filesystem.
+
+## Cloud Run deployment (planned)
+
+The app must remain stateless:
+
 - Firestore for metadata
 - Cloud Storage for files
-- Stripe for billing records
+- Stripe for billing
 - Firebase Auth for identity
 
-### Domain routing
-You can map a custom domain to a Cloud Run service, or place Firebase Hosting in front and route dynamic requests to Cloud Run. Choose the simpler path that fits the final routing model.
-
-### Build pipeline
-Recommended CI path:
-1. install dependencies
-2. run lint, typecheck, unit tests, integration tests, Playwright smoke tests
-3. build the app container
-4. deploy to Cloud Run
-5. run post deployment smoke checks
-
-## Local run contract
-At minimum the repo should support commands equivalent to:
-- install dependencies
-- start local web app
-- run unit tests
-- run integration tests
-- run Playwright tests
-- run a dry run generation flow without paid APIs
-
-## Production safety requirements
-- validate all webhook signatures
-- use idempotency keys where supported
-- keep secrets in environment variables or secret management
-- never expose server secrets to the client
-- log job identifiers and provider response metadata
-- redact sensitive tokens from logs
+Build pipeline: install → lint → typecheck → test → build container → deploy → smoke test.
