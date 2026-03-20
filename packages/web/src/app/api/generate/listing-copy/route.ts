@@ -8,6 +8,10 @@ import {
 } from "@/lib/generation/listing-copy";
 import { generateText } from "@/lib/generation/gemini-text";
 import { z } from "zod";
+import { config } from "dotenv";
+import { resolve } from "path";
+
+config({ path: resolve(process.cwd(), "../../.env") });
 
 const RequestSchema = z.object({
   productId: z.string().min(1),

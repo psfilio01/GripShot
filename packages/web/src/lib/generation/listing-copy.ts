@@ -69,8 +69,17 @@ Requirements:
 }
 
 export function parseListingCopyResponse(raw: string): ListingCopyResult {
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  let text = raw.trim();
+
+  // Strip markdown code fences (```json ... ``` or ``` ... ```)
+  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (fenceMatch) {
+    text = fenceMatch[1].trim();
+  }
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
+    console.error("No JSON found in Gemini response. Raw:", raw.slice(0, 500));
     throw new Error("No JSON found in response");
   }
 

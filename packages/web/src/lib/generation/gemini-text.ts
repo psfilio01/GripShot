@@ -3,7 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   GEMINI_API_KEY: z.string().min(1).optional(),
   NANOBANANA_API_KEY: z.string().min(1).optional(),
-  GEMINI_TEXT_MODEL: z.string().default("gemini-2.0-flash"),
+  GEMINI_TEXT_MODEL: z.string().default("gemini-2.5-flash"),
   GEMINI_DRY_RUN: z
     .string()
     .transform((v) => v === "true")

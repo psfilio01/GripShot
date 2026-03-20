@@ -13,6 +13,18 @@ The product goal is a fun, slightly weird, high utility web app for Amazon selle
 6. pay via subscriptions and buy extra credits
 7. optionally trigger jobs through WhatsApp or Telegram later
 
+### Upcoming Features (incrementally added by the user)
+
+1. Brand and Product Management  
+   Users should be able to create, edit, and delete both brands and products. The UX should remain simple and efficient, supporting fast iteration and clear data organization.
+2. Image Interaction in Dashboard  
+   Users should be able to click on images to view them in an enlarged modal with an optional zoom capability.  
+   Prefer a well known, lightweight, and high quality open source library for this functionality. If no suitable option is available, implement a minimal custom solution.
+3. Public Landing Experience  
+   The application should not default directly to a login screen. Instead, provide a modern, high quality landing page that clearly communicates the product’s value proposition, features, and pricing.  
+   Include a visible login button, typically positioned in the top right corner.  
+   The design should target young e commerce entrepreneurs, primarily male, with a bold, slightly unconventional, and engaging visual style.
+
 ## Non negotiable working style
 1. Work feature by feature.
 2. Every completed feature must include code, tests, docs, and a concise README update.
@@ -166,7 +178,7 @@ For each feature:
 1. create a short lived feature branch
 2. implement the feature
 3. run tests and validations
-4. commit with a focused message
+4. commit with a focused message (Start message with "Cloude: <msg>")
 5. push the branch
 6. if all checks pass, merge into the primary branch
 7. delete the feature branch if appropriate

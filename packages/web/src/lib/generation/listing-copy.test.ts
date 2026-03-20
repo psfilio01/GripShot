@@ -93,4 +93,26 @@ describe("parseListingCopyResponse", () => {
       parseListingCopyResponse(JSON.stringify({ title: "T" })),
     ).toThrow("missing required fields");
   });
+
+  it("extracts JSON from markdown code fence", () => {
+    const json = JSON.stringify({
+      title: "Fenced",
+      bulletPoints: ["A"],
+      description: "D",
+    });
+    const raw = "```json\n" + json + "\n```";
+    const result = parseListingCopyResponse(raw);
+    expect(result.title).toBe("Fenced");
+  });
+
+  it("extracts JSON from bare code fence", () => {
+    const json = JSON.stringify({
+      title: "Bare",
+      bulletPoints: ["B"],
+      description: "E",
+    });
+    const raw = "```\n" + json + "\n```";
+    const result = parseListingCopyResponse(raw);
+    expect(result.title).toBe("Bare");
+  });
 });
