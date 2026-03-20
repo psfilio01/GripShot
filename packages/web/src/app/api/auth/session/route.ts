@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebase/admin";
+import { ensureUserProvisioned } from "@/lib/db/users";
 import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_MS,
@@ -10,6 +11,19 @@ export async function POST(req: NextRequest) {
     const { idToken } = (await req.json()) as { idToken?: string };
     if (!idToken) {
       return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
+    }
+
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
+
+    const { isNew } = await ensureUserProvisioned({
+      uid: decoded.uid,
+      email: decoded.email,
+      name: decoded.name,
+      picture: decoded.picture,
+    });
+
+    if (isNew) {
+      console.log(`New user provisioned: ${decoded.uid} (${decoded.email})`);
     }
 
     const sessionCookie = await getAdminAuth().createSessionCookie(idToken, {

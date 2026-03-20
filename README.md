@@ -16,7 +16,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Protected dashboard with sidebar | Done |
 | Vitest unit tests | Done |
 | Playwright smoke test config | Done |
-| Firestore data model | Planned |
+| Firestore data model + user provisioning | Done |
 | Onboarding flow | Planned |
 | Listing copy generation | Planned |
 | Product upload + categorization | Planned |
@@ -129,11 +129,13 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 
 ---
 
-## Auth
+## Auth and user provisioning
 
 - **Email/password** and **Google sign-in** via Firebase Authentication
 - Session cookies managed server-side via `/api/auth/session`
 - Middleware redirects unauthenticated users to `/login`
+- First sign-in automatically creates a Firestore user document and workspace
+- Each user gets a workspace with a free-tier quota (50 credits)
 
 ---
 
@@ -143,7 +145,7 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 |-------|-----------|
 | Frontend | Next.js 15 App Router, Tailwind CSS 4 |
 | Auth | Firebase Authentication |
-| Database | Firestore (planned) |
+| Database | Firestore |
 | Storage | Cloud Storage for Firebase (planned) |
 | Billing | Stripe (planned) |
 | Image generation | Google Gemini API |
