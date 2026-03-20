@@ -52,7 +52,14 @@ export function ListingCopyTab() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Generation failed");
+      if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error(
+            `Quota exceeded (${data.used}/${data.limit} credits used). Upgrade your plan for more credits.`,
+          );
+        }
+        throw new Error(data.error ?? "Generation failed");
+      }
       setResult(data.result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
