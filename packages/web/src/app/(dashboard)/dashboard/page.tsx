@@ -55,7 +55,7 @@ export default function DashboardPage() {
   }, []);
 
   const greeting = me?.user.displayName
-    ? `Welcome, ${me.user.displayName.split(" ")[0]}`
+    ? `Welcome back, ${me.user.displayName.split(" ")[0]}`
     : "Welcome to Grip Shot";
 
   const remaining = me
@@ -67,35 +67,53 @@ export default function DashboardPage() {
       : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 gs-fade-in">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-sand-800">
+        <h1
+          className="text-2xl font-bold tracking-tight"
+          style={{ color: "var(--gs-text)" }}
+        >
           {greeting}
         </h1>
-        <p className="mt-1 text-sm text-sand-500">
+        <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
           Your Amazon product image command center.
         </p>
       </div>
 
       {/* Low-credit warning */}
       {me && usagePercent >= 90 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 flex items-center justify-between">
-          <div className="text-sm text-amber-800">
+        <div
+          className="rounded-xl p-4 flex items-center justify-between"
+          style={{
+            background: "var(--gs-warning-bg)",
+            border: "1px solid var(--gs-warning-text)",
+            borderColor: "color-mix(in srgb, var(--gs-warning-text) 30%, transparent)",
+          }}
+        >
+          <div className="text-sm" style={{ color: "var(--gs-warning-text)" }}>
             You&apos;re running low on credits ({remaining} remaining).
           </div>
           <Link
             href="/dashboard/settings"
-            className="text-sm font-medium text-amber-700 hover:text-amber-900 transition"
+            className="text-sm font-semibold transition"
+            style={{ color: "var(--gs-warning-text)" }}
           >
             {me.workspace.plan === "free" ? "Upgrade plan" : "View usage"}
           </Link>
         </div>
       )}
 
+      {/* Stats grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Plan"
-          value={me?.workspace.plan?.charAt(0).toUpperCase() + (me?.workspace.plan?.slice(1) ?? "") || "—"}
+          value={
+            me?.workspace.plan
+              ? me.workspace.plan.charAt(0).toUpperCase() +
+                me.workspace.plan.slice(1)
+              : "—"
+          }
           description={me ? `${me.workspace.quotaLimit} credits/month` : ""}
         />
         <StatCard
@@ -125,65 +143,137 @@ export default function DashboardPage() {
         <QuickAction
           href="/dashboard/generate"
           title="Generate"
-          description="Create images or listing copy"
-          color="peach"
+          description="Create images, listing copy, or A+ content"
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+          }
         />
         <QuickAction
           href="/dashboard/products"
           title="Products"
           description="Manage products and reference images"
-          color="olive"
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+            </svg>
+          }
         />
         <QuickAction
           href="/dashboard/results"
           title="Results"
           description="Browse and review generated content"
-          color="sand"
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+          }
         />
       </div>
 
+      {/* Brand section */}
       {brands.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-peach-300 bg-peach-50/50 p-6 text-center">
-          <h2 className="text-lg font-medium text-sand-800">
+        <div
+          className="rounded-xl p-8 text-center"
+          style={{
+            border: "2px dashed var(--gs-border)",
+            background: "var(--gs-surface-inset)",
+          }}
+        >
+          <div
+            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
+            style={{ background: "var(--gs-accent-subtle)" }}
+          >
+            <svg
+              className="h-6 w-6"
+              style={{ color: "var(--gs-accent)" }}
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+          </div>
+          <h2
+            className="text-lg font-semibold"
+            style={{ color: "var(--gs-text)" }}
+          >
             Let&apos;s get started
           </h2>
-          <p className="mt-2 text-sm text-sand-500">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: "var(--gs-text-muted)" }}
+          >
             Set up your brand to start generating Amazon-ready images and copy.
           </p>
           <Link
             href="/dashboard/onboarding"
-            className="mt-4 inline-block rounded-lg bg-peach-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-peach-400 transition"
+            className="gs-btn-primary mt-5 inline-block px-6 py-2.5 text-sm"
           >
             Set up your brand
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-sand-200 bg-white p-6">
-          <h2 className="text-lg font-medium text-sand-800">Your brands</h2>
-          <div className="mt-3 space-y-2">
+        <div className="gs-card-static p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              className="text-base font-semibold"
+              style={{ color: "var(--gs-text)" }}
+            >
+              Your brands
+            </h2>
+            <Link
+              href="/dashboard/onboarding"
+              className="text-sm font-medium transition"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              + Add brand
+            </Link>
+          </div>
+          <div className="space-y-2">
             {brands.map((b) => (
               <div
                 key={b.id}
-                className="flex items-center justify-between rounded-lg border border-sand-100 px-4 py-3"
+                className="flex items-center justify-between rounded-lg px-4 py-3 transition-colors"
+                style={{
+                  border: "1px solid var(--gs-border-subtle)",
+                  background: "var(--gs-surface-inset)",
+                }}
               >
                 <div>
-                  <p className="text-sm font-medium text-sand-800">{b.name}</p>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "var(--gs-text)" }}
+                  >
+                    {b.name}
+                  </p>
                   {b.productCategory && (
-                    <p className="text-xs text-sand-400">{b.productCategory}</p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "var(--gs-text-faint)" }}
+                    >
+                      {b.productCategory}
+                    </p>
                   )}
                 </div>
-                <span className="rounded-full bg-olive-100 px-2 py-0.5 text-xs font-medium text-olive-600">
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  style={{
+                    background: "var(--gs-success-bg)",
+                    color: "var(--gs-success-text)",
+                  }}
+                >
                   Active
                 </span>
               </div>
             ))}
           </div>
-          <Link
-            href="/dashboard/onboarding"
-            className="mt-3 inline-block text-sm font-medium text-peach-500 hover:text-peach-600 transition"
-          >
-            + Add another brand
-          </Link>
         </div>
       )}
     </div>
@@ -202,24 +292,37 @@ function StatCard({
   bar?: { percent: number };
 }) {
   return (
-    <div className="rounded-xl border border-sand-200 bg-white p-5">
-      <p className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+    <div className="gs-card-static p-5">
+      <p
+        className="text-xs font-medium uppercase tracking-wider"
+        style={{ color: "var(--gs-text-faint)" }}
+      >
         {title}
       </p>
-      <p className="mt-2 text-3xl font-semibold text-sand-800">{value}</p>
-      <p className="mt-1 text-xs text-sand-400">{description}</p>
+      <p
+        className="mt-2 text-3xl font-bold"
+        style={{ color: "var(--gs-text)" }}
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-xs" style={{ color: "var(--gs-text-faint)" }}>
+        {description}
+      </p>
       {bar && (
-        <div className="mt-2 h-1.5 w-full rounded-full bg-sand-100">
+        <div
+          className="mt-3 h-1.5 w-full rounded-full"
+          style={{ background: "var(--gs-surface-inset)" }}
+        >
           <div
             className="h-1.5 rounded-full transition-all duration-500"
             style={{
               width: `${Math.min(100, bar.percent)}%`,
               backgroundColor:
                 bar.percent >= 90
-                  ? "#ef4444"
+                  ? "var(--gs-error-text)"
                   : bar.percent >= 70
-                    ? "#f59e0b"
-                    : "#d4956a",
+                    ? "var(--gs-warning-text)"
+                    : "var(--gs-accent)",
             }}
           />
         </div>
@@ -232,26 +335,38 @@ function QuickAction({
   href,
   title,
   description,
-  color,
+  icon,
 }: {
   href: string;
   title: string;
   description: string;
-  color: "peach" | "olive" | "sand";
+  icon: React.ReactNode;
 }) {
-  const colors = {
-    peach: "border-peach-200 hover:border-peach-300 hover:bg-peach-50/30",
-    olive: "border-olive-200 hover:border-olive-300 hover:bg-olive-50/30",
-    sand: "border-sand-200 hover:border-sand-300 hover:bg-sand-50/50",
-  };
-
   return (
-    <Link
-      href={href}
-      className={`block rounded-xl border bg-white p-5 transition ${colors[color]}`}
-    >
-      <h3 className="text-sm font-semibold text-sand-800">{title}</h3>
-      <p className="mt-1 text-xs text-sand-400">{description}</p>
+    <Link href={href} className="gs-card group flex items-start gap-4 p-5">
+      <div
+        className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
+        style={{
+          background: "var(--gs-accent-subtle)",
+          color: "var(--gs-accent)",
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--gs-text)" }}
+        >
+          {title}
+        </h3>
+        <p
+          className="mt-0.5 text-xs"
+          style={{ color: "var(--gs-text-muted)" }}
+        >
+          {description}
+        </p>
+      </div>
     </Link>
   );
 }

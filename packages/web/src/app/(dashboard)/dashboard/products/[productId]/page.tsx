@@ -30,7 +30,11 @@ export default function ProductDetailPage() {
   const [dragOver, setDragOver] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", category: "", description: "" });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    category: "",
+    description: "",
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -171,67 +175,96 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-sand-400">Loading product…</p>
+        <p
+          className="text-sm animate-pulse"
+          style={{ color: "var(--gs-text-faint)" }}
+        >
+          Loading product…
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 gs-fade-in">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-sand-400">
+      <div className="flex items-center gap-2 text-sm">
         <Link
           href="/dashboard/products"
-          className="hover:text-sand-600 transition"
+          className="transition-colors"
+          style={{ color: "var(--gs-text-faint)" }}
         >
           Products
         </Link>
-        <span>/</span>
-        <span className="text-sand-700">{product.name}</span>
+        <span style={{ color: "var(--gs-text-faint)" }}>/</span>
+        <span style={{ color: "var(--gs-text-secondary)" }}>
+          {product.name}
+        </span>
       </div>
 
       {/* Product info */}
-      <section className="rounded-xl border border-sand-200 bg-white p-6">
+      <section className="gs-card-static p-6">
         {editing ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-sand-700">Name</label>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
+                Name
+              </label>
               <input
                 type="text"
                 value={editForm.name}
-                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, name: e.target.value }))
+                }
+                className="gs-input block w-full px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-sand-700">Category</label>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
+                Category
+              </label>
               <input
                 type="text"
                 value={editForm.category}
-                onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, category: e.target.value }))
+                }
+                className="gs-input block w-full px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-sand-700">Description</label>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
+                Description
+              </label>
               <textarea
                 rows={3}
                 value={editForm.description}
-                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, description: e.target.value }))
+                }
+                className="gs-input block w-full px-3 py-2 text-sm resize-none"
               />
             </div>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setEditing(false)}
-                className="rounded-lg border border-sand-200 px-4 py-2 text-sm font-medium text-sand-600 hover:bg-sand-50 transition"
+                className="gs-btn-secondary px-4 py-2 text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={saving || !editForm.name.trim()}
-                className="rounded-lg bg-peach-500 px-4 py-2 text-sm font-medium text-white hover:bg-peach-400 disabled:opacity-50 transition"
+                className="gs-btn-primary px-4 py-2 text-sm"
               >
                 {saving ? "Saving…" : "Save changes"}
               </button>
@@ -241,39 +274,65 @@ export default function ProductDetailPage() {
           <>
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-sand-800">
+                <h1
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--gs-text)" }}
+                >
                   {product.name}
                 </h1>
                 {product.category && (
-                  <p className="mt-1 text-sm text-sand-400">{product.category}</p>
+                  <p
+                    className="mt-1 text-sm"
+                    style={{ color: "var(--gs-text-faint)" }}
+                  >
+                    {product.category}
+                  </p>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  className="rounded-full px-3 py-1 text-xs font-medium"
+                  style={
                     product.status === "active"
-                      ? "bg-olive-100 text-olive-600"
-                      : "bg-sand-100 text-sand-600"
-                  }`}
+                      ? {
+                          background: "var(--gs-success-bg)",
+                          color: "var(--gs-success-text)",
+                        }
+                      : {
+                          background: "var(--gs-surface-inset)",
+                          color: "var(--gs-text-muted)",
+                        }
+                  }
                 >
                   {product.status}
                 </span>
                 <button
                   onClick={startEditing}
-                  className="rounded-lg border border-sand-200 px-3 py-1.5 text-xs font-medium text-sand-600 hover:bg-sand-50 transition"
+                  className="gs-btn-secondary px-3 py-1.5 text-xs"
                 >
                   Edit
                 </button>
                 <button
                   onClick={handleDeleteProduct}
-                  className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                  style={{
+                    background: "var(--gs-error-bg)",
+                    color: "var(--gs-error-text)",
+                    border:
+                      "1px solid color-mix(in srgb, var(--gs-error-text) 25%, transparent)",
+                  }}
                 >
                   Delete
                 </button>
               </div>
             </div>
             {product.description && (
-              <p className="mt-3 text-sm text-sand-500">{product.description}</p>
+              <p
+                className="mt-3 text-sm"
+                style={{ color: "var(--gs-text-muted)" }}
+              >
+                {product.description}
+              </p>
             )}
           </>
         )}
@@ -282,10 +341,13 @@ export default function ProductDetailPage() {
       {/* Reference Images */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-sand-800">
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--gs-text)" }}
+          >
             Reference Images
           </h2>
-          <span className="text-sm text-sand-400">
+          <span className="text-sm" style={{ color: "var(--gs-text-faint)" }}>
             {images.length} image{images.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -299,11 +361,13 @@ export default function ProductDetailPage() {
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
-            dragOver
-              ? "border-peach-400 bg-peach-50"
-              : "border-sand-300 bg-white hover:border-sand-400 hover:bg-sand-50"
-          }`}
+          className="cursor-pointer rounded-xl p-8 text-center transition-all"
+          style={{
+            border: `2px dashed ${dragOver ? "var(--gs-accent)" : "var(--gs-border)"}`,
+            background: dragOver
+              ? "var(--gs-accent-subtle)"
+              : "var(--gs-surface)",
+          }}
         >
           <input
             ref={fileInputRef}
@@ -318,30 +382,38 @@ export default function ProductDetailPage() {
               }
             }}
           />
-          <UploadIcon className="mx-auto h-8 w-8 text-sand-300" />
-          <p className="mt-2 text-sm font-medium text-sand-600">
+          <UploadIcon />
+          <p
+            className="mt-2 text-sm font-medium"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             {uploading
               ? "Uploading…"
               : "Drop images here or click to browse"}
           </p>
-          <p className="mt-1 text-xs text-sand-400">
+          <p className="mt-1 text-xs" style={{ color: "var(--gs-text-faint)" }}>
             JPEG, PNG, or WebP — max 10 MB each
           </p>
         </div>
 
         {error && (
-          <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+          <p
+            className="rounded-lg p-3 text-sm"
+            style={{
+              background: "var(--gs-error-bg)",
+              color: "var(--gs-error-text)",
+            }}
+          >
             {error}
           </p>
         )}
 
-        {/* Image grid */}
         {images.length > 0 && (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {images.map((img) => (
               <div
                 key={img.name}
-                className="group relative overflow-hidden rounded-lg border border-sand-200 bg-white"
+                className="gs-card group relative overflow-hidden"
               >
                 <ZoomableImage
                   src={img.url}
@@ -375,7 +447,10 @@ export default function ProductDetailPage() {
         )}
 
         {images.length === 0 && !uploading && (
-          <p className="text-center text-sm text-sand-400 py-4">
+          <p
+            className="text-center text-sm py-4"
+            style={{ color: "var(--gs-text-faint)" }}
+          >
             No reference images yet. Upload some to use in image generation.
           </p>
         )}
@@ -384,10 +459,11 @@ export default function ProductDetailPage() {
   );
 }
 
-function UploadIcon({ className }: { className?: string }) {
+function UploadIcon() {
   return (
     <svg
-      className={className}
+      className="mx-auto h-8 w-8"
+      style={{ color: "var(--gs-text-faint)" }}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}

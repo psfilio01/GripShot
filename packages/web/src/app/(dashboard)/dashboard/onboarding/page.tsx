@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-
 import Link from "next/link";
 
 const STEPS = [
@@ -36,7 +35,9 @@ export default function OnboardingPage() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdBrandName, setCreatedBrandName] = useState<string | null>(null);
+  const [createdBrandName, setCreatedBrandName] = useState<string | null>(
+    null,
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -76,16 +77,19 @@ export default function OnboardingPage() {
     }
   }
 
-  const canProceed =
-    step === 0 ? form.name.trim().length > 0 : true;
+  void router;
+  const canProceed = step === 0 ? form.name.trim().length > 0 : true;
 
   return (
-    <div className="mx-auto max-w-lg space-y-8">
+    <div className="mx-auto max-w-lg space-y-8 gs-fade-in">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-sand-800">
+        <h1
+          className="text-2xl font-bold tracking-tight"
+          style={{ color: "var(--gs-text)" }}
+        >
           Set up your brand
         </h1>
-        <p className="mt-1 text-sm text-sand-500">
+        <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
           Tell us about your brand so we can tailor your images and copy.
         </p>
       </div>
@@ -95,14 +99,20 @@ export default function OnboardingPage() {
         {STEPS.map((label, i) => (
           <div key={label} className="flex-1">
             <div
-              className={`h-1 rounded-full transition ${
-                i <= step ? "bg-peach-400" : "bg-sand-200"
-              }`}
+              className="h-1 rounded-full transition-all"
+              style={{
+                background:
+                  i <= step ? "var(--gs-accent)" : "var(--gs-border)",
+              }}
             />
             <p
-              className={`mt-1.5 text-xs font-medium ${
-                i <= step ? "text-sand-700" : "text-sand-400"
-              }`}
+              className="mt-1.5 text-xs font-medium"
+              style={{
+                color:
+                  i <= step
+                    ? "var(--gs-text-secondary)"
+                    : "var(--gs-text-faint)",
+              }}
             >
               {label}
             </p>
@@ -111,13 +121,13 @@ export default function OnboardingPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step 0: Brand basics */}
         {step === 0 && (
-          <div className="space-y-4 rounded-xl border border-sand-200 bg-white p-6">
+          <div className="gs-card-static p-6 space-y-4">
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-sand-700"
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
               >
                 Brand name *
               </label>
@@ -127,24 +137,31 @@ export default function OnboardingPage() {
                 required
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+                className="gs-input block w-full px-3 py-2 text-sm"
                 placeholder="e.g. AuréLéa"
               />
             </div>
 
             <div>
-              <label className="flex items-center gap-3">
+              <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.isPrivateLabel}
                   onChange={(e) => update("isPrivateLabel", e.target.checked)}
-                  className="h-4 w-4 rounded border-sand-300 text-peach-500 focus:ring-peach-300"
+                  className="h-4 w-4 rounded"
+                  style={{ accentColor: "var(--gs-accent)" }}
                 />
-                <span className="text-sm text-sand-700">
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--gs-text-secondary)" }}
+                >
                   This is a private label brand
                 </span>
               </label>
-              <p className="mt-1 ml-7 text-xs text-sand-400">
+              <p
+                className="mt-1 ml-7 text-xs"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
                 Private label brands sell under their own brand name on Amazon.
               </p>
             </div>
@@ -152,7 +169,8 @@ export default function OnboardingPage() {
             <div>
               <label
                 htmlFor="productCategory"
-                className="block text-sm font-medium text-sand-700"
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
               >
                 Product category
               </label>
@@ -161,24 +179,27 @@ export default function OnboardingPage() {
                 type="text"
                 value={form.productCategory}
                 onChange={(e) => update("productCategory", e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+                className="gs-input block w-full px-3 py-2 text-sm"
                 placeholder="e.g. Pilates & Yoga Accessories"
               />
             </div>
           </div>
         )}
 
-        {/* Step 1: Brand DNA */}
         {step === 1 && (
-          <div className="space-y-4 rounded-xl border border-sand-200 bg-white p-6">
+          <div className="gs-card-static p-6 space-y-4">
             <div>
               <label
                 htmlFor="dna"
-                className="block text-sm font-medium text-sand-700"
+                className="block text-sm font-medium mb-1"
+                style={{ color: "var(--gs-text-secondary)" }}
               >
                 Brand DNA
               </label>
-              <p className="mt-0.5 text-xs text-sand-400">
+              <p
+                className="text-xs mb-2"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
                 Describe your brand&apos;s visual identity, mood, and values.
                 This shapes how AI generates your images and copy.
               </p>
@@ -187,20 +208,20 @@ export default function OnboardingPage() {
                 rows={6}
                 value={form.dna}
                 onChange={(e) => update("dna", e.target.value)}
-                className="mt-2 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+                className="gs-input block w-full px-3 py-2 text-sm resize-none"
                 placeholder="e.g. Quiet, refined elegance in movement. Calm, minimal, feminine, and premium. Inspired by Pilates studios, natural light, and Mediterranean softness..."
               />
             </div>
           </div>
         )}
 
-        {/* Step 2: Audience & tone */}
         {step === 2 && (
-          <div className="space-y-4 rounded-xl border border-sand-200 bg-white p-6">
+          <div className="gs-card-static p-6 space-y-4">
             <div>
               <label
                 htmlFor="targetAudience"
-                className="block text-sm font-medium text-sand-700"
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
               >
                 Target audience
               </label>
@@ -209,7 +230,7 @@ export default function OnboardingPage() {
                 rows={3}
                 value={form.targetAudience}
                 onChange={(e) => update("targetAudience", e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+                className="gs-input block w-full px-3 py-2 text-sm resize-none"
                 placeholder="e.g. Women 25-40, health-conscious, design-focused, willing to pay for quality"
               />
             </div>
@@ -217,7 +238,8 @@ export default function OnboardingPage() {
             <div>
               <label
                 htmlFor="tone"
-                className="block text-sm font-medium text-sand-700"
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
               >
                 Tone & conversion priorities
               </label>
@@ -226,37 +248,49 @@ export default function OnboardingPage() {
                 rows={3}
                 value={form.tone}
                 onChange={(e) => update("tone", e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+                className="gs-input block w-full px-3 py-2 text-sm resize-none"
                 placeholder="e.g. Elegant but approachable. Prioritize trust, quality perception, and lifestyle aspiration."
               />
             </div>
           </div>
         )}
 
-        {/* Step 3: Done */}
         {step === 3 && createdBrandName && (
-          <div className="space-y-6 rounded-xl border border-olive-200 bg-olive-50/50 p-8 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-olive-100">
-              <CheckIcon className="h-6 w-6 text-olive-600" />
+          <div
+            className="gs-card-static p-8 text-center space-y-6"
+          >
+            <div
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full"
+              style={{
+                background: "var(--gs-success-bg)",
+              }}
+            >
+              <CheckIcon style={{ color: "var(--gs-success-text)" }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-sand-800">
+              <h2
+                className="text-lg font-semibold"
+                style={{ color: "var(--gs-text)" }}
+              >
                 {createdBrandName} is ready!
               </h2>
-              <p className="mt-2 text-sm text-sand-500">
+              <p
+                className="mt-2 text-sm"
+                style={{ color: "var(--gs-text-muted)" }}
+              >
                 Your brand has been created. Here&apos;s what to do next:
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
                 href="/dashboard/products"
-                className="rounded-lg bg-peach-500 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-peach-400 transition"
+                className="gs-btn-primary px-5 py-3 text-sm text-center"
               >
                 Add your first product
               </Link>
               <Link
                 href="/dashboard"
-                className="rounded-lg border border-sand-200 bg-white px-5 py-3 text-sm font-medium text-sand-700 shadow-sm hover:bg-sand-50 transition"
+                className="gs-btn-secondary px-5 py-3 text-sm text-center"
               >
                 Go to dashboard
               </Link>
@@ -265,19 +299,24 @@ export default function OnboardingPage() {
         )}
 
         {error && (
-          <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+          <p
+            className="rounded-lg p-3 text-sm"
+            style={{
+              background: "var(--gs-error-bg)",
+              color: "var(--gs-error-text)",
+            }}
+          >
             {error}
           </p>
         )}
 
-        {/* Navigation (hidden on done step) */}
         {step < 3 && (
           <div className="flex justify-between">
             <button
               type="button"
               onClick={back}
               disabled={step === 0}
-              className="rounded-lg border border-sand-200 bg-white px-4 py-2 text-sm font-medium text-sand-600 shadow-sm hover:bg-sand-50 disabled:opacity-30 transition"
+              className="gs-btn-secondary px-4 py-2 text-sm disabled:opacity-30"
             >
               Back
             </button>
@@ -287,7 +326,7 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={next}
                 disabled={!canProceed}
-                className="rounded-lg bg-sand-800 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-sand-700 disabled:opacity-50 transition"
+                className="gs-btn-primary px-5 py-2 text-sm"
               >
                 Continue
               </button>
@@ -295,7 +334,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={busy || !canProceed}
-                className="rounded-lg bg-peach-500 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-peach-400 disabled:opacity-50 transition"
+                className="gs-btn-primary px-5 py-2 text-sm"
               >
                 {busy ? "Creating…" : "Create brand"}
               </button>
@@ -307,10 +346,11 @@ export default function OnboardingPage() {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function CheckIcon({ style }: { style?: React.CSSProperties }) {
   return (
     <svg
-      className={className}
+      className="h-6 w-6"
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={2}

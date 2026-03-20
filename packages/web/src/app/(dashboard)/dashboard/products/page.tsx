@@ -42,20 +42,23 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 gs-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-sand-800">
+          <h1
+            className="text-2xl font-bold tracking-tight"
+            style={{ color: "var(--gs-text)" }}
+          >
             Products
           </h1>
-          <p className="mt-1 text-sm text-sand-500">
+          <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
             Manage your products and their reference images.
           </p>
         </div>
         {brands.length > 0 && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="rounded-lg bg-sand-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sand-700 transition"
+            className={showForm ? "gs-btn-secondary px-4 py-2 text-sm" : "gs-btn-primary px-4 py-2 text-sm"}
           >
             {showForm ? "Cancel" : "+ New product"}
           </button>
@@ -63,8 +66,14 @@ export default function ProductsPage() {
       </div>
 
       {brands.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-sand-300 bg-white p-8 text-center">
-          <p className="text-sm text-sand-500">
+        <div
+          className="rounded-xl p-8 text-center"
+          style={{
+            border: "2px dashed var(--gs-border)",
+            background: "var(--gs-surface-inset)",
+          }}
+        >
+          <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
             Set up a brand first before adding products.
           </p>
         </div>
@@ -89,8 +98,14 @@ export default function ProductsPage() {
       ) : (
         brands.length > 0 &&
         !showForm && (
-          <div className="rounded-xl border-2 border-dashed border-sand-300 bg-white p-8 text-center">
-            <p className="text-sm text-sand-500">
+          <div
+            className="rounded-xl p-8 text-center"
+            style={{
+              border: "2px dashed var(--gs-border)",
+              background: "var(--gs-surface-inset)",
+            }}
+          >
+            <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
               No products yet. Click &quot;+ New product&quot; to add your
               first.
             </p>
@@ -141,15 +156,20 @@ function CreateProductForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-xl border border-sand-200 bg-white p-6 space-y-4"
-    >
-      <h2 className="text-lg font-medium text-sand-800">New product</h2>
+    <form onSubmit={handleSubmit} className="gs-card-static p-6 space-y-4">
+      <h2
+        className="text-base font-semibold"
+        style={{ color: "var(--gs-text)" }}
+      >
+        New product
+      </h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-sand-700">
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Product name *
           </label>
           <input
@@ -157,19 +177,22 @@ function CreateProductForm({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+            className="gs-input block w-full px-3 py-2 text-sm"
             placeholder="e.g. Pilates Mini Ball"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-sand-700">
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Brand *
           </label>
           <select
             value={brandId}
             onChange={(e) => setBrandId(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+            className="gs-input block w-full px-3 py-2 text-sm"
           >
             {brands.map((b) => (
               <option key={b.id} value={b.id}>
@@ -181,33 +204,45 @@ function CreateProductForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-sand-700">
+        <label
+          className="block text-sm font-medium mb-1.5"
+          style={{ color: "var(--gs-text-secondary)" }}
+        >
           Category
         </label>
         <input
           type="text"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+          className="gs-input block w-full px-3 py-2 text-sm"
           placeholder="e.g. Pilates Accessories"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-sand-700">
+        <label
+          className="block text-sm font-medium mb-1.5"
+          style={{ color: "var(--gs-text-secondary)" }}
+        >
           Description
         </label>
         <textarea
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+          className="gs-input block w-full px-3 py-2 text-sm resize-none"
           placeholder="Brief product description for AI context..."
         />
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+        <p
+          className="rounded-lg p-3 text-sm"
+          style={{
+            background: "var(--gs-error-bg)",
+            color: "var(--gs-error-text)",
+          }}
+        >
           {error}
         </p>
       )}
@@ -216,7 +251,7 @@ function CreateProductForm({
         <button
           type="submit"
           disabled={busy || !name.trim()}
-          className="rounded-lg bg-peach-500 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-peach-400 disabled:opacity-50 transition"
+          className="gs-btn-primary px-5 py-2 text-sm"
         >
           {busy ? "Creating…" : "Create product"}
         </button>
@@ -226,35 +261,64 @@ function CreateProductForm({
 }
 
 function ProductCard({ product }: { product: ProductData }) {
-  const statusColors: Record<string, string> = {
-    draft: "bg-sand-100 text-sand-600",
-    active: "bg-olive-100 text-olive-600",
-    archived: "bg-sand-200 text-sand-500",
-  };
-
   return (
     <Link
       href={`/dashboard/products/${product.id}`}
-      className="block rounded-xl border border-sand-200 bg-white p-5 space-y-3 hover:border-sand-300 hover:shadow-sm transition"
+      className="gs-card block p-5 space-y-3"
     >
       <div className="flex items-start justify-between">
-        <h3 className="text-sm font-semibold text-sand-800">{product.name}</h3>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            statusColors[product.status] ?? statusColors.draft
-          }`}
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--gs-text)" }}
         >
-          {product.status}
-        </span>
+          {product.name}
+        </h3>
+        <StatusBadge status={product.status} />
       </div>
       {product.category && (
-        <p className="text-xs text-sand-400">{product.category}</p>
+        <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+          {product.category}
+        </p>
       )}
       {product.description && (
-        <p className="text-xs text-sand-500 line-clamp-2">
+        <p
+          className="text-xs line-clamp-2"
+          style={{ color: "var(--gs-text-muted)" }}
+        >
           {product.description}
         </p>
       )}
     </Link>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const getStyle = (s: string) => {
+    switch (s) {
+      case "active":
+        return {
+          background: "var(--gs-success-bg)",
+          color: "var(--gs-success-text)",
+        };
+      case "archived":
+        return {
+          background: "var(--gs-surface-inset)",
+          color: "var(--gs-text-faint)",
+        };
+      default:
+        return {
+          background: "var(--gs-surface-inset)",
+          color: "var(--gs-text-muted)",
+        };
+    }
+  };
+
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-xs font-medium"
+      style={getStyle(status)}
+    >
+      {status}
+    </span>
   );
 }

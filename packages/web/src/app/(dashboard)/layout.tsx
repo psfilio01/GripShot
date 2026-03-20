@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { clsx } from "clsx";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: GridIcon },
@@ -22,17 +23,44 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-sand-200 bg-white">
-        <div className="flex h-14 items-center gap-2 px-4 border-b border-sand-100">
-          <span className="text-lg font-semibold tracking-tight text-sand-800">
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={clsx(
+          "fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col transition-transform duration-200 lg:static lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+        style={{
+          background: "var(--gs-sidebar-bg)",
+          borderRight: "1px solid var(--gs-sidebar-border)",
+        }}
+      >
+        {/* Logo */}
+        <div className="flex h-14 items-center gap-2.5 px-5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold text-white"
+            style={{ background: "var(--gs-accent)" }}
+          >
+            G
+          </div>
+          <span className="text-[15px] font-bold tracking-tight text-white">
             Grip Shot
           </span>
         </div>
 
-        <nav className="flex-1 space-y-0.5 px-2 py-3">
+        {/* Nav */}
+        <nav className="flex-1 space-y-0.5 px-3 py-3">
           {NAV_ITEMS.map((item) => {
             const active =
               item.href === "/dashboard"
@@ -43,18 +71,40 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setMobileOpen(false)}
                 className={clsx(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition",
-                  active
-                    ? "bg-sand-100 text-sand-900"
-                    : "text-sand-500 hover:bg-sand-50 hover:text-sand-700",
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
                 )}
+                style={{
+                  background: active
+                    ? "var(--gs-sidebar-active)"
+                    : "transparent",
+                  color: active
+                    ? "var(--gs-sidebar-text-active)"
+                    : "var(--gs-sidebar-text)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background =
+                      "var(--gs-sidebar-hover)";
+                    e.currentTarget.style.color =
+                      "var(--gs-sidebar-text-active)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--gs-sidebar-text)";
+                  }
+                }}
               >
                 <item.icon
-                  className={clsx(
-                    "h-4 w-4",
-                    active ? "text-peach-500" : "text-sand-400",
-                  )}
+                  className="h-4 w-4"
+                  style={{
+                    color: active
+                      ? "var(--gs-accent)"
+                      : "var(--gs-sidebar-text)",
+                  }}
                 />
                 {item.label}
               </Link>
@@ -62,20 +112,41 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        <div className="border-t border-sand-100 p-3">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-sand-200 flex items-center justify-center text-xs font-medium text-sand-600">
+        {/* User section */}
+        <div
+          className="p-3"
+          style={{ borderTop: "1px solid var(--gs-sidebar-border)" }}
+        >
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+              style={{
+                background: "var(--gs-sidebar-active)",
+                color: "var(--gs-sidebar-text-active)",
+              }}
+            >
               {user?.email?.charAt(0).toUpperCase() ?? "?"}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-xs font-medium text-sand-700">
+            <div className="min-w-0 flex-1">
+              <p
+                className="truncate text-xs font-medium"
+                style={{ color: "var(--gs-sidebar-text-active)" }}
+              >
                 {user?.email ?? "—"}
               </p>
             </div>
             <button
               onClick={signOut}
               title="Sign out"
-              className="rounded p-1 text-sand-400 hover:bg-sand-100 hover:text-sand-600 transition"
+              className="rounded p-1 transition-colors"
+              style={{ color: "var(--gs-sidebar-text)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color =
+                  "var(--gs-sidebar-text-active)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--gs-sidebar-text)")
+              }
             >
               <LogOutIcon className="h-3.5 w-3.5" />
             </button>
@@ -83,17 +154,60 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-sand-50 p-6">
-        {children}
-      </main>
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top bar */}
+        <header
+          className="flex h-14 shrink-0 items-center justify-between px-4 lg:px-6"
+          style={{
+            background: "var(--gs-surface)",
+            borderBottom: "1px solid var(--gs-border-subtle)",
+          }}
+        >
+          <button
+            className="rounded-lg p-2 lg:hidden"
+            style={{ color: "var(--gs-text-muted)" }}
+            onClick={() => setMobileOpen(true)}
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+              />
+            </svg>
+          </button>
+
+          <div className="hidden lg:block" />
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main
+          className="flex-1 overflow-y-auto p-4 lg:p-6"
+          style={{ background: "var(--gs-bg)" }}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
 
-function GridIcon({ className }: { className?: string }) {
+function GridIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}
@@ -108,10 +222,11 @@ function GridIcon({ className }: { className?: string }) {
   );
 }
 
-function BoxIcon({ className }: { className?: string }) {
+function BoxIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}
@@ -126,10 +241,11 @@ function BoxIcon({ className }: { className?: string }) {
   );
 }
 
-function SparkleIcon({ className }: { className?: string }) {
+function SparkleIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}
@@ -144,10 +260,11 @@ function SparkleIcon({ className }: { className?: string }) {
   );
 }
 
-function ImageIcon({ className }: { className?: string }) {
+function ImageIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}
@@ -162,10 +279,11 @@ function ImageIcon({ className }: { className?: string }) {
   );
 }
 
-function WandIcon({ className }: { className?: string }) {
+function WandIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}
@@ -180,10 +298,11 @@ function WandIcon({ className }: { className?: string }) {
   );
 }
 
-function GearIcon({ className }: { className?: string }) {
+function GearIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
+      style={style}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}

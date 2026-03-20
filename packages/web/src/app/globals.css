@@ -1,34 +1,332 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Light Theme Tokens ─── */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --gs-bg: #f8f8fa;
+  --gs-surface: #ffffff;
+  --gs-surface-raised: #ffffff;
+  --gs-surface-inset: #f1f1f5;
+  --gs-surface-overlay: rgba(255,255,255,0.85);
+
+  /* Text */
+  --gs-text: #111118;
+  --gs-text-secondary: #494956;
+  --gs-text-muted: #7c7c8a;
+  --gs-text-faint: #a8a8b4;
+  --gs-text-on-accent: #ffffff;
+
+  /* Borders */
+  --gs-border: #e2e2ea;
+  --gs-border-subtle: #ededf2;
+  --gs-border-strong: #d0d0da;
+
+  /* Accent */
+  --gs-accent: #f06630;
+  --gs-accent-hover: #d85a28;
+  --gs-accent-subtle: #fff1eb;
+  --gs-accent-text: #d04f1a;
+  --gs-accent-glow: rgba(240,102,48,0.12);
+
+  /* Success / Warning / Error */
+  --gs-success-bg: #ecfdf3;
+  --gs-success-text: #16a34a;
+  --gs-warning-bg: #fffbe6;
+  --gs-warning-text: #ca8a04;
+  --gs-error-bg: #fef2f2;
+  --gs-error-text: #dc2626;
+
+  /* Sidebar */
+  --gs-sidebar-bg: #111118;
+  --gs-sidebar-text: #a8a8b4;
+  --gs-sidebar-text-active: #ffffff;
+  --gs-sidebar-hover: rgba(255,255,255,0.06);
+  --gs-sidebar-active: rgba(255,255,255,0.1);
+  --gs-sidebar-border: rgba(255,255,255,0.08);
+
+  /* Shadows */
+  --gs-shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --gs-shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --gs-shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
+  --gs-shadow-glow: 0 0 24px var(--gs-accent-glow);
+
+  /* Radius */
+  --gs-radius-sm: 8px;
+  --gs-radius-md: 12px;
+  --gs-radius-lg: 16px;
+  --gs-radius-xl: 20px;
+
+  /* Old palette mapped for backwards compat */
+  --sand-50: #f8f8fa;
+  --sand-100: #f1f1f5;
+  --sand-200: #e2e2ea;
+  --sand-300: #d0d0da;
+  --sand-400: #a8a8b4;
+  --sand-500: #7c7c8a;
+  --sand-600: #494956;
+  --sand-700: #3a3a45;
+  --sand-800: #222230;
+  --sand-900: #111118;
+
+  --peach-50: #fff8f5;
+  --peach-100: #fff1eb;
+  --peach-200: #fdddd0;
+  --peach-300: #f7b298;
+  --peach-400: #f08c66;
+  --peach-500: #f06630;
+  --peach-600: #d85a28;
+
+  --olive-50: #f5f7f2;
+  --olive-100: #e8eedf;
+  --olive-200: #d2dbc2;
+  --olive-300: #b0c096;
+  --olive-400: #8ba56d;
+  --olive-500: #6b8950;
+  --olive-600: #4f6d38;
+}
+
+/* ─── Dark Theme Tokens ─── */
+.dark {
+  color-scheme: dark;
+
+  --gs-bg: #09090b;
+  --gs-surface: #111113;
+  --gs-surface-raised: #19191d;
+  --gs-surface-inset: #0c0c0e;
+  --gs-surface-overlay: rgba(17,17,19,0.9);
+
+  --gs-text: #f4f4f7;
+  --gs-text-secondary: #c0c0cc;
+  --gs-text-muted: #7c7c8a;
+  --gs-text-faint: #4a4a56;
+  --gs-text-on-accent: #ffffff;
+
+  --gs-border: #222228;
+  --gs-border-subtle: #1a1a20;
+  --gs-border-strong: #333340;
+
+  --gs-accent: #f07a3e;
+  --gs-accent-hover: #f8934e;
+  --gs-accent-subtle: rgba(240,122,62,0.12);
+  --gs-accent-text: #f8934e;
+  --gs-accent-glow: rgba(240,122,62,0.2);
+
+  --gs-success-bg: rgba(22,163,74,0.12);
+  --gs-success-text: #4ade80;
+  --gs-warning-bg: rgba(202,138,4,0.12);
+  --gs-warning-text: #facc15;
+  --gs-error-bg: rgba(220,38,38,0.12);
+  --gs-error-text: #f87171;
+
+  --gs-sidebar-bg: #0c0c0e;
+  --gs-sidebar-text: #7c7c8a;
+  --gs-sidebar-text-active: #f4f4f7;
+  --gs-sidebar-hover: rgba(255,255,255,0.04);
+  --gs-sidebar-active: rgba(255,255,255,0.08);
+  --gs-sidebar-border: rgba(255,255,255,0.06);
+
+  --gs-shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --gs-shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --gs-shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+  --gs-shadow-glow: 0 0 32px var(--gs-accent-glow);
+
+  --sand-50: #09090b;
+  --sand-100: #111113;
+  --sand-200: #222228;
+  --sand-300: #333340;
+  --sand-400: #4a4a56;
+  --sand-500: #7c7c8a;
+  --sand-600: #a8a8b4;
+  --sand-700: #c0c0cc;
+  --sand-800: #e0e0ea;
+  --sand-900: #f4f4f7;
+
+  --peach-50: rgba(240,122,62,0.06);
+  --peach-100: rgba(240,122,62,0.12);
+  --peach-200: rgba(240,122,62,0.2);
+  --peach-300: #c06030;
+  --peach-400: #e8854a;
+  --peach-500: #f07a3e;
+  --peach-600: #f8934e;
+
+  --olive-50: rgba(107,137,80,0.06);
+  --olive-100: rgba(107,137,80,0.12);
+  --olive-200: rgba(107,137,80,0.2);
+  --olive-300: #5a7842;
+  --olive-400: #7aa054;
+  --olive-500: #8bb866;
+  --olive-600: #a0d07a;
+}
+
 @theme {
-  --color-sand-50: #faf8f5;
-  --color-sand-100: #f3efe8;
-  --color-sand-200: #e6ddd1;
-  --color-sand-300: #d4c7b5;
-  --color-sand-400: #bfab95;
-  --color-sand-500: #a68e74;
-  --color-sand-600: #8d7660;
-  --color-sand-700: #745f4e;
-  --color-sand-800: #5e4d40;
-  --color-sand-900: #4d3f35;
+  --color-sand-50: var(--sand-50);
+  --color-sand-100: var(--sand-100);
+  --color-sand-200: var(--sand-200);
+  --color-sand-300: var(--sand-300);
+  --color-sand-400: var(--sand-400);
+  --color-sand-500: var(--sand-500);
+  --color-sand-600: var(--sand-600);
+  --color-sand-700: var(--sand-700);
+  --color-sand-800: var(--sand-800);
+  --color-sand-900: var(--sand-900);
 
-  --color-peach-50: #fef6f2;
-  --color-peach-100: #fde9e0;
-  --color-peach-200: #fbd2c1;
-  --color-peach-300: #f7b298;
-  --color-peach-400: #f08c66;
-  --color-peach-500: #e76f42;
+  --color-peach-50: var(--peach-50);
+  --color-peach-100: var(--peach-100);
+  --color-peach-200: var(--peach-200);
+  --color-peach-300: var(--peach-300);
+  --color-peach-400: var(--peach-400);
+  --color-peach-500: var(--peach-500);
+  --color-peach-600: var(--peach-600);
 
-  --color-olive-50: #f7f7f2;
-  --color-olive-100: #edeee2;
-  --color-olive-200: #d9dbc4;
-  --color-olive-300: #bcc09e;
-  --color-olive-400: #9fa57b;
-  --color-olive-500: #828961;
+  --color-olive-50: var(--olive-50);
+  --color-olive-100: var(--olive-100);
+  --color-olive-200: var(--olive-200);
+  --color-olive-300: var(--olive-300);
+  --color-olive-400: var(--olive-400);
+  --color-olive-500: var(--olive-500);
+  --color-olive-600: var(--olive-600);
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Base ─── */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-sans);
+  background: var(--gs-bg);
+  color: var(--gs-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Reusable surface classes ─── */
+.gs-surface {
+  background: var(--gs-surface);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  box-shadow: var(--gs-shadow-sm);
+}
+
+.gs-surface-raised {
+  background: var(--gs-surface-raised);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  box-shadow: var(--gs-shadow-md);
+}
+
+.gs-card {
+  background: var(--gs-surface);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-lg);
+  box-shadow: var(--gs-shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.gs-card:hover {
+  border-color: var(--gs-border-strong);
+  box-shadow: var(--gs-shadow-md);
+}
+
+.gs-card-static {
+  background: var(--gs-surface);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-lg);
+  box-shadow: var(--gs-shadow-sm);
+}
+
+.gs-input {
+  background: var(--gs-surface);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  color: var(--gs-text);
+  box-shadow: var(--gs-shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.gs-input::placeholder {
+  color: var(--gs-text-faint);
+}
+
+.gs-input:focus {
+  border-color: var(--gs-accent);
+  box-shadow: 0 0 0 3px var(--gs-accent-glow);
+}
+
+.gs-btn-primary {
+  background: var(--gs-accent);
+  color: var(--gs-text-on-accent);
+  border-radius: var(--gs-radius-sm);
+  font-weight: 600;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: var(--gs-shadow-sm);
+}
+
+.gs-btn-primary:hover:not(:disabled) {
+  background: var(--gs-accent-hover);
+  box-shadow: var(--gs-shadow-glow);
+}
+
+.gs-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.gs-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gs-btn-secondary {
+  background: var(--gs-surface);
+  color: var(--gs-text-secondary);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+  box-shadow: var(--gs-shadow-sm);
+}
+
+.gs-btn-secondary:hover:not(:disabled) {
+  background: var(--gs-surface-inset);
+  border-color: var(--gs-border-strong);
+}
+
+.gs-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Transitions ─── */
+.gs-fade-in {
+  animation: gsFadeIn 0.3s ease-out;
+}
+
+@keyframes gsFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Scrollbar styling ─── */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: var(--gs-bg);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--gs-border-strong);
+  border-radius: 4px;
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: var(--gs-accent-glow);
+  color: var(--gs-text);
 }

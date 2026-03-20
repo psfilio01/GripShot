@@ -90,8 +90,14 @@ export function ListingCopyTab() {
 
   if (products.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-sand-300 bg-white p-12 text-center">
-        <p className="text-sm text-sand-500">
+      <div
+        className="rounded-xl p-12 text-center"
+        style={{
+          border: "2px dashed var(--gs-border)",
+          background: "var(--gs-surface-inset)",
+        }}
+      >
+        <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
           Add a product first to start generating listing copy.
         </p>
       </div>
@@ -100,18 +106,18 @@ export function ListingCopyTab() {
 
   return (
     <div className="space-y-6">
-      <form
-        onSubmit={handleGenerate}
-        className="rounded-xl border border-sand-200 bg-white p-6 space-y-4"
-      >
+      <form onSubmit={handleGenerate} className="gs-card-static p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-sand-700">
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Product
           </label>
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+            className="gs-input block w-full px-3 py-2 text-sm"
           >
             {products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -122,33 +128,45 @@ export function ListingCopyTab() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-sand-700">
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Target keywords
           </label>
           <input
             type="text"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+            className="gs-input block w-full px-3 py-2 text-sm"
             placeholder="e.g. pilates ball, exercise ball, core training"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-sand-700">
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Additional notes
           </label>
           <textarea
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+            className="gs-input block w-full px-3 py-2 text-sm resize-none"
             placeholder="e.g. emphasize premium materials"
           />
         </div>
 
         {error && (
-          <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+          <p
+            className="rounded-lg p-3 text-sm"
+            style={{
+              background: "var(--gs-error-bg)",
+              color: "var(--gs-error-text)",
+            }}
+          >
             {error}
           </p>
         )}
@@ -156,7 +174,7 @@ export function ListingCopyTab() {
         <button
           type="submit"
           disabled={busy || !selectedProduct}
-          className="rounded-lg bg-peach-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-peach-400 disabled:opacity-50 transition"
+          className="gs-btn-primary px-5 py-2.5 text-sm"
         >
           {busy ? "Generating…" : "Generate listing copy"}
         </button>
@@ -164,33 +182,57 @@ export function ListingCopyTab() {
 
       {result && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-sand-200 bg-white p-6 space-y-4">
+          <div className="gs-card-static p-6 space-y-4">
             <div>
-              <h3 className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+              <h3
+                className="text-xs font-medium uppercase tracking-wider"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
                 Title
               </h3>
-              <p className="mt-1 text-sm font-medium text-sand-800">
+              <p
+                className="mt-1 text-sm font-medium"
+                style={{ color: "var(--gs-text)" }}
+              >
                 {result.title}
               </p>
             </div>
             <div>
-              <h3 className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+              <h3
+                className="text-xs font-medium uppercase tracking-wider"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
                 Bullet points
               </h3>
               <ul className="mt-1 space-y-1">
                 {result.bulletPoints.map((bp, i) => (
-                  <li key={i} className="text-sm text-sand-700 flex gap-2">
-                    <span className="text-peach-400 shrink-0">•</span>
+                  <li
+                    key={i}
+                    className="text-sm flex gap-2"
+                    style={{ color: "var(--gs-text-secondary)" }}
+                  >
+                    <span
+                      className="shrink-0"
+                      style={{ color: "var(--gs-accent)" }}
+                    >
+                      •
+                    </span>
                     {bp}
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+              <h3
+                className="text-xs font-medium uppercase tracking-wider"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
                 Description
               </h3>
-              <p className="mt-1 text-sm text-sand-700 leading-relaxed whitespace-pre-line">
+              <p
+                className="mt-1 text-sm leading-relaxed whitespace-pre-line"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
                 {result.description}
               </p>
             </div>
@@ -200,17 +242,19 @@ export function ListingCopyTab() {
               const text = `${result.title}\n\n${result.bulletPoints.map((b) => `• ${b}`).join("\n")}\n\n${result.description}`;
               navigator.clipboard.writeText(text);
             }}
-            className="rounded-lg border border-sand-200 bg-white px-4 py-2 text-sm font-medium text-sand-600 shadow-sm hover:bg-sand-50 transition"
+            className="gs-btn-secondary px-4 py-2 text-sm"
           >
             Copy to clipboard
           </button>
         </div>
       )}
 
-      {/* History */}
       {history.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-sand-600">
+          <h3
+            className="text-sm font-medium"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Recent generations
           </h3>
           <div className="space-y-2">
@@ -219,13 +263,19 @@ export function ListingCopyTab() {
                 key={item.id}
                 type="button"
                 onClick={() => setResult(item.result)}
-                className="w-full text-left rounded-lg border border-sand-200 bg-white p-4 hover:border-sand-300 hover:shadow-sm transition"
+                className="gs-card w-full text-left p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-sand-700">
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: "var(--gs-text)" }}
+                  >
                     {item.productName}
                   </span>
-                  <span className="text-xs text-sand-400">
+                  <span
+                    className="text-xs"
+                    style={{ color: "var(--gs-text-faint)" }}
+                  >
                     {item.createdAt?._seconds
                       ? new Date(
                           item.createdAt._seconds * 1000,
@@ -233,7 +283,10 @@ export function ListingCopyTab() {
                       : ""}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-sand-500 line-clamp-1">
+                <p
+                  className="mt-1 text-xs line-clamp-1"
+                  style={{ color: "var(--gs-text-muted)" }}
+                >
                   {item.result.title}
                 </p>
               </button>

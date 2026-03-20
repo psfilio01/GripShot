@@ -81,8 +81,14 @@ export function AplusContentTab() {
 
   if (products.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-sand-300 bg-white p-12 text-center">
-        <p className="text-sm text-sand-500">
+      <div
+        className="rounded-xl p-12 text-center"
+        style={{
+          border: "2px dashed var(--gs-border)",
+          background: "var(--gs-surface-inset)",
+        }}
+      >
+        <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
           Add a product first to start generating A+ content.
         </p>
       </div>
@@ -91,19 +97,19 @@ export function AplusContentTab() {
 
   return (
     <div className="space-y-6">
-      <form
-        onSubmit={handleGenerate}
-        className="rounded-xl border border-sand-200 bg-white p-6 space-y-4"
-      >
+      <form onSubmit={handleGenerate} className="gs-card-static p-6 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-sand-700">
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
               Product
             </label>
             <select
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+              className="gs-input block w-full px-3 py-2 text-sm"
             >
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -114,13 +120,16 @@ export function AplusContentTab() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-sand-700">
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
               A+ Module Type
             </label>
             <select
               value={selectedModule}
               onChange={(e) => setSelectedModule(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+              className="gs-input block w-full px-3 py-2 text-sm"
             >
               {MODULE_OPTIONS.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -132,20 +141,29 @@ export function AplusContentTab() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-sand-700">
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             Additional notes
           </label>
           <textarea
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+            className="gs-input block w-full px-3 py-2 text-sm resize-none"
             placeholder="e.g. focus on eco-friendly materials, target yoga beginners"
           />
         </div>
 
         {error && (
-          <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+          <p
+            className="rounded-lg p-3 text-sm"
+            style={{
+              background: "var(--gs-error-bg)",
+              color: "var(--gs-error-text)",
+            }}
+          >
             {error}
           </p>
         )}
@@ -153,7 +171,7 @@ export function AplusContentTab() {
         <button
           type="submit"
           disabled={busy || !selectedProduct}
-          className="rounded-lg bg-peach-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-peach-400 disabled:opacity-50 transition"
+          className="gs-btn-primary px-5 py-2.5 text-sm"
         >
           {busy ? "Generating…" : "Generate A+ content"}
         </button>
@@ -162,15 +180,24 @@ export function AplusContentTab() {
       {result && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-sand-700">
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--gs-text)" }}
+            >
               {result.moduleName}
             </span>
-            <span className="rounded-full bg-olive-100 px-2 py-0.5 text-xs font-medium text-olive-600">
+            <span
+              className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+              style={{
+                background: "var(--gs-success-bg)",
+                color: "var(--gs-success-text)",
+              }}
+            >
               {result.amazonModuleType}
             </span>
           </div>
 
-          <div className="rounded-xl border border-sand-200 bg-white p-6">
+          <div className="gs-card-static p-6">
             <AplusResultRenderer content={result.content} />
           </div>
 
@@ -180,7 +207,7 @@ export function AplusContentTab() {
                 JSON.stringify(result.content, null, 2),
               );
             }}
-            className="rounded-lg border border-sand-200 bg-white px-4 py-2 text-sm font-medium text-sand-600 shadow-sm hover:bg-sand-50 transition"
+            className="gs-btn-secondary px-4 py-2 text-sm"
           >
             Copy JSON to clipboard
           </button>
@@ -200,42 +227,67 @@ function AplusResultRenderer({
       <div className="space-y-4">
         {content.headline ? (
           <div>
-            <p className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+            <p
+              className="text-xs font-medium uppercase tracking-wider"
+              style={{ color: "var(--gs-text-faint)" }}
+            >
               Headline
             </p>
-            <p className="mt-1 text-lg font-semibold text-sand-800">
+            <p
+              className="mt-1 text-lg font-semibold"
+              style={{ color: "var(--gs-text)" }}
+            >
               {String(content.headline)}
             </p>
           </div>
         ) : null}
         <div>
-          <p className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+          <p
+            className="text-xs font-medium uppercase tracking-wider"
+            style={{ color: "var(--gs-text-faint)" }}
+          >
             Body
           </p>
-          <p className="mt-1 text-sm text-sand-700 leading-relaxed">
+          <p
+            className="mt-1 text-sm leading-relaxed"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
             {String(content.body)}
           </p>
         </div>
         {content.imageDirection ? (
           <div>
-            <p className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+            <p
+              className="text-xs font-medium uppercase tracking-wider"
+              style={{ color: "var(--gs-text-faint)" }}
+            >
               Image Direction
             </p>
-            <p className="mt-1 text-sm text-sand-500 italic">
+            <p
+              className="mt-1 text-sm italic"
+              style={{ color: "var(--gs-text-muted)" }}
+            >
               {String(content.imageDirection)}
             </p>
           </div>
         ) : null}
         {Array.isArray(content.values) && (
           <div>
-            <p className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+            <p
+              className="text-xs font-medium uppercase tracking-wider"
+              style={{ color: "var(--gs-text-faint)" }}
+            >
               Values
             </p>
             <div className="mt-1 flex flex-wrap gap-2">
               {(content.values as string[]).map((v, i) => (
                 <span
                   key={i}
-                  className="rounded-full bg-peach-100 px-3 py-1 text-xs font-medium text-peach-700"
+                  className="rounded-full px-3 py-1 text-xs font-medium"
+                  style={{
+                    background: "var(--gs-accent-subtle)",
+                    color: "var(--gs-accent-text)",
+                  }}
                 >
                   {v}
                 </span>
@@ -250,7 +302,10 @@ function AplusResultRenderer({
   if ("features" in content && Array.isArray(content.features)) {
     return (
       <div className="space-y-4">
-        <p className="text-xs font-medium text-sand-400 uppercase tracking-wider">
+        <p
+          className="text-xs font-medium uppercase tracking-wider"
+          style={{ color: "var(--gs-text-faint)" }}
+        >
           Features
         </p>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -258,12 +313,24 @@ function AplusResultRenderer({
             (f, i) => (
               <div
                 key={i}
-                className="rounded-lg border border-sand-100 bg-sand-50 p-4"
+                className="rounded-lg p-4"
+                style={{
+                  background: "var(--gs-surface-inset)",
+                  border: "1px solid var(--gs-border-subtle)",
+                }}
               >
-                <h4 className="text-sm font-semibold text-sand-800">
+                <h4
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--gs-text)" }}
+                >
                   {f.title}
                 </h4>
-                <p className="mt-1 text-xs text-sand-600">{f.body}</p>
+                <p
+                  className="mt-1 text-xs"
+                  style={{ color: "var(--gs-text-muted)" }}
+                >
+                  {f.body}
+                </p>
               </div>
             ),
           )}
@@ -287,14 +354,18 @@ function AplusResultRenderer({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-sand-200">
-              <th className="pb-2 pr-4 text-left text-xs font-medium text-sand-400">
+            <tr style={{ borderBottom: "1px solid var(--gs-border)" }}>
+              <th
+                className="pb-2 pr-4 text-left text-xs font-medium"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
                 Attribute
               </th>
               {columns.map((col) => (
                 <th
                   key={col}
-                  className="pb-2 px-4 text-left text-xs font-medium text-sand-400"
+                  className="pb-2 px-4 text-left text-xs font-medium"
+                  style={{ color: "var(--gs-text-faint)" }}
                 >
                   {col}
                 </th>
@@ -303,12 +374,22 @@ function AplusResultRenderer({
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="border-b border-sand-100">
-                <td className="py-2 pr-4 font-medium text-sand-700">
+              <tr
+                key={i}
+                style={{ borderBottom: "1px solid var(--gs-border-subtle)" }}
+              >
+                <td
+                  className="py-2 pr-4 font-medium"
+                  style={{ color: "var(--gs-text)" }}
+                >
                   {row.attribute}
                 </td>
                 {row.values.map((val, j) => (
-                  <td key={j} className="py-2 px-4 text-sand-600">
+                  <td
+                    key={j}
+                    className="py-2 px-4"
+                    style={{ color: "var(--gs-text-secondary)" }}
+                  >
                     {val}
                   </td>
                 ))}
@@ -323,15 +404,30 @@ function AplusResultRenderer({
   if ("specs" in content && Array.isArray(content.specs)) {
     return (
       <div>
-        <p className="text-xs font-medium text-sand-400 uppercase tracking-wider mb-3">
+        <p
+          className="text-xs font-medium uppercase tracking-wider mb-3"
+          style={{ color: "var(--gs-text-faint)" }}
+        >
           Specifications
         </p>
-        <div className="divide-y divide-sand-100">
+        <div>
           {(content.specs as { label: string; value: string }[]).map(
             (spec, i) => (
-              <div key={i} className="flex justify-between py-2">
-                <span className="text-sm text-sand-500">{spec.label}</span>
-                <span className="text-sm font-medium text-sand-700">
+              <div
+                key={i}
+                className="flex justify-between py-2"
+                style={{ borderBottom: "1px solid var(--gs-border-subtle)" }}
+              >
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--gs-text-muted)" }}
+                >
+                  {spec.label}
+                </span>
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "var(--gs-text)" }}
+                >
                   {spec.value}
                 </span>
               </div>
@@ -343,7 +439,10 @@ function AplusResultRenderer({
   }
 
   return (
-    <pre className="text-xs text-sand-600 overflow-x-auto whitespace-pre-wrap">
+    <pre
+      className="text-xs overflow-x-auto whitespace-pre-wrap"
+      style={{ color: "var(--gs-text-muted)" }}
+    >
       {JSON.stringify(content, null, 2)}
     </pre>
   );

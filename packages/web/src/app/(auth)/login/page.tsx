@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
+import { ThemeToggle } from "@/components/theme-toggle";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { signInEmail, signUpEmail, signInGoogle } = useAuth();
@@ -48,87 +50,49 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-sand-800">
+    <div
+      className="flex min-h-full flex-col items-center justify-center px-4"
+      style={{ background: "var(--gs-bg)" }}
+    >
+      {/* Top bar */}
+      <div className="fixed top-0 left-0 right-0 flex items-center justify-between px-6 py-3">
+        <Link href="/" className="flex items-center gap-2">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold text-white"
+            style={{ background: "var(--gs-accent)" }}
+          >
+            G
+          </div>
+          <span
+            className="text-base font-bold tracking-tight"
+            style={{ color: "var(--gs-text)" }}
+          >
             Grip Shot
+          </span>
+        </Link>
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-sm space-y-6 gs-fade-in">
+        <div className="text-center">
+          <h1
+            className="text-2xl font-bold tracking-tight"
+            style={{ color: "var(--gs-text)" }}
+          >
+            {isSignUp ? "Create your account" : "Welcome back"}
           </h1>
-          <p className="mt-2 text-sand-500 text-sm">
-            AI-powered product images for Amazon sellers
+          <p className="mt-2 text-sm" style={{ color: "var(--gs-text-muted)" }}>
+            {isSignUp
+              ? "Start generating Amazon-ready content"
+              : "Sign in to your Grip Shot account"}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-sand-700"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-sand-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-lg bg-sand-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-sand-700 disabled:opacity-50 transition"
-          >
-            {busy
-              ? "Working…"
-              : isSignUp
-                ? "Create account"
-                : "Sign in"}
-          </button>
-        </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-sand-200" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-sand-50 px-2 text-sand-400">or</span>
-          </div>
-        </div>
-
+        {/* Google button first for social proof */}
         <button
           onClick={handleGoogle}
           disabled={busy}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-sand-200 bg-white px-4 py-2.5 text-sm font-medium text-sand-700 shadow-sm hover:bg-sand-100 disabled:opacity-50 transition"
+          className="gs-btn-secondary flex w-full items-center justify-center gap-2.5 px-4 py-2.5 text-sm font-medium"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24">
             <path
@@ -151,11 +115,97 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        <p className="text-center text-xs text-sand-400">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div
+              className="w-full"
+              style={{ borderTop: "1px solid var(--gs-border)" }}
+            />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span
+              className="px-3"
+              style={{
+                background: "var(--gs-bg)",
+                color: "var(--gs-text-faint)",
+              }}
+            >
+              or continue with email
+            </span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="gs-input block w-full px-3 py-2.5 text-sm"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="gs-input block w-full px-3 py-2.5 text-sm"
+              placeholder="••••••••"
+            />
+          </div>
+
+          {error && (
+            <p
+              className="rounded-lg p-3 text-sm"
+              style={{
+                background: "var(--gs-error-bg)",
+                color: "var(--gs-error-text)",
+              }}
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="gs-btn-primary w-full px-4 py-2.5 text-sm"
+          >
+            {busy
+              ? "Working…"
+              : isSignUp
+                ? "Create account"
+                : "Sign in"}
+          </button>
+        </form>
+
+        <p className="text-center text-sm" style={{ color: "var(--gs-text-faint)" }}>
           {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-peach-500 hover:text-peach-600 font-medium"
+            className="font-semibold transition"
+            style={{ color: "var(--gs-accent-text)" }}
           >
             {isSignUp ? "Sign in" : "Sign up"}
           </button>

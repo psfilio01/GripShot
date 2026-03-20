@@ -88,38 +88,72 @@ export default function SettingsPage() {
       : 0;
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-6 gs-fade-in">
       <div>
-        <h1 className="text-2xl font-semibold text-sand-800">Settings</h1>
-        <p className="mt-1 text-sm text-sand-500">
+        <h1
+          className="text-2xl font-bold tracking-tight"
+          style={{ color: "var(--gs-text)" }}
+        >
+          Settings
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
           Manage your account, plan, and usage.
         </p>
       </div>
 
       {billingStatus === "success" && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+        <div
+          className="rounded-xl p-4 text-sm"
+          style={{
+            background: "var(--gs-success-bg)",
+            color: "var(--gs-success-text)",
+            border: "1px solid color-mix(in srgb, var(--gs-success-text) 25%, transparent)",
+          }}
+        >
           Your subscription has been activated! It may take a moment to reflect.
         </div>
       )}
       {billingStatus === "cancelled" && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div
+          className="rounded-xl p-4 text-sm"
+          style={{
+            background: "var(--gs-warning-bg)",
+            color: "var(--gs-warning-text)",
+            border: "1px solid color-mix(in srgb, var(--gs-warning-text) 25%, transparent)",
+          }}
+        >
           Checkout was cancelled. You can upgrade anytime.
         </div>
       )}
 
       {/* Account */}
-      <section className="rounded-xl border border-sand-200 bg-white p-6">
-        <h2 className="text-lg font-medium text-sand-800">Account</h2>
+      <section className="gs-card-static p-6">
+        <h2
+          className="text-base font-semibold"
+          style={{ color: "var(--gs-text)" }}
+        >
+          Account
+        </h2>
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-sand-500">Email</span>
-            <span className="text-sm font-medium text-sand-700">
+            <span className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
+              Email
+            </span>
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
               {user?.email ?? "—"}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-sand-500">Display name</span>
-            <span className="text-sm font-medium text-sand-700">
+            <span className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
+              Display name
+            </span>
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
               {user?.displayName ?? "—"}
             </span>
           </div>
@@ -127,21 +161,35 @@ export default function SettingsPage() {
       </section>
 
       {/* Plan & Usage */}
-      <section className="rounded-xl border border-sand-200 bg-white p-6">
-        <h2 className="text-lg font-medium text-sand-800">
+      <section className="gs-card-static p-6">
+        <h2
+          className="text-base font-semibold"
+          style={{ color: "var(--gs-text)" }}
+        >
           Plan &amp; Usage
         </h2>
 
         {loading ? (
-          <div className="mt-4 text-sm text-sand-400">Loading…</div>
+          <div
+            className="mt-4 text-sm animate-pulse"
+            style={{ color: "var(--gs-text-faint)" }}
+          >
+            Loading…
+          </div>
         ) : quota ? (
           <div className="mt-4 space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xl font-semibold text-sand-800">
+                <span
+                  className="text-xl font-bold"
+                  style={{ color: "var(--gs-text)" }}
+                >
                   {PLAN_LABELS[quota.plan] ?? quota.plan}
                 </span>
-                <span className="ml-2 text-sm text-sand-400">
+                <span
+                  className="ml-2 text-sm"
+                  style={{ color: "var(--gs-text-faint)" }}
+                >
                   {PLAN_PRICES[quota.plan] ?? ""}
                 </span>
               </div>
@@ -153,7 +201,7 @@ export default function SettingsPage() {
                     )
                   }
                   disabled={upgrading}
-                  className="rounded-lg bg-peach-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-peach-600 disabled:opacity-50"
+                  className="gs-btn-primary px-4 py-2 text-sm"
                 >
                   {upgrading ? "Redirecting…" : "Upgrade to Starter"}
                 </button>
@@ -161,37 +209,45 @@ export default function SettingsPage() {
                 <button
                   onClick={handleManageSubscription}
                   disabled={managing}
-                  className="rounded-lg border border-sand-300 px-4 py-2 text-sm font-medium text-sand-700 transition hover:bg-sand-50 disabled:opacity-50"
+                  className="gs-btn-secondary px-4 py-2 text-sm"
                 >
                   {managing ? "Redirecting…" : "Manage Subscription"}
                 </button>
               )}
             </div>
 
-            {/* Usage bar */}
             <div>
-              <div className="flex justify-between text-xs text-sand-500 mb-1.5">
+              <div
+                className="flex justify-between text-xs mb-1.5"
+                style={{ color: "var(--gs-text-muted)" }}
+              >
                 <span>Credits used this period</span>
                 <span>
                   {quota.used} / {quota.limit}
                 </span>
               </div>
-              <div className="h-2.5 w-full rounded-full bg-sand-100">
+              <div
+                className="h-2 w-full rounded-full"
+                style={{ background: "var(--gs-surface-inset)" }}
+              >
                 <div
-                  className="h-2.5 rounded-full transition-all duration-500"
+                  className="h-2 rounded-full transition-all duration-500"
                   style={{
                     width: `${usagePercent}%`,
                     backgroundColor:
                       usagePercent >= 90
-                        ? "#ef4444"
+                        ? "var(--gs-error-text)"
                         : usagePercent >= 70
-                          ? "#f59e0b"
-                          : "#d4956a",
+                          ? "var(--gs-warning-text)"
+                          : "var(--gs-accent)",
                   }}
                 />
               </div>
               {usagePercent >= 90 && (
-                <p className="mt-2 text-xs text-red-600">
+                <p
+                  className="mt-2 text-xs"
+                  style={{ color: "var(--gs-error-text)" }}
+                >
                   You&apos;re running low on credits.{" "}
                   {quota.plan === "free"
                     ? "Upgrade to get more."
@@ -200,15 +256,17 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Credit breakdown */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <CreditCard label="Used" value={quota.used} />
               <CreditCard label="Remaining" value={quota.remaining} />
               <CreditCard label="Limit" value={quota.limit} />
             </div>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-sand-400">
+          <p
+            className="mt-4 text-sm"
+            style={{ color: "var(--gs-text-faint)" }}
+          >
             Could not load plan information.
           </p>
         )}
@@ -216,19 +274,18 @@ export default function SettingsPage() {
 
       {/* Plan Comparison */}
       {quota?.plan === "free" && (
-        <section className="rounded-xl border border-sand-200 bg-white p-6">
-          <h2 className="text-lg font-medium text-sand-800">
+        <section className="gs-card-static p-6">
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--gs-text)" }}
+          >
             Compare Plans
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <PlanCard
               name="Free"
               price="€0/mo"
-              features={[
-                "50 credits/month",
-                "1 brand",
-                "3 products",
-              ]}
+              features={["50 credits/month", "1 brand", "3 products"]}
               current
             />
             <PlanCard
@@ -273,9 +330,22 @@ export default function SettingsPage() {
 
 function CreditCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-sand-100 bg-sand-50 p-3 text-center">
-      <p className="text-xs text-sand-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-sand-700">{value}</p>
+    <div
+      className="rounded-lg p-3 text-center"
+      style={{
+        background: "var(--gs-surface-inset)",
+        border: "1px solid var(--gs-border-subtle)",
+      }}
+    >
+      <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+        {label}
+      </p>
+      <p
+        className="mt-1 text-lg font-bold"
+        style={{ color: "var(--gs-text)" }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -299,34 +369,55 @@ function PlanCard({
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 ${
+      className="gs-card-static p-4"
+      style={
         highlighted
-          ? "border-peach-300 bg-peach-50/50"
-          : "border-sand-200 bg-white"
-      }`}
+          ? {
+              borderColor: "var(--gs-accent)",
+              boxShadow: "var(--gs-shadow-glow)",
+            }
+          : {}
+      }
     >
-      <h3 className="font-medium text-sand-800">{name}</h3>
-      <p className="text-xl font-semibold text-sand-700 mt-1">{price}</p>
+      <h3 className="font-semibold" style={{ color: "var(--gs-text)" }}>
+        {name}
+      </h3>
+      <p
+        className="text-xl font-bold mt-1"
+        style={{ color: "var(--gs-text)" }}
+      >
+        {price}
+      </p>
       <ul className="mt-3 space-y-1.5">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-1.5 text-xs text-sand-600">
-            <span className="text-peach-500 mt-0.5">✓</span>
+          <li
+            key={f}
+            className="flex items-start gap-1.5 text-xs"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
+            <span style={{ color: "var(--gs-accent)" }} className="mt-0.5">
+              ✓
+            </span>
             {f}
           </li>
         ))}
       </ul>
       {current ? (
-        <div className="mt-4 rounded-lg border border-sand-200 py-1.5 text-center text-xs font-medium text-sand-500">
+        <div
+          className="mt-4 rounded-lg py-1.5 text-center text-xs font-medium"
+          style={{
+            border: "1px solid var(--gs-border)",
+            color: "var(--gs-text-faint)",
+          }}
+        >
           Current plan
         </div>
       ) : onUpgrade ? (
         <button
           onClick={onUpgrade}
           disabled={upgrading}
-          className={`mt-4 w-full rounded-lg py-1.5 text-xs font-medium text-white transition disabled:opacity-50 ${
-            highlighted
-              ? "bg-peach-500 hover:bg-peach-600"
-              : "bg-sand-600 hover:bg-sand-700"
+          className={`mt-4 w-full rounded-lg py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+            highlighted ? "gs-btn-primary" : "gs-btn-secondary"
           }`}
         >
           {upgrading ? "Redirecting…" : "Upgrade"}

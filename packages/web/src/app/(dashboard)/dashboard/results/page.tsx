@@ -39,7 +39,10 @@ export default function ResultsPage() {
     loadJobs();
   }, []);
 
-  async function handleFeedback(imageId: string, action: "favorite" | "reject") {
+  async function handleFeedback(
+    imageId: string,
+    action: "favorite" | "reject",
+  ) {
     try {
       const res = await fetch("/api/feedback", {
         method: "POST",
@@ -82,31 +85,45 @@ export default function ResultsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 gs-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-sand-800">
+          <h1
+            className="text-2xl font-bold tracking-tight"
+            style={{ color: "var(--gs-text)" }}
+          >
             Results
           </h1>
-          <p className="mt-1 text-sm text-sand-500">
+          <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
             Browse, filter, and manage your generated images.
           </p>
         </div>
-        <p className="text-xs text-sand-400">
-          {filteredImages.length} image{filteredImages.length !== 1 ? "s" : ""}
+        <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+          {filteredImages.length} image
+          {filteredImages.length !== 1 ? "s" : ""}
         </p>
       </div>
 
-      <div className="flex gap-1 rounded-lg bg-sand-100 p-1">
+      <div
+        className="flex gap-1 rounded-xl p-1"
+        style={{ background: "var(--gs-surface-inset)" }}
+      >
         {FILTERS.map((f) => (
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+            className="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all"
+            style={
               filter === f.value
-                ? "bg-white text-sand-800 shadow-sm"
-                : "text-sand-500 hover:text-sand-700"
-            }`}
+                ? {
+                    background: "var(--gs-surface)",
+                    color: "var(--gs-text)",
+                    boxShadow: "var(--gs-shadow-sm)",
+                  }
+                : {
+                    color: "var(--gs-text-muted)",
+                  }
+            }
           >
             {f.label}
           </button>
@@ -115,13 +132,22 @@ export default function ResultsPage() {
 
       {loading ? (
         <div className="py-12 text-center">
-          <p className="text-sm text-sand-400 animate-pulse">
+          <p
+            className="text-sm animate-pulse"
+            style={{ color: "var(--gs-text-faint)" }}
+          >
             Loading results…
           </p>
         </div>
       ) : filteredImages.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-sand-300 bg-white p-12 text-center">
-          <p className="text-sm text-sand-500">
+        <div
+          className="rounded-xl p-12 text-center"
+          style={{
+            border: "2px dashed var(--gs-border)",
+            background: "var(--gs-surface-inset)",
+          }}
+        >
+          <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
             {filter === "all"
               ? "No images generated yet. Go to Generate to create your first."
               : `No ${filter} images found.`}
@@ -130,10 +156,7 @@ export default function ResultsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredImages.map((img) => (
-            <div
-              key={img.imageId}
-              className="group overflow-hidden rounded-xl border border-sand-200 bg-white"
-            >
+            <div key={img.imageId} className="gs-card group overflow-hidden">
               <ZoomableImage
                 src={imageUrl(img.filePath)}
                 alt={`${img.productId} — ${img.imageId.slice(0, 6)}`}
@@ -141,12 +164,15 @@ export default function ResultsPage() {
               />
               <div className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-sand-600">
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: "var(--gs-text-secondary)" }}
+                  >
                     {img.productId}
                   </span>
-                  <StatusBadge status={img.status} />
+                  <ImageStatusBadge status={img.status} />
                 </div>
-                <p className="text-xs text-sand-400">
+                <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
                   {img.workflowType === "AMAZON_LIFESTYLE_SHOT"
                     ? "Lifestyle"
                     : "Product shot"}
@@ -155,13 +181,25 @@ export default function ResultsPage() {
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => handleFeedback(img.imageId, "favorite")}
-                      className="flex-1 rounded-lg border border-olive-200 bg-olive-50 py-1.5 text-xs font-medium text-olive-600 hover:bg-olive-100 transition"
+                      className="flex-1 rounded-lg py-1.5 text-xs font-medium transition"
+                      style={{
+                        background: "var(--gs-success-bg)",
+                        color: "var(--gs-success-text)",
+                        border:
+                          "1px solid color-mix(in srgb, var(--gs-success-text) 25%, transparent)",
+                      }}
                     >
                       ♥ Favorite
                     </button>
                     <button
                       onClick={() => handleFeedback(img.imageId, "reject")}
-                      className="flex-1 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-medium text-red-500 hover:bg-red-100 transition"
+                      className="flex-1 rounded-lg py-1.5 text-xs font-medium transition"
+                      style={{
+                        background: "var(--gs-error-bg)",
+                        color: "var(--gs-error-text)",
+                        border:
+                          "1px solid color-mix(in srgb, var(--gs-error-text) 25%, transparent)",
+                      }}
                     >
                       ✕ Reject
                     </button>
@@ -176,19 +214,31 @@ export default function ResultsPage() {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    neutral: "bg-sand-100 text-sand-600",
-    favorite: "bg-olive-100 text-olive-600",
-    rejected: "bg-red-100 text-red-500",
-    variant: "bg-peach-100 text-peach-600",
+function ImageStatusBadge({ status }: { status: string }) {
+  const getStyle = (s: string) => {
+    switch (s) {
+      case "favorite":
+        return {
+          background: "var(--gs-success-bg)",
+          color: "var(--gs-success-text)",
+        };
+      case "rejected":
+        return {
+          background: "var(--gs-error-bg)",
+          color: "var(--gs-error-text)",
+        };
+      default:
+        return {
+          background: "var(--gs-surface-inset)",
+          color: "var(--gs-text-muted)",
+        };
+    }
   };
 
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-        styles[status] ?? styles.neutral
-      }`}
+      className="rounded-full px-2 py-0.5 text-xs font-medium"
+      style={getStyle(status)}
     >
       {status}
     </span>
