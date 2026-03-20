@@ -3,7 +3,14 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-const STEPS = ["Brand basics", "Brand DNA", "Audience & tone"] as const;
+import Link from "next/link";
+
+const STEPS = [
+  "Brand basics",
+  "Brand DNA",
+  "Audience & tone",
+  "Done",
+] as const;
 
 interface FormState {
   name: string;
@@ -29,6 +36,7 @@ export default function OnboardingPage() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdBrandName, setCreatedBrandName] = useState<string | null>(null);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -59,7 +67,8 @@ export default function OnboardingPage() {
         throw new Error(data.error ?? "Failed to create brand");
       }
 
-      router.push("/dashboard");
+      setCreatedBrandName(form.name);
+      setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -224,43 +233,94 @@ export default function OnboardingPage() {
           </div>
         )}
 
+        {/* Step 3: Done */}
+        {step === 3 && createdBrandName && (
+          <div className="space-y-6 rounded-xl border border-olive-200 bg-olive-50/50 p-8 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-olive-100">
+              <CheckIcon className="h-6 w-6 text-olive-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-sand-800">
+                {createdBrandName} is ready!
+              </h2>
+              <p className="mt-2 text-sm text-sand-500">
+                Your brand has been created. Here&apos;s what to do next:
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/dashboard/products"
+                className="rounded-lg bg-peach-500 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-peach-400 transition"
+              >
+                Add your first product
+              </Link>
+              <Link
+                href="/dashboard"
+                className="rounded-lg border border-sand-200 bg-white px-5 py-3 text-sm font-medium text-sand-700 shadow-sm hover:bg-sand-50 transition"
+              >
+                Go to dashboard
+              </Link>
+            </div>
+          </div>
+        )}
+
         {error && (
           <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
             {error}
           </p>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={back}
-            disabled={step === 0}
-            className="rounded-lg border border-sand-200 bg-white px-4 py-2 text-sm font-medium text-sand-600 shadow-sm hover:bg-sand-50 disabled:opacity-30 transition"
-          >
-            Back
-          </button>
-
-          {step < STEPS.length - 1 ? (
+        {/* Navigation (hidden on done step) */}
+        {step < 3 && (
+          <div className="flex justify-between">
             <button
               type="button"
-              onClick={next}
-              disabled={!canProceed}
-              className="rounded-lg bg-sand-800 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-sand-700 disabled:opacity-50 transition"
+              onClick={back}
+              disabled={step === 0}
+              className="rounded-lg border border-sand-200 bg-white px-4 py-2 text-sm font-medium text-sand-600 shadow-sm hover:bg-sand-50 disabled:opacity-30 transition"
             >
-              Continue
+              Back
             </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={busy || !canProceed}
-              className="rounded-lg bg-peach-500 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-peach-400 disabled:opacity-50 transition"
-            >
-              {busy ? "Creating…" : "Create brand"}
-            </button>
-          )}
-        </div>
+
+            {step < 2 ? (
+              <button
+                type="button"
+                onClick={next}
+                disabled={!canProceed}
+                className="rounded-lg bg-sand-800 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-sand-700 disabled:opacity-50 transition"
+              >
+                Continue
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={busy || !canProceed}
+                className="rounded-lg bg-peach-500 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-peach-400 disabled:opacity-50 transition"
+              >
+                {busy ? "Creating…" : "Create brand"}
+              </button>
+            )}
+          </div>
+        )}
       </form>
     </div>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m4.5 12.75 6 6 9-13.5"
+      />
+    </svg>
   );
 }
