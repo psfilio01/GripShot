@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useCallback, type FormEvent } from "react";
 
 interface ProductOption {
   id: string;
@@ -13,6 +13,13 @@ interface ListingCopyResult {
   description: string;
 }
 
+interface HistoryItem {
+  id: string;
+  productName: string;
+  result: ListingCopyResult;
+  createdAt: { _seconds: number };
+}
+
 export function ListingCopyTab() {
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
@@ -21,6 +28,16 @@ export function ListingCopyTab() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ListingCopyResult | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  const loadHistory = useCallback(() => {
+    fetch("/api/generations?type=listing-copy&limit=10")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.generations) setHistory(d.generations);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/products")
@@ -32,7 +49,9 @@ export function ListingCopyTab() {
         }
       })
       .catch(() => {});
-  }, []);
+
+    loadHistory();
+  }, [loadHistory]);
 
   async function handleGenerate(e: FormEvent) {
     e.preventDefault();
@@ -61,6 +80,7 @@ export function ListingCopyTab() {
         throw new Error(data.error ?? "Generation failed");
       }
       setResult(data.result);
+      loadHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -184,6 +204,41 @@ export function ListingCopyTab() {
           >
             Copy to clipboard
           </button>
+        </div>
+      )}
+
+      {/* History */}
+      {history.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-sand-600">
+            Recent generations
+          </h3>
+          <div className="space-y-2">
+            {history.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setResult(item.result)}
+                className="w-full text-left rounded-lg border border-sand-200 bg-white p-4 hover:border-sand-300 hover:shadow-sm transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-sand-700">
+                    {item.productName}
+                  </span>
+                  <span className="text-xs text-sand-400">
+                    {item.createdAt?._seconds
+                      ? new Date(
+                          item.createdAt._seconds * 1000,
+                        ).toLocaleDateString()
+                      : ""}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-sand-500 line-clamp-1">
+                  {item.result.title}
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

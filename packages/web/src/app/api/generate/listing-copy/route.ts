@@ -8,6 +8,7 @@ import {
 } from "@/lib/generation/listing-copy";
 import { generateText } from "@/lib/generation/gemini-text";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
+import { saveGeneration } from "@/lib/db/generations";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -70,7 +71,15 @@ export async function POST(req: NextRequest) {
 
     await consumeCredit(session.user.workspaceId);
 
-    return NextResponse.json({ result, prompt });
+    const generationId = await saveGeneration(session.user.workspaceId, {
+      type: "listing-copy",
+      productId: input.productId,
+      productName: product.name,
+      input: { keywords: input.keywords, additionalNotes: input.additionalNotes },
+      result: result as unknown as Record<string, unknown>,
+    });
+
+    return NextResponse.json({ result, prompt, generationId });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
