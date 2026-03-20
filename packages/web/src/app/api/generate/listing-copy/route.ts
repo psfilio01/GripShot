@@ -7,6 +7,7 @@ import {
   parseListingCopyResponse,
 } from "@/lib/generation/listing-copy";
 import { generateText } from "@/lib/generation/gemini-text";
+import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -26,6 +27,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const quota = await checkQuota(session.user.workspaceId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: "Quota exceeded",
+          used: quota.used,
+          limit: quota.limit,
+        },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const input = RequestSchema.parse(body);
 
@@ -54,6 +67,8 @@ export async function POST(req: NextRequest) {
 
     const rawResponse = await generateText(prompt);
     const result = parseListingCopyResponse(rawResponse);
+
+    await consumeCredit(session.user.workspaceId);
 
     return NextResponse.json({ result, prompt });
   } catch (err) {

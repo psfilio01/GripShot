@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
+import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -20,6 +21,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const quota = await checkQuota(session.user.workspaceId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: "Quota exceeded",
+          used: quota.used,
+          limit: quota.limit,
+        },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const input = RequestSchema.parse(body);
 
@@ -35,6 +48,8 @@ export async function POST(req: NextRequest) {
     });
 
     const job = await getJob(jobId);
+
+    await consumeCredit(session.user.workspaceId);
 
     return NextResponse.json({ job });
   } catch (err) {

@@ -18,6 +18,8 @@ export interface WorkspaceDoc {
   plan: "free" | "starter" | "pro";
   quotaUsed: number;
   quotaLimit: number;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -22,7 +22,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Product management | Done |
 | Image generation UI (workflow-core bridge) | Done |
 | Results dashboard (browse, filter, favorite, reject) | Done |
-| Stripe billing + quotas | Planned |
+| Stripe billing + quota enforcement | Done |
 | A+ content workflows | Planned |
 | Dockerfile + Cloud Run readiness | Done |
 
@@ -85,6 +85,10 @@ Required variables for the web app:
 | `FIREBASE_ADMIN_PROJECT_ID` | Firebase Admin (server) |
 | `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase Admin (server) |
 | `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase Admin (server) |
+| `STRIPE_SECRET_KEY` | Stripe billing (server) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook verification |
+| `NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID` | Stripe Starter plan price ID |
+| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | Stripe Pro plan price ID |
 
 For the workflow engine, also set variables in the root `.env` (see `.env.example`).
 
@@ -139,6 +143,17 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 
 ---
 
+## Billing and quotas
+
+- Three plans: **Free** (50 credits/mo), **Starter** (500 credits, €29/mo), **Pro** (2,000 credits, €79/mo)
+- Stripe Checkout for upgrades, Stripe Billing Portal for management
+- Webhook handler processes subscription lifecycle events (created, updated, cancelled, invoice paid)
+- Quota automatically resets on each billing cycle via `invoice.payment_succeeded`
+- Generation routes check credits before running and consume one credit per successful generation
+- Settings page shows plan info, a usage bar, and upgrade/manage buttons
+
+---
+
 ## Tech stack
 
 | Layer | Technology |
@@ -147,7 +162,7 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 | Auth | Firebase Authentication |
 | Database | Firestore |
 | Storage | Cloud Storage for Firebase (planned) |
-| Billing | Stripe (planned) |
+| Billing | Stripe |
 | Image generation | Google Gemini API |
 | Unit tests | Vitest |
 | E2E tests | Playwright |
