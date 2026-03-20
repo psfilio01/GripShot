@@ -3,7 +3,8 @@ import { getServerSession } from "@/lib/auth/server-session";
 import { getProduct } from "@/lib/db/products";
 import { config } from "dotenv";
 import { resolve, join, extname } from "path";
-import { mkdir, readdir, stat, writeFile } from "fs/promises";
+import { mkdir, readdir, stat, writeFile, unlink } from "fs/promises";
+import { existsSync } from "fs";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -113,6 +114,63 @@ export async function POST(
     console.error("Image upload failed:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Upload failed" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ productId: string }> },
+) {
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { productId } = await params;
+  const product = await getProduct(session.user.workspaceId, productId);
+  if (!product) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const fileName = searchParams.get("name");
+
+    if (!fileName || /[/\\]/.test(fileName)) {
+      return NextResponse.json(
+        { error: "Invalid file name" },
+        { status: 400 },
+      );
+    }
+
+    const filePath = join(
+      getDataRoot(),
+      "products",
+      productId,
+      "reference",
+      fileName,
+    );
+
+    const normalizedPath = resolve(filePath);
+    const safeBoundary = resolve(
+      join(getDataRoot(), "products", productId, "reference"),
+    );
+    if (!normalizedPath.startsWith(safeBoundary)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!existsSync(normalizedPath)) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    await unlink(normalizedPath);
+    return NextResponse.json({ deleted: fileName });
+  } catch (err) {
+    console.error("Image deletion failed:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Deletion failed" },
       { status: 500 },
     );
   }
