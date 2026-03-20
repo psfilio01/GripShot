@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface MeData {
   user: {
@@ -16,13 +17,27 @@ interface MeData {
   };
 }
 
+interface BrandData {
+  id: string;
+  name: string;
+  productCategory: string;
+}
+
 export default function DashboardPage() {
   const [me, setMe] = useState<MeData | null>(null);
+  const [brands, setBrands] = useState<BrandData[]>([]);
 
   useEffect(() => {
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : null))
       .then(setMe)
+      .catch(() => {});
+
+    fetch("/api/brands")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.brands) setBrands(data.brands);
+      })
       .catch(() => {});
   }, []);
 
@@ -67,27 +82,50 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="rounded-xl border border-sand-200 bg-white p-6">
-        <h2 className="text-lg font-medium text-sand-800">Getting started</h2>
-        <ol className="mt-3 space-y-2 text-sm text-sand-600 leading-relaxed list-decimal list-inside">
-          <li>
-            <span className="font-medium text-sand-700">Onboard your brand</span>
-            {" "}— tell us about your brand DNA, target audience, and tone
-          </li>
-          <li>
-            <span className="font-medium text-sand-700">Add products</span>
-            {" "}— upload reference images, categorize assets, set up variants
-          </li>
-          <li>
-            <span className="font-medium text-sand-700">Generate</span>
-            {" "}— create Amazon-ready listing images, lifestyle shots, and A+ content
-          </li>
-          <li>
-            <span className="font-medium text-sand-700">Review & export</span>
-            {" "}— favorite the best, reject the rest, download production files
-          </li>
-        </ol>
-      </div>
+      {brands.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-peach-300 bg-peach-50/50 p-6 text-center">
+          <h2 className="text-lg font-medium text-sand-800">
+            Let&apos;s get started
+          </h2>
+          <p className="mt-2 text-sm text-sand-500">
+            Set up your brand to start generating Amazon-ready images and copy.
+          </p>
+          <Link
+            href="/dashboard/onboarding"
+            className="mt-4 inline-block rounded-lg bg-peach-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-peach-400 transition"
+          >
+            Set up your brand
+          </Link>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-sand-200 bg-white p-6">
+          <h2 className="text-lg font-medium text-sand-800">Your brands</h2>
+          <div className="mt-3 space-y-2">
+            {brands.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between rounded-lg border border-sand-100 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-sand-800">{b.name}</p>
+                  {b.productCategory && (
+                    <p className="text-xs text-sand-400">{b.productCategory}</p>
+                  )}
+                </div>
+                <span className="rounded-full bg-olive-100 px-2 py-0.5 text-xs font-medium text-olive-600">
+                  Active
+                </span>
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/dashboard/onboarding"
+            className="mt-3 inline-block text-sm font-medium text-peach-500 hover:text-peach-600 transition"
+          >
+            + Add another brand
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

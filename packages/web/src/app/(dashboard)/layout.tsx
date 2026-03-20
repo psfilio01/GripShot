@@ -8,8 +8,9 @@ import type { ReactNode } from "react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: GridIcon },
+  { href: "/dashboard/onboarding", label: "Brand Setup", icon: SparkleIcon },
   { href: "/dashboard/products", label: "Products", icon: BoxIcon },
-  { href: "/dashboard/generate", label: "Generate", icon: SparkleIcon },
+  { href: "/dashboard/generate", label: "Generate", icon: WandIcon },
   { href: "/dashboard/results", label: "Results", icon: ImageIcon },
   { href: "/dashboard/settings", label: "Settings", icon: GearIcon },
 ];
@@ -156,6 +157,24 @@ function ImageIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+      />
+    </svg>
+  );
+}
+
+function WandIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.591"
       />
     </svg>
   );
