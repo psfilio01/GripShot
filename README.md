@@ -24,7 +24,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Results dashboard (browse, filter, favorite, reject) | Done |
 | Stripe billing + quota enforcement | Done |
 | Product reference image upload | Done |
-| A+ content workflows | Planned |
+| A+ content generation | Done |
 | Dockerfile + Cloud Run readiness | Done |
 
 ---
@@ -141,6 +141,16 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 - Middleware redirects unauthenticated users to `/login`
 - First sign-in automatically creates a Firestore user document and workspace
 - Each user gets a workspace with a free-tier quota (50 credits)
+
+---
+
+## A+ content generation
+
+- Five Amazon A+ module templates: Hero Banner, Feature Highlights, Comparison Chart, Brand Story, Technical Specifications
+- AI generates structured JSON content tailored to each module type, using brand DNA and product context
+- Rich result rendering: feature cards, comparison tables, spec lists, brand value tags
+- Copy-to-clipboard for direct use in Amazon Seller Central
+- Quota-enforced — consumes one credit per generation
 
 ---
 

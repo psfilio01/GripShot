@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { ListingCopyTab } from "./listing-copy-tab";
 import { ImageGenerationTab } from "./image-generation-tab";
+import { AplusContentTab } from "./aplus-content-tab";
 
-const TABS = ["Listing copy", "Image generation"] as const;
+const TABS = ["Listing copy", "A+ content", "Image generation"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function GeneratePage() {
@@ -37,7 +38,9 @@ export default function GeneratePage() {
         ))}
       </div>
 
-      {tab === "Listing copy" ? <ListingCopyTab /> : <ImageGenerationTab />}
+      {tab === "Listing copy" && <ListingCopyTab />}
+      {tab === "A+ content" && <AplusContentTab />}
+      {tab === "Image generation" && <ImageGenerationTab />}
     </div>
   );
 }
