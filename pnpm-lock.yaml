@@ -14,9 +14,15 @@ importers:
 
   packages/web:
     dependencies:
+      '@fashionmentum/workflow-core':
+        specifier: workspace:*
+        version: link:../workflow-core
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       firebase:
         specifier: ^11.4.0
         version: 11.10.0

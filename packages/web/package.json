@@ -12,7 +12,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@fashionmentum/workflow-core": "workspace:*",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.5",
     "firebase": "^11.4.0",
     "firebase-admin": "^13.0.0",
     "next": "^15.2.0",
