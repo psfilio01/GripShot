@@ -1,9 +1,16 @@
+export interface PlanLimits {
+  maxBrands: number;
+  maxProducts: number;
+  aplusEnabled: boolean;
+}
+
 export interface PlanDefinition {
   id: "free" | "starter" | "pro";
   name: string;
   credits: number;
   price: string;
   features: string[];
+  limits: PlanLimits;
 }
 
 export const PLANS: PlanDefinition[] = [
@@ -19,6 +26,7 @@ export const PLANS: PlanDefinition[] = [
       "Listing copy generation",
       "Basic image generation",
     ],
+    limits: { maxBrands: 1, maxProducts: 3, aplusEnabled: false },
   },
   {
     id: "starter",
@@ -32,6 +40,7 @@ export const PLANS: PlanDefinition[] = [
       "All generation types",
       "Priority support",
     ],
+    limits: { maxBrands: 3, maxProducts: 20, aplusEnabled: true },
   },
   {
     id: "pro",
@@ -46,9 +55,16 @@ export const PLANS: PlanDefinition[] = [
       "A+ content workflows",
       "Priority support",
     ],
+    limits: { maxBrands: Infinity, maxProducts: Infinity, aplusEnabled: true },
   },
 ];
 
 export function getPlanById(id: string): PlanDefinition | undefined {
   return PLANS.find((p) => p.id === id);
+}
+
+const DEFAULT_LIMITS: PlanLimits = { maxBrands: 1, maxProducts: 3, aplusEnabled: false };
+
+export function getPlanLimits(planId: string): PlanLimits {
+  return getPlanById(planId)?.limits ?? DEFAULT_LIMITS;
 }

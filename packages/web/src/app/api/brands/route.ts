@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { createBrand, listBrands } from "@/lib/db/brands";
+import { getPlanLimits } from "@/lib/billing/plans";
 import { z } from "zod";
 
 const CreateBrandSchema = z.object({
@@ -19,6 +20,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const limits = getPlanLimits(session.workspace.plan);
+    const existingBrands = await listBrands(session.user.workspaceId);
+    if (existingBrands.length >= limits.maxBrands) {
+      return NextResponse.json(
+        {
+          error: `Brand limit reached (${limits.maxBrands} on ${session.workspace.plan} plan). Upgrade for more.`,
+          limit: limits.maxBrands,
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json();
     const data = CreateBrandSchema.parse(body);
 

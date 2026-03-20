@@ -9,6 +9,7 @@ import {
 } from "@/lib/generation/aplus-content";
 import { generateText } from "@/lib/generation/gemini-text";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
+import { getPlanLimits } from "@/lib/billing/plans";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -28,6 +29,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const planLimits = getPlanLimits(session.workspace.plan);
+    if (!planLimits.aplusEnabled) {
+      return NextResponse.json(
+        { error: "A+ content requires a Starter or Pro plan. Upgrade to unlock." },
+        { status: 403 },
+      );
+    }
+
     const quota = await checkQuota(session.user.workspaceId);
     if (!quota.allowed) {
       return NextResponse.json(

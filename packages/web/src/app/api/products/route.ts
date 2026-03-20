@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { createProduct, listProducts } from "@/lib/db/products";
+import { getPlanLimits } from "@/lib/billing/plans";
 import { z } from "zod";
 
 const CreateProductSchema = z.object({
@@ -17,6 +18,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const limits = getPlanLimits(session.workspace.plan);
+    const existingProducts = await listProducts(session.user.workspaceId);
+    if (existingProducts.length >= limits.maxProducts) {
+      return NextResponse.json(
+        {
+          error: `Product limit reached (${limits.maxProducts} on ${session.workspace.plan} plan). Upgrade for more.`,
+          limit: limits.maxProducts,
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json();
     const data = CreateProductSchema.parse(body);
 
