@@ -54,7 +54,10 @@ export default function DashboardLayout({
           >
             G
           </div>
-          <span className="text-[15px] font-bold tracking-tight text-white">
+          <span
+            className="text-[15px] font-bold tracking-tight"
+            style={{ color: "var(--gs-sidebar-text-active)" }}
+          >
             Grip Shot
           </span>
         </div>
