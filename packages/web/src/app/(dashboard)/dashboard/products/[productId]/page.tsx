@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ZoomableImage } from "@/components/zoomable-image";
 
 interface ProductData {
   id: string;
@@ -22,11 +23,15 @@ interface ImageData {
 
 export default function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
+  const router = useRouter();
   const [product, setProduct] = useState<ProductData | null>(null);
   const [images, setImages] = useState<ImageData[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", category: "", description: "" });
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,6 +106,54 @@ export default function ProductDetailPage() {
     }
   }
 
+  function startEditing() {
+    if (!product) return;
+    setEditForm({
+      name: product.name,
+      category: product.category,
+      description: product.description,
+    });
+    setEditing(true);
+  }
+
+  async function handleSaveEdit() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Update failed");
+      }
+      setEditing(false);
+      await loadProduct();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteProduct() {
+    if (!confirm(`Delete "${product?.name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Delete failed");
+      }
+      router.push("/dashboard/products");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    }
+  }
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
@@ -139,27 +192,90 @@ export default function ProductDetailPage() {
 
       {/* Product info */}
       <section className="rounded-xl border border-sand-200 bg-white p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-sand-800">
-              {product.name}
-            </h1>
-            {product.category && (
-              <p className="mt-1 text-sm text-sand-400">{product.category}</p>
-            )}
+        {editing ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-sand-700">Name</label>
+              <input
+                type="text"
+                value={editForm.name}
+                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-sand-700">Category</label>
+              <input
+                type="text"
+                value={editForm.category}
+                onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}
+                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-sand-700">Description</label>
+              <textarea
+                rows={3}
+                value={editForm.description}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                className="mt-1 block w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-peach-400 focus:ring-2 focus:ring-peach-200 transition resize-none"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setEditing(false)}
+                className="rounded-lg border border-sand-200 px-4 py-2 text-sm font-medium text-sand-600 hover:bg-sand-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving || !editForm.name.trim()}
+                className="rounded-lg bg-peach-500 px-4 py-2 text-sm font-medium text-white hover:bg-peach-400 disabled:opacity-50 transition"
+              >
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
           </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
-              product.status === "active"
-                ? "bg-olive-100 text-olive-600"
-                : "bg-sand-100 text-sand-600"
-            }`}
-          >
-            {product.status}
-          </span>
-        </div>
-        {product.description && (
-          <p className="mt-3 text-sm text-sand-500">{product.description}</p>
+        ) : (
+          <>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-sand-800">
+                  {product.name}
+                </h1>
+                {product.category && (
+                  <p className="mt-1 text-sm text-sand-400">{product.category}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    product.status === "active"
+                      ? "bg-olive-100 text-olive-600"
+                      : "bg-sand-100 text-sand-600"
+                  }`}
+                >
+                  {product.status}
+                </span>
+                <button
+                  onClick={startEditing}
+                  className="rounded-lg border border-sand-200 px-3 py-1.5 text-xs font-medium text-sand-600 hover:bg-sand-50 transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDeleteProduct}
+                  className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+            {product.description && (
+              <p className="mt-3 text-sm text-sand-500">{product.description}</p>
+            )}
+          </>
         )}
       </section>
 
@@ -227,7 +343,7 @@ export default function ProductDetailPage() {
                 key={img.name}
                 className="group relative overflow-hidden rounded-lg border border-sand-200 bg-white"
               >
-                <img
+                <ZoomableImage
                   src={img.url}
                   alt={img.name}
                   className="aspect-square w-full object-cover"

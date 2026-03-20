@@ -181,7 +181,7 @@ For each feature:
 4. commit with a focused message (Start message with "Cloude: <msg>")
 5. push the branch
 6. if all checks pass, merge into the primary branch
-7. delete the feature branch if appropriate
+7. Do not delete the feature branch (shall be kept for history)
 
 Never merge failing code.
 Never bypass tests unless the repo is broken before the feature started, in which case document the pre existing failure explicitly.

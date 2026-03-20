@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ZoomableImage } from "@/components/zoomable-image";
 
 interface JobImage {
   imageId: string;
@@ -133,8 +134,7 @@ export default function ResultsPage() {
               key={img.imageId}
               className="group overflow-hidden rounded-xl border border-sand-200 bg-white"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ZoomableImage
                 src={imageUrl(img.filePath)}
                 alt={`${img.productId} — ${img.imageId.slice(0, 6)}`}
                 className="aspect-[4/5] w-full object-cover"

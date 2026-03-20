@@ -59,3 +59,28 @@ export async function getBrand(
 
   return snap.exists ? { id: snap.id, ...(snap.data() as BrandDoc) } : null;
 }
+
+export async function updateBrand(
+  workspaceId: string,
+  brandId: string,
+  data: Partial<Omit<BrandDoc, "createdAt" | "updatedAt">>,
+): Promise<void> {
+  await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("brands")
+    .doc(brandId)
+    .update({ ...data, updatedAt: FieldValue.serverTimestamp() });
+}
+
+export async function deleteBrand(
+  workspaceId: string,
+  brandId: string,
+): Promise<void> {
+  await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("brands")
+    .doc(brandId)
+    .delete();
+}

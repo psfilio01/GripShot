@@ -25,6 +25,9 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Stripe billing + quota enforcement | Done |
 | Product reference image upload | Done |
 | A+ content generation | Done |
+| Brand & product edit/delete | Done |
+| Image zoom/lightbox | Done |
+| Public landing page | Done |
 | Dockerfile + Cloud Run readiness | Done |
 
 ---

@@ -59,15 +59,27 @@ export async function getProduct(
   return snap.exists ? { id: snap.id, ...(snap.data() as ProductDoc) } : null;
 }
 
-export async function updateProductStatus(
+export async function updateProduct(
   workspaceId: string,
   productId: string,
-  status: ProductDoc["status"],
+  data: Partial<Omit<ProductDoc, "createdAt" | "updatedAt">>,
 ): Promise<void> {
   await getDb()
     .collection("workspaces")
     .doc(workspaceId)
     .collection("products")
     .doc(productId)
-    .update({ status, updatedAt: FieldValue.serverTimestamp() });
+    .update({ ...data, updatedAt: FieldValue.serverTimestamp() });
+}
+
+export async function deleteProduct(
+  workspaceId: string,
+  productId: string,
+): Promise<void> {
+  await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("products")
+    .doc(productId)
+    .delete();
 }

@@ -3,16 +3,17 @@ import { isPublicPath, SESSION_COOKIE_NAME, SESSION_MAX_AGE_MS } from "./session
 
 describe("session helpers", () => {
   it("identifies public paths", () => {
+    expect(isPublicPath("/")).toBe(true);
     expect(isPublicPath("/login")).toBe(true);
     expect(isPublicPath("/login?redirect=/dashboard")).toBe(true);
     expect(isPublicPath("/api/auth/session")).toBe(true);
+    expect(isPublicPath("/api/billing/webhook")).toBe(true);
   });
 
   it("identifies protected paths", () => {
     expect(isPublicPath("/dashboard")).toBe(false);
     expect(isPublicPath("/dashboard/products")).toBe(false);
     expect(isPublicPath("/api/generate")).toBe(false);
-    expect(isPublicPath("/")).toBe(false);
   });
 
   it("exports correct cookie name", () => {
