@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 
 interface ProductData {
   id: string;
@@ -232,7 +233,10 @@ function ProductCard({ product }: { product: ProductData }) {
   };
 
   return (
-    <div className="rounded-xl border border-sand-200 bg-white p-5 space-y-3">
+    <Link
+      href={`/dashboard/products/${product.id}`}
+      className="block rounded-xl border border-sand-200 bg-white p-5 space-y-3 hover:border-sand-300 hover:shadow-sm transition"
+    >
       <div className="flex items-start justify-between">
         <h3 className="text-sm font-semibold text-sand-800">{product.name}</h3>
         <span
@@ -251,6 +255,6 @@ function ProductCard({ product }: { product: ProductData }) {
           {product.description}
         </p>
       )}
-    </div>
+    </Link>
   );
 }

@@ -23,6 +23,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Image generation UI (workflow-core bridge) | Done |
 | Results dashboard (browse, filter, favorite, reject) | Done |
 | Stripe billing + quota enforcement | Done |
+| Product reference image upload | Done |
 | A+ content workflows | Planned |
 | Dockerfile + Cloud Run readiness | Done |
 
@@ -140,6 +141,15 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 - Middleware redirects unauthenticated users to `/login`
 - First sign-in automatically creates a Firestore user document and workspace
 - Each user gets a workspace with a free-tier quota (50 credits)
+
+---
+
+## Product reference images
+
+- Upload JPEG, PNG, or WebP reference images (max 10 MB each) via drag-and-drop or file picker
+- Images are stored in `data/products/<productId>/reference/` — directly used by the workflow-core engine
+- Product cards link to a detail page showing product info and an image gallery
+- The image serving route supports both generated images (`data/generated/`) and product reference images (`data/products/`)
 
 ---
 
