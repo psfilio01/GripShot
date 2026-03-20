@@ -62,6 +62,13 @@ export const metadataStore = {
     return store.jobs.find((j) => j.id === jobId) ?? null;
   },
 
+  async listJobs(): Promise<ImageJob[]> {
+    const store = await loadStore();
+    return [...store.jobs].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  },
+
   async insertVariant(variant: ImageVariant): Promise<void> {
     const store = await loadStore();
     store.variants.push(variant);
