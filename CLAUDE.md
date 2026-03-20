@@ -216,9 +216,13 @@ Unless current code state forces a different order, prioritize like this:
 - Mock external APIs where practical
 - Keep at least one narrow happy path that can run locally without paid external services
 
-## Cost control for Claude Code
-The hard budget stop must be enforced in Anthropic Console by setting the Claude Code workspace spend limit to 100 USD.
-Inside the repo, assume that this external guard exists. Do not claim repo code alone can enforce Anthropic account level billing limits.
+## Dependency Policy
+- Only install well-known, actively maintained packages with a strong community
+- Prefer packages with >1000 weekly downloads and recent updates (<6 months)
+- Minimize the number of dependencies — use existing libraries or native solutions first
+- Pin exact versions in package.json (no ^ or ~)
+- Never install packages that look like typosquatting variants
+- When in doubt, ask before adding a new dependency
 
 ## Definition of success for this project
 Deliver a polished SaaS that can be run locally and deployed to Google Cloud Run, with Firebase based auth and storage, Stripe based billing, a strong Amazon seller workflow, a playful but professional UI, and a maintainable engineering foundation.
