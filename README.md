@@ -18,7 +18,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Playwright smoke test config | Done |
 | Firestore data model + user provisioning | Done |
 | Brand onboarding flow | Done |
-| Listing copy generation | Planned |
+| Listing copy generation | Done |
 | Product management | Done |
 | Generation job UI | Planned |
 | Results dashboard | Planned |
