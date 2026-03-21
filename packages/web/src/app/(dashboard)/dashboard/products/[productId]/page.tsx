@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { EmptyState } from "@/components/empty-state";
 
 const IMAGE_CATEGORIES = [
   { id: "primary", label: "Primary" },
@@ -611,12 +612,9 @@ function GeneratedImagesSection({
   productId: string;
   productName: string;
 }) {
-  const allImages = jobs.flatMap((j) =>
-    j.images.map((img) => ({
-      ...img,
-      workflowType: j.workflowType,
-      createdAt: j.createdAt,
-    })),
+  const totalImages = jobs.reduce((sum, j) => sum + j.images.length, 0);
+  const sortedJobs = [...jobs].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
   return (
@@ -633,7 +631,7 @@ function GeneratedImagesSection({
             className="text-sm"
             style={{ color: "var(--gs-text-faint)" }}
           >
-            {allImages.length} image{allImages.length !== 1 ? "s" : ""}
+            {totalImages} image{totalImages !== 1 ? "s" : ""} · {sortedJobs.length} job{sortedJobs.length !== 1 ? "s" : ""}
           </span>
           <Link
             href={`/dashboard/generate?productId=${encodeURIComponent(productId)}&tab=images`}
@@ -644,63 +642,94 @@ function GeneratedImagesSection({
         </div>
       </div>
 
-      {allImages.length === 0 ? (
-        <div
-          className="rounded-xl p-8 text-center"
-          style={{
-            border: "2px dashed var(--gs-border)",
-            background: "var(--gs-surface-inset)",
-          }}
-        >
-          <p
-            className="text-sm"
-            style={{ color: "var(--gs-text-muted)" }}
-          >
-            No images generated for {productName} yet.
-          </p>
-        </div>
+      {sortedJobs.length === 0 ? (
+        <EmptyState
+          icon="🖼️"
+          title={`No images for ${productName}`}
+          description="Generate your first product images to see them here."
+          actionLabel="Generate images"
+          actionHref={`/dashboard/generate?productId=${encodeURIComponent(productId)}&tab=images`}
+        />
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {allImages.map((img) => (
-            <div
-              key={img.imageId}
-              className="gs-card group overflow-hidden"
-            >
-              <ZoomableImage
-                src={generatedImageUrl(img.filePath)}
-                alt={`Generated ${img.imageId.slice(0, 6)}`}
-                className="aspect-[4/5] w-full object-cover"
-              />
-              <div className="p-2 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--gs-text-faint)" }}
-                  >
-                    {workflowLabel(img.workflowType)}
-                  </span>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-xs font-medium"
-                    style={
-                      img.status === "favorite"
+        <div className="space-y-6">
+          {sortedJobs.map((job) => (
+            <div key={job.jobId} className="space-y-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: "var(--gs-text-secondary)" }}
+                >
+                  {workflowLabel(job.workflowType)}
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={
+                    job.status === "completed"
+                      ? {
+                          background: "var(--gs-success-bg)",
+                          color: "var(--gs-success-text)",
+                        }
+                      : job.status === "failed"
                         ? {
-                            background: "var(--gs-success-bg)",
-                            color: "var(--gs-success-text)",
+                            background: "var(--gs-error-bg)",
+                            color: "var(--gs-error-text)",
                           }
-                        : img.status === "rejected"
-                          ? {
-                              background: "var(--gs-error-bg)",
-                              color: "var(--gs-error-text)",
-                            }
-                          : {
-                              background: "var(--gs-surface-inset)",
-                              color: "var(--gs-text-muted)",
-                            }
-                    }
-                  >
-                    {img.status}
-                  </span>
-                </div>
+                        : {
+                            background: "var(--gs-surface-inset)",
+                            color: "var(--gs-text-muted)",
+                          }
+                  }
+                >
+                  {job.status}
+                </span>
+                <span
+                  className="text-[10px]"
+                  style={{ color: "var(--gs-text-faint)" }}
+                >
+                  {formatRelative(job.createdAt)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {job.images.map((img) => (
+                  <div key={img.imageId} className="gs-card group overflow-hidden">
+                    <ZoomableImage
+                      src={generatedImageUrl(img.filePath)}
+                      alt={`Generated ${img.imageId.slice(0, 6)}`}
+                      className="aspect-[4/5] w-full object-cover"
+                    />
+                    <div className="p-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="text-[10px]"
+                          style={{ color: "var(--gs-text-faint)" }}
+                        >
+                          {img.imageId.slice(0, 8)}
+                        </span>
+                        <span
+                          className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                          style={
+                            img.status === "favorite"
+                              ? {
+                                  background: "var(--gs-success-bg)",
+                                  color: "var(--gs-success-text)",
+                                }
+                              : img.status === "rejected"
+                                ? {
+                                    background: "var(--gs-error-bg)",
+                                    color: "var(--gs-error-text)",
+                                  }
+                                : {
+                                    background: "var(--gs-surface-inset)",
+                                    color: "var(--gs-text-muted)",
+                                  }
+                          }
+                        >
+                          {img.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
@@ -727,6 +756,18 @@ function UploadIcon() {
       />
     </svg>
   );
+}
+
+function formatRelative(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
 
 function TrashIcon({ className }: { className?: string }) {
