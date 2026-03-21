@@ -28,10 +28,19 @@ interface ProductData {
   name: string;
 }
 
+interface RecentGeneration {
+  id: string;
+  type: "listing-copy" | "aplus";
+  productName: string;
+  createdAt: { _seconds: number };
+}
+
 export default function DashboardPage() {
   const [me, setMe] = useState<MeData | null>(null);
   const [brands, setBrands] = useState<BrandData[]>([]);
   const [products, setProducts] = useState<ProductData[]>([]);
+  const [recentGens, setRecentGens] = useState<RecentGeneration[]>([]);
+  const [imageJobCount, setImageJobCount] = useState(0);
 
   useEffect(() => {
     fetch("/api/me")
@@ -50,6 +59,20 @@ export default function DashboardPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.products) setProducts(data.products);
+      })
+      .catch(() => {});
+
+    fetch("/api/generations?limit=5")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.generations) setRecentGens(data.generations);
+      })
+      .catch(() => {});
+
+    fetch("/api/jobs")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.jobs) setImageJobCount(data.jobs.length);
       })
       .catch(() => {});
   }, []);
@@ -171,6 +194,101 @@ export default function DashboardPage() {
           }
         />
       </div>
+
+      {/* Recent activity */}
+      {(recentGens.length > 0 || imageJobCount > 0) && (
+        <div className="gs-card-static p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              className="text-base font-semibold"
+              style={{ color: "var(--gs-text)" }}
+            >
+              Recent activity
+            </h2>
+            <Link
+              href="/dashboard/results"
+              className="text-sm font-medium transition"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              View all
+            </Link>
+          </div>
+
+          {imageJobCount > 0 && (
+            <Link
+              href="/dashboard/results"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 mb-2 transition-colors"
+              style={{
+                border: "1px solid var(--gs-border-subtle)",
+                background: "var(--gs-surface-inset)",
+              }}
+            >
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{
+                  background: "var(--gs-accent-subtle)",
+                  color: "var(--gs-accent)",
+                }}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+              </span>
+              <div>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--gs-text)" }}
+                >
+                  {imageJobCount} image generation{imageJobCount !== 1 ? "s" : ""}
+                </p>
+                <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                  View in results
+                </p>
+              </div>
+            </Link>
+          )}
+
+          {recentGens.map((gen) => (
+            <Link
+              key={gen.id}
+              href="/dashboard/generate"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 mb-2 last:mb-0 transition-colors"
+              style={{
+                border: "1px solid var(--gs-border-subtle)",
+                background: "var(--gs-surface-inset)",
+              }}
+            >
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{
+                  background:
+                    gen.type === "aplus"
+                      ? "color-mix(in srgb, var(--gs-accent) 15%, transparent)"
+                      : "var(--gs-accent-subtle)",
+                  color: "var(--gs-accent)",
+                }}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: "var(--gs-text)" }}
+                >
+                  {gen.productName} — {gen.type === "aplus" ? "A+ content" : "Listing copy"}
+                </p>
+                <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                  {gen.createdAt?._seconds
+                    ? new Date(gen.createdAt._seconds * 1000).toLocaleDateString()
+                    : ""}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Brand section */}
       {brands.length === 0 ? (
