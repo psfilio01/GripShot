@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { useToast } from "@/components/toast";
 
@@ -28,13 +28,13 @@ const PLAN_PRICES: Record<string, string> = {
 export default function SettingsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [quota, setQuota] = useState<QuotaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [managing, setManaging] = useState(false);
   const [buyingCredits, setBuyingCredits] = useState(false);
   const { toast } = useToast();
-  const billingStatus = searchParams.get("billing");
 
   const fetchQuota = useCallback(async () => {
     try {
@@ -50,6 +50,18 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchQuota();
   }, [fetchQuota]);
+
+  useEffect(() => {
+    const billing = searchParams.get("billing");
+    if (billing === "success") {
+      toast("Payment successful! Your account has been updated.", "success");
+      router.replace("/dashboard/settings", { scroll: false });
+    } else if (billing === "cancelled") {
+      toast("Checkout was cancelled. You can upgrade anytime.", "info");
+      router.replace("/dashboard/settings", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleUpgrade(priceId: string) {
     setUpgrading(true);
@@ -138,31 +150,6 @@ export default function SettingsPage() {
           Manage your account, plan, and usage.
         </p>
       </div>
-
-      {billingStatus === "success" && (
-        <div
-          className="rounded-xl p-4 text-sm"
-          style={{
-            background: "var(--gs-success-bg)",
-            color: "var(--gs-success-text)",
-            border: "1px solid color-mix(in srgb, var(--gs-success-text) 25%, transparent)",
-          }}
-        >
-          Your subscription has been activated! It may take a moment to reflect.
-        </div>
-      )}
-      {billingStatus === "cancelled" && (
-        <div
-          className="rounded-xl p-4 text-sm"
-          style={{
-            background: "var(--gs-warning-bg)",
-            color: "var(--gs-warning-text)",
-            border: "1px solid color-mix(in srgb, var(--gs-warning-text) 25%, transparent)",
-          }}
-        >
-          Checkout was cancelled. You can upgrade anytime.
-        </div>
-      )}
 
       {/* Account */}
       <section className="gs-card-static p-6">
