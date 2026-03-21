@@ -39,6 +39,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Keyboard navigation shortcuts | Done |
 | Toast notification system | Done |
 | Skeleton loading states | Done |
+| Credit top-up purchases | Done |
 
 ---
 
@@ -179,11 +180,12 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 ## Billing and quotas
 
 - Three plans: **Free** (50 credits/mo), **Starter** (500 credits, €29/mo), **Pro** (2,000 credits, €79/mo)
-- Stripe Checkout for upgrades, Stripe Billing Portal for management
-- Webhook handler processes subscription lifecycle events (created, updated, cancelled, invoice paid)
+- **Credit top-ups**: Buy extra credits via one-time Stripe payments (100 for €9, 500 for €39, 1,500 for €99)
+- Stripe Checkout for upgrades and credit purchases, Stripe Billing Portal for subscription management
+- Webhook handler processes subscription lifecycle events and credit top-up completions
 - Quota automatically resets on each billing cycle via `invoice.payment_succeeded`
 - Generation routes check credits before running and consume one credit per successful generation
-- Settings page shows plan info, a usage bar, and upgrade/manage buttons
+- Settings page shows plan info, a usage bar, credit pack cards, and upgrade/manage buttons
 
 ---
 

@@ -5,6 +5,8 @@ import { z } from "zod";
 
 const RequestSchema = z.object({
   priceId: z.string().min(1),
+  mode: z.enum(["subscription", "payment"]).default("subscription"),
+  creditPackId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -15,22 +17,29 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { priceId } = RequestSchema.parse(body);
+    const { priceId, mode, creditPackId } = RequestSchema.parse(body);
 
     const stripe = getStripe();
     const origin = req.headers.get("origin") ?? "http://localhost:3000";
 
+    const metadata: Record<string, string> = {
+      workspaceId: session.user.workspaceId,
+      uid: session.user.uid,
+    };
+
+    if (mode === "payment" && creditPackId) {
+      metadata.type = "credit_topup";
+      metadata.creditPackId = creditPackId;
+    }
+
     const checkoutSession = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode,
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/dashboard/settings?billing=success`,
       cancel_url: `${origin}/dashboard/settings?billing=cancelled`,
       client_reference_id: session.user.uid,
-      metadata: {
-        workspaceId: session.user.workspaceId,
-        uid: session.user.uid,
-      },
+      metadata,
     });
 
     return NextResponse.json({ url: checkoutSession.url });

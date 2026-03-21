@@ -51,3 +51,16 @@ export async function setQuotaLimit(
     updatedAt: FieldValue.serverTimestamp(),
   });
 }
+
+export async function addCredits(
+  workspaceId: string,
+  credits: number,
+): Promise<void> {
+  await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .update({
+      quotaLimit: FieldValue.increment(credits),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+}

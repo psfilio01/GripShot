@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
+import { useToast } from "@/components/toast";
 
 interface QuotaData {
   plan: string;
@@ -31,6 +32,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [buyingCredits, setBuyingCredits] = useState(false);
+  const { toast } = useToast();
   const billingStatus = searchParams.get("billing");
 
   const fetchQuota = useCallback(async () => {
@@ -64,6 +67,41 @@ export default function SettingsPage() {
       console.error("Upgrade failed:", err);
     } finally {
       setUpgrading(false);
+    }
+  }
+
+  const CREDIT_PACK_PRICE_IDS: Record<string, string> = {
+    "credits-100": process.env.NEXT_PUBLIC_STRIPE_CREDITS_100_PRICE_ID ?? "",
+    "credits-500": process.env.NEXT_PUBLIC_STRIPE_CREDITS_500_PRICE_ID ?? "",
+    "credits-1500": process.env.NEXT_PUBLIC_STRIPE_CREDITS_1500_PRICE_ID ?? "",
+  };
+
+  async function handleBuyCredits(packId: string) {
+    const priceId = CREDIT_PACK_PRICE_IDS[packId];
+    if (!priceId) {
+      toast("Credit pack not configured. Set the Stripe price ID in .env.", "error");
+      return;
+    }
+    setBuyingCredits(true);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId,
+          mode: "payment",
+          creditPackId: packId,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error("Credit purchase failed:", err);
+      toast("Failed to start checkout", "error");
+    } finally {
+      setBuyingCredits(false);
     }
   }
 
@@ -272,6 +310,48 @@ export default function SettingsPage() {
         )}
       </section>
 
+      {/* Credit Top-Up */}
+      {quota && (
+        <section className="gs-card-static p-6">
+          <h2
+            className="text-base font-semibold"
+            style={{ color: "var(--gs-text)" }}
+          >
+            Buy Extra Credits
+          </h2>
+          <p
+            className="mt-1 text-sm"
+            style={{ color: "var(--gs-text-muted)" }}
+          >
+            Need more credits before your next billing cycle? Top up instantly.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <CreditPackCard
+              name="100 Credits"
+              price="€9"
+              savings=""
+              onBuy={() => handleBuyCredits("credits-100")}
+              buying={buyingCredits}
+            />
+            <CreditPackCard
+              name="500 Credits"
+              price="€39"
+              savings="Save 13%"
+              onBuy={() => handleBuyCredits("credits-500")}
+              buying={buyingCredits}
+              highlighted
+            />
+            <CreditPackCard
+              name="1,500 Credits"
+              price="€99"
+              savings="Save 27%"
+              onBuy={() => handleBuyCredits("credits-1500")}
+              buying={buyingCredits}
+            />
+          </div>
+        </section>
+      )}
+
       {/* Plan Comparison */}
       {quota?.plan === "free" && (
         <section className="gs-card-static p-6">
@@ -423,6 +503,65 @@ function PlanCard({
           {upgrading ? "Redirecting…" : "Upgrade"}
         </button>
       ) : null}
+    </div>
+  );
+}
+
+function CreditPackCard({
+  name,
+  price,
+  savings,
+  highlighted,
+  onBuy,
+  buying,
+}: {
+  name: string;
+  price: string;
+  savings: string;
+  highlighted?: boolean;
+  onBuy: () => void;
+  buying: boolean;
+}) {
+  return (
+    <div
+      className="gs-card-static p-4 flex flex-col"
+      style={
+        highlighted
+          ? {
+              borderColor: "var(--gs-accent)",
+              boxShadow: "var(--gs-shadow-glow)",
+            }
+          : {}
+      }
+    >
+      <div className="flex-1">
+        <h3 className="font-semibold" style={{ color: "var(--gs-text)" }}>
+          {name}
+        </h3>
+        <p
+          className="text-xl font-bold mt-1"
+          style={{ color: "var(--gs-text)" }}
+        >
+          {price}
+        </p>
+        {savings && (
+          <p
+            className="mt-1 text-xs font-medium"
+            style={{ color: "var(--gs-success-text)" }}
+          >
+            {savings}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={onBuy}
+        disabled={buying}
+        className={`mt-3 w-full rounded-lg py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+          highlighted ? "gs-btn-primary" : "gs-btn-secondary"
+        }`}
+      >
+        {buying ? "Redirecting…" : "Buy now"}
+      </button>
     </div>
   );
 }

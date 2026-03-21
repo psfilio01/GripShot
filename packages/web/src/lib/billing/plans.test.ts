@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PLANS, getPlanById, getPlanLimits } from "./plans";
+import { PLANS, getPlanById, getPlanLimits, CREDIT_PACKS, getCreditPackById } from "./plans";
 
 describe("PLANS", () => {
   it("defines three plans in order: free, starter, pro", () => {
@@ -77,5 +77,36 @@ describe("getPlanLimits", () => {
     expect(limits.maxBrands).toBe(1);
     expect(limits.maxProducts).toBe(3);
     expect(limits.aplusEnabled).toBe(false);
+  });
+});
+
+describe("CREDIT_PACKS", () => {
+  it("defines three credit packs", () => {
+    expect(CREDIT_PACKS).toHaveLength(3);
+  });
+
+  it("packs have increasing credit amounts", () => {
+    for (let i = 1; i < CREDIT_PACKS.length; i++) {
+      expect(CREDIT_PACKS[i].credits).toBeGreaterThan(CREDIT_PACKS[i - 1].credits);
+    }
+  });
+
+  it("each pack has a positive credit count and price", () => {
+    for (const pack of CREDIT_PACKS) {
+      expect(pack.credits).toBeGreaterThan(0);
+      expect(pack.price).toBeTruthy();
+    }
+  });
+});
+
+describe("getCreditPackById", () => {
+  it("returns the correct pack", () => {
+    const pack = getCreditPackById("credits-500");
+    expect(pack).toBeDefined();
+    expect(pack!.credits).toBe(500);
+  });
+
+  it("returns undefined for unknown pack", () => {
+    expect(getCreditPackById("credits-9999")).toBeUndefined();
   });
 });

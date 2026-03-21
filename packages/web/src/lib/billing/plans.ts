@@ -59,6 +59,23 @@ export const PLANS: PlanDefinition[] = [
   },
 ];
 
+export interface CreditPack {
+  id: string;
+  name: string;
+  credits: number;
+  price: string;
+}
+
+export const CREDIT_PACKS: CreditPack[] = [
+  { id: "credits-100", name: "100 Credits", credits: 100, price: "€9" },
+  { id: "credits-500", name: "500 Credits", credits: 500, price: "€39" },
+  { id: "credits-1500", name: "1,500 Credits", credits: 1500, price: "€99" },
+];
+
+export function getCreditPackById(id: string): CreditPack | undefined {
+  return CREDIT_PACKS.find((p) => p.id === id);
+}
+
 export function getPlanById(id: string): PlanDefinition | undefined {
   return PLANS.find((p) => p.id === id);
 }

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe, getWebhookSecret } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { getPlanById } from "@/lib/billing/plans";
+import { getPlanById, getCreditPackById } from "@/lib/billing/plans";
+import { addCredits } from "@/lib/billing/quota";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -28,19 +29,30 @@ export async function POST(req: NextRequest) {
         const workspaceId = session.metadata?.workspaceId;
         if (!workspaceId) break;
 
-        await getDb()
-          .collection("workspaces")
-          .doc(workspaceId)
-          .update({
-            stripeCustomerId: session.customer,
-            stripeSubscriptionId: session.subscription,
-            plan: "starter",
-            quotaLimit: getPlanById("starter")!.credits,
-            quotaUsed: 0,
-            updatedAt: FieldValue.serverTimestamp(),
-          });
+        if (session.metadata?.type === "credit_topup") {
+          const packId = session.metadata.creditPackId;
+          const pack = packId ? getCreditPackById(packId) : null;
+          if (pack) {
+            await addCredits(workspaceId, pack.credits);
+            console.log(`Workspace ${workspaceId} topped up ${pack.credits} credits (${pack.id})`);
+          } else {
+            console.warn(`Unknown credit pack "${packId}" for workspace ${workspaceId}`);
+          }
+        } else {
+          await getDb()
+            .collection("workspaces")
+            .doc(workspaceId)
+            .update({
+              stripeCustomerId: session.customer,
+              stripeSubscriptionId: session.subscription,
+              plan: "starter",
+              quotaLimit: getPlanById("starter")!.credits,
+              quotaUsed: 0,
+              updatedAt: FieldValue.serverTimestamp(),
+            });
 
-        console.log(`Workspace ${workspaceId} upgraded to starter plan`);
+          console.log(`Workspace ${workspaceId} upgraded to starter plan`);
+        }
         break;
       }
 
