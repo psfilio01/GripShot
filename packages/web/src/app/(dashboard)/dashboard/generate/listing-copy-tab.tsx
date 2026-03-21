@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, type FormEvent } from "react";
+import { useEffect, useState, useCallback, type FormEvent, type ReactNode } from "react";
 
 interface ProductOption {
   id: string;
@@ -180,74 +180,7 @@ export function ListingCopyTab() {
         </button>
       </form>
 
-      {result && (
-        <div className="space-y-4">
-          <div className="gs-card-static p-6 space-y-4">
-            <div>
-              <h3
-                className="text-xs font-medium uppercase tracking-wider"
-                style={{ color: "var(--gs-text-faint)" }}
-              >
-                Title
-              </h3>
-              <p
-                className="mt-1 text-sm font-medium"
-                style={{ color: "var(--gs-text)" }}
-              >
-                {result.title}
-              </p>
-            </div>
-            <div>
-              <h3
-                className="text-xs font-medium uppercase tracking-wider"
-                style={{ color: "var(--gs-text-faint)" }}
-              >
-                Bullet points
-              </h3>
-              <ul className="mt-1 space-y-1">
-                {result.bulletPoints.map((bp, i) => (
-                  <li
-                    key={i}
-                    className="text-sm flex gap-2"
-                    style={{ color: "var(--gs-text-secondary)" }}
-                  >
-                    <span
-                      className="shrink-0"
-                      style={{ color: "var(--gs-accent)" }}
-                    >
-                      •
-                    </span>
-                    {bp}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3
-                className="text-xs font-medium uppercase tracking-wider"
-                style={{ color: "var(--gs-text-faint)" }}
-              >
-                Description
-              </h3>
-              <p
-                className="mt-1 text-sm leading-relaxed whitespace-pre-line"
-                style={{ color: "var(--gs-text-secondary)" }}
-              >
-                {result.description}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              const text = `${result.title}\n\n${result.bulletPoints.map((b) => `• ${b}`).join("\n")}\n\n${result.description}`;
-              navigator.clipboard.writeText(text);
-            }}
-            className="gs-btn-secondary px-4 py-2 text-sm"
-          >
-            Copy to clipboard
-          </button>
-        </div>
-      )}
+      {result && <ListingCopyResult result={result} />}
 
       {history.length > 0 && (
         <div className="space-y-3">
@@ -294,6 +227,108 @@ export function ListingCopyTab() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CopyButton({ text, label }: { text: string; label?: ReactNode }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="shrink-0 rounded-md px-2 py-1 text-xs font-medium transition"
+      style={{
+        background: copied ? "var(--gs-success-bg)" : "var(--gs-surface-inset)",
+        color: copied ? "var(--gs-success-text)" : "var(--gs-text-muted)",
+      }}
+      title="Copy to clipboard"
+    >
+      {copied ? "Copied!" : label ?? "Copy"}
+    </button>
+  );
+}
+
+function ListingCopyResult({ result }: { result: ListingCopyResult }) {
+  const allText = `${result.title}\n\n${result.bulletPoints.map((b) => `• ${b}`).join("\n")}\n\n${result.description}`;
+  const bulletsText = result.bulletPoints.map((b) => `• ${b}`).join("\n");
+
+  return (
+    <div className="space-y-4">
+      <div className="gs-card-static p-6 space-y-5">
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <h3
+              className="text-xs font-medium uppercase tracking-wider"
+              style={{ color: "var(--gs-text-faint)" }}
+            >
+              Title
+            </h3>
+            <CopyButton text={result.title} />
+          </div>
+          <p
+            className="text-sm font-medium"
+            style={{ color: "var(--gs-text)" }}
+          >
+            {result.title}
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <h3
+              className="text-xs font-medium uppercase tracking-wider"
+              style={{ color: "var(--gs-text-faint)" }}
+            >
+              Bullet points
+            </h3>
+            <CopyButton text={bulletsText} />
+          </div>
+          <ul className="space-y-1">
+            {result.bulletPoints.map((bp, i) => (
+              <li
+                key={i}
+                className="text-sm flex gap-2"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
+                <span
+                  className="shrink-0"
+                  style={{ color: "var(--gs-accent)" }}
+                >
+                  •
+                </span>
+                {bp}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <h3
+              className="text-xs font-medium uppercase tracking-wider"
+              style={{ color: "var(--gs-text-faint)" }}
+            >
+              Description
+            </h3>
+            <CopyButton text={result.description} />
+          </div>
+          <p
+            className="text-sm leading-relaxed whitespace-pre-line"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
+            {result.description}
+          </p>
+        </div>
+      </div>
+
+      <CopyButton text={allText} label="Copy all to clipboard" />
     </div>
   );
 }
