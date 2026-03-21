@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useToast } from "@/components/toast";
 
 interface ProductOption {
   id: string;
@@ -36,6 +37,7 @@ export function ImageGenerationTab({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<JobResult | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetch("/api/products")
@@ -50,6 +52,16 @@ export function ImageGenerationTab({
             setProductId(match?.id ?? d.products[0]?.id ?? "");
           }
         }
+      })
+      .catch(() => {});
+
+    fetch("/api/preferences")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((prefs) => {
+        if (!prefs) return;
+        if (prefs.defaultAspectRatio) setAspectRatio(prefs.defaultAspectRatio);
+        if (prefs.defaultResolution) setResolution(prefs.defaultResolution);
+        if (prefs.defaultWorkflowType) setWorkflowType(prefs.defaultWorkflowType);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,13 +266,37 @@ export function ImageGenerationTab({
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={busy || !productId.trim()}
-          className="gs-btn-primary px-5 py-2.5 text-sm"
-        >
-          {busy ? "Generating…" : "Generate image"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={busy || !productId.trim()}
+            className="gs-btn-primary px-5 py-2.5 text-sm"
+          >
+            {busy ? "Generating…" : "Generate image"}
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await fetch("/api/preferences", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    defaultAspectRatio: aspectRatio,
+                    defaultResolution: resolution,
+                    defaultWorkflowType: workflowType,
+                  }),
+                });
+                toast("Defaults saved", "success");
+              } catch {
+                toast("Failed to save defaults", "error");
+              }
+            }}
+            className="gs-btn-secondary px-4 py-2.5 text-sm"
+          >
+            Save as defaults
+          </button>
+        </div>
       </form>
 
       {job && (
