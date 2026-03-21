@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 
 interface ProductData {
   id: string;
@@ -66,17 +67,13 @@ export default function ProductsPage() {
       </div>
 
       {brands.length === 0 && (
-        <div
-          className="rounded-xl p-8 text-center"
-          style={{
-            border: "2px dashed var(--gs-border)",
-            background: "var(--gs-surface-inset)",
-          }}
-        >
-          <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
-            Set up a brand first before adding products.
-          </p>
-        </div>
+        <EmptyState
+          icon="🏷️"
+          title="Create a brand first"
+          description="Before adding products, you need at least one brand. Head to the onboarding flow to get started."
+          actionLabel="Set up brand"
+          actionHref="/dashboard/onboarding"
+        />
       )}
 
       {showForm && brands.length > 0 && (
@@ -98,18 +95,13 @@ export default function ProductsPage() {
       ) : (
         brands.length > 0 &&
         !showForm && (
-          <div
-            className="rounded-xl p-8 text-center"
-            style={{
-              border: "2px dashed var(--gs-border)",
-              background: "var(--gs-surface-inset)",
-            }}
-          >
-            <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
-              No products yet. Click &quot;+ New product&quot; to add your
-              first.
-            </p>
-          </div>
+          <EmptyState
+            icon="📦"
+            title="No products yet"
+            description="Add your first product to start generating images and listing copy. Upload reference photos and let AI do the rest."
+            actionLabel="+ New product"
+            onAction={() => setShowForm(true)}
+          />
         )
       )}
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { useToast } from "@/components/toast";
+import { EmptyState } from "@/components/empty-state";
 import { ResultsSkeleton } from "@/components/skeleton";
 
 interface JobImage {
@@ -284,19 +285,21 @@ export default function ResultsPage() {
       {loading ? (
         <ResultsSkeleton />
       ) : filteredImages.length === 0 ? (
-        <div
-          className="rounded-xl p-12 text-center"
-          style={{
-            border: "2px dashed var(--gs-border)",
-            background: "var(--gs-surface-inset)",
-          }}
-        >
-          <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
-            {!hasFilters
-              ? "No images generated yet. Go to Generate to create your first."
-              : "No images match your filters."}
-          </p>
-        </div>
+        !hasFilters ? (
+          <EmptyState
+            icon="🎨"
+            title="No images generated yet"
+            description="Head to the Generate page to create your first AI-powered product images. They'll appear here once ready."
+            actionLabel="Generate images"
+            actionHref="/dashboard/generate?tab=images"
+          />
+        ) : (
+          <EmptyState
+            icon="🔍"
+            title="No images match your filters"
+            description="Try adjusting your filter criteria to see more results."
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredImages.map((img) => (
