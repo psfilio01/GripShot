@@ -1,6 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+
+interface ProductOption {
+  id: string;
+  name: string;
+}
 
 interface JobImage {
   imageId: string;
@@ -19,9 +24,8 @@ export function ImageGenerationTab({
 }: {
   prefillProductId?: string;
 }) {
-  const [productId, setProductId] = useState(
-    prefillProductId ?? "pilates-mini-ball",
-  );
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [productId, setProductId] = useState(prefillProductId ?? "");
   const [workflowType, setWorkflowType] = useState<string>(
     "NEUTRAL_PRODUCT_SHOT",
   );
@@ -32,6 +36,24 @@ export function ImageGenerationTab({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<JobResult | null>(null);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.products) {
+          setProducts(d.products);
+          const match = prefillProductId
+            ? d.products.find((p: ProductOption) => p.id === prefillProductId)
+            : null;
+          if (!productId) {
+            setProductId(match?.id ?? d.products[0]?.id ?? "");
+          }
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleGenerate(e: FormEvent) {
     e.preventDefault();
@@ -100,15 +122,22 @@ export function ImageGenerationTab({
               className="block text-sm font-medium mb-1.5"
               style={{ color: "var(--gs-text-secondary)" }}
             >
-              Product ID
+              Product
             </label>
-            <input
-              type="text"
+            <select
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
               className="gs-input block w-full px-3 py-2 text-sm"
-              placeholder="e.g. pilates-mini-ball"
-            />
+            >
+              {products.length === 0 && (
+                <option value="">Loading products…</option>
+              )}
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
