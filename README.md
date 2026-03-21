@@ -47,6 +47,9 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Generation pre-fill via URL params | Done |
 | Job grouping + timestamps on product page | Done |
 | Workspace generation preferences | Done |
+| Billing toast notifications | Done |
+| Product card quick actions | Done |
+| Results page image traceability | Done |
 
 ---
 
@@ -237,6 +240,18 @@ Press these keys anywhere in the dashboard (when no input is focused):
 - Token-based CSS custom properties (`--gs-*`) for consistent theming
 - Preference persists to `localStorage` and applies before hydration (no flash)
 - Both themes are independently designed — not just inverted colors
+
+---
+
+## Shared UI components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| ConfirmDialog | `components/confirm-dialog.tsx` | Accessible modal for destructive actions |
+| EmptyState | `components/empty-state.tsx` | Friendly placeholder with CTA for empty pages |
+| ToastProvider | `components/toast.tsx` | Global non-blocking notification system |
+| Skeleton | `components/skeleton.tsx` | Loading state placeholders |
+| ZoomableImage | `components/zoomable-image.tsx` | Click-to-zoom image viewer |
 
 ---
 
