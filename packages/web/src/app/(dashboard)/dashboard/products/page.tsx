@@ -254,10 +254,8 @@ function CreateProductForm({
 
 function ProductCard({ product }: { product: ProductData }) {
   return (
-    <Link
-      href={`/dashboard/products/${product.id}`}
-      className="gs-card block p-5 space-y-3"
-    >
+    <div className="gs-card group relative p-5 space-y-3">
+      <Link href={`/dashboard/products/${product.id}`} className="absolute inset-0" />
       <div className="flex items-start justify-between">
         <h3
           className="text-sm font-semibold"
@@ -280,7 +278,33 @@ function ProductCard({ product }: { product: ProductData }) {
           {product.description}
         </p>
       )}
-    </Link>
+      <div className="relative flex items-center gap-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Link
+          href={`/dashboard/generate?productId=${encodeURIComponent(product.id)}&tab=images`}
+          className="rounded-lg px-2.5 py-1 text-[11px] font-medium transition"
+          style={{
+            background: "var(--gs-surface-inset)",
+            color: "var(--gs-text-muted)",
+            border: "1px solid var(--gs-border-subtle)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Generate images
+        </Link>
+        <Link
+          href={`/dashboard/generate?productId=${encodeURIComponent(product.id)}`}
+          className="rounded-lg px-2.5 py-1 text-[11px] font-medium transition"
+          style={{
+            background: "var(--gs-surface-inset)",
+            color: "var(--gs-text-muted)",
+            border: "1px solid var(--gs-border-subtle)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Listing copy
+        </Link>
+      </div>
+    </div>
   );
 }
 
