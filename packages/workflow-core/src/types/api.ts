@@ -21,6 +21,10 @@ export interface StartImageJobInput {
   sceneOptions?: SceneOptions;
   /** If true, allow AI to adapt styling within brand DNA. */
   creativeFreedom?: boolean;
+  /** Override aspect ratio (e.g. "4:5", "1:1", "16:9"). Falls back to runtime JSON or default. */
+  aspectRatio?: string;
+  /** Override resolution (e.g. "2K", "4K"). Falls back to runtime JSON or default. */
+  resolution?: string;
 }
 
 export interface StartImageJobResult {

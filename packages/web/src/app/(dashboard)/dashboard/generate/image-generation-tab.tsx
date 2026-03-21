@@ -21,6 +21,8 @@ export function ImageGenerationTab() {
   );
   const [useGoldenBg, setUseGoldenBg] = useState(false);
   const [creativeFreedom, setCreativeFreedom] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState("4:5");
+  const [resolution, setResolution] = useState("2K");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<JobResult | null>(null);
@@ -40,6 +42,8 @@ export function ImageGenerationTab() {
           workflowType,
           useGoldenBackground: useGoldenBg,
           creativeFreedom,
+          aspectRatio,
+          resolution,
         }),
       });
 
@@ -119,6 +123,50 @@ export function ImageGenerationTab() {
               <option value="AMAZON_LIFESTYLE_SHOT">
                 Amazon lifestyle shot
               </option>
+            </select>
+          </div>
+        </div>
+
+        {/* Generation settings */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
+              Aspect ratio
+            </label>
+            <select
+              value={aspectRatio}
+              onChange={(e) => setAspectRatio(e.target.value)}
+              className="gs-input block w-full px-3 py-2 text-sm"
+            >
+              <option value="4:5">4:5 (Amazon main)</option>
+              <option value="1:1">1:1 (Square)</option>
+              <option value="3:4">3:4</option>
+              <option value="16:9">16:9 (Wide)</option>
+              <option value="9:16">9:16 (Tall)</option>
+              <option value="2:3">2:3</option>
+              <option value="3:2">3:2</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--gs-text-secondary)" }}
+            >
+              Resolution
+            </label>
+            <select
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              className="gs-input block w-full px-3 py-2 text-sm"
+            >
+              <option value="2K">2K (default)</option>
+              <option value="4K">4K (high quality)</option>
+              <option value="1K">1K (fast preview)</option>
+              <option value="512">512px (fastest)</option>
             </select>
           </div>
         </div>

@@ -66,6 +66,13 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     const globalHardRules = await loadGlobalHardRules(dataRoot);
     const productHardRules = await loadProductHardRules(product);
 
+    if (input.aspectRatio) {
+      generationSettings.aspectRatio = input.aspectRatio as typeof generationSettings.aspectRatio;
+    }
+    if (input.resolution) {
+      generationSettings.resolution = input.resolution as typeof generationSettings.resolution;
+    }
+
     console.log(`Grip Shot: generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}`);
     if (runtimeInput) {
       console.log("Grip Shot: runtime input loaded", Object.keys(runtimeInput));

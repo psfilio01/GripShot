@@ -7,11 +7,20 @@ import { resolve } from "path";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
+const ASPECT_RATIOS = [
+  "1:1", "1:4", "1:8", "2:3", "3:2", "3:4",
+  "4:1", "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9",
+] as const;
+
+const RESOLUTIONS = ["512", "1K", "2K", "4K"] as const;
+
 const RequestSchema = z.object({
   productId: z.string().min(1),
   workflowType: z.enum(["NEUTRAL_PRODUCT_SHOT", "AMAZON_LIFESTYLE_SHOT"]),
   useGoldenBackground: z.boolean().default(false),
   creativeFreedom: z.boolean().default(false),
+  aspectRatio: z.enum(ASPECT_RATIOS).optional(),
+  resolution: z.enum(RESOLUTIONS).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -45,6 +54,8 @@ export async function POST(req: NextRequest) {
       workflowType: input.workflowType,
       useGoldenBackground: input.useGoldenBackground,
       creativeFreedom: input.creativeFreedom,
+      aspectRatio: input.aspectRatio,
+      resolution: input.resolution,
     });
 
     const job = await getJob(jobId);
