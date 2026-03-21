@@ -5,15 +5,16 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { clsx } from "clsx";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview", icon: GridIcon },
+  { href: "/dashboard", label: "Overview", icon: GridIcon, shortcut: "H" },
   { href: "/dashboard/onboarding", label: "Brand Setup", icon: SparkleIcon },
-  { href: "/dashboard/products", label: "Products", icon: BoxIcon },
-  { href: "/dashboard/generate", label: "Generate", icon: WandIcon },
-  { href: "/dashboard/results", label: "Results", icon: ImageIcon },
-  { href: "/dashboard/settings", label: "Settings", icon: GearIcon },
+  { href: "/dashboard/products", label: "Products", icon: BoxIcon, shortcut: "P" },
+  { href: "/dashboard/generate", label: "Generate", icon: WandIcon, shortcut: "G" },
+  { href: "/dashboard/results", label: "Results", icon: ImageIcon, shortcut: "R" },
+  { href: "/dashboard/settings", label: "Settings", icon: GearIcon, shortcut: "S" },
 ];
 
 export default function DashboardLayout({
@@ -22,8 +23,28 @@ export default function DashboardLayout({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const match = NAV_ITEMS.find(
+        (item) => item.shortcut?.toLowerCase() === e.key.toLowerCase(),
+      );
+      if (match) {
+        e.preventDefault();
+        router.push(match.href);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
 
   return (
     <div className="flex h-full">
@@ -109,7 +130,22 @@ export default function DashboardLayout({
                       : "var(--gs-sidebar-text)",
                   }}
                 />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.shortcut && (
+                  <kbd
+                    className="hidden lg:inline-block rounded px-1.5 py-0.5 text-[10px] font-mono"
+                    style={{
+                      background: active
+                        ? "color-mix(in srgb, var(--gs-sidebar-text-active) 10%, transparent)"
+                        : "color-mix(in srgb, var(--gs-sidebar-text) 15%, transparent)",
+                      color: active
+                        ? "var(--gs-sidebar-text-active)"
+                        : "var(--gs-sidebar-text)",
+                    }}
+                  >
+                    {item.shortcut}
+                  </kbd>
+                )}
               </Link>
             );
           })}
