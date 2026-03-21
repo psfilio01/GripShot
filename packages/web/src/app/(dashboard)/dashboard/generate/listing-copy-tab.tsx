@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, type FormEvent, type ReactNode } from "react";
+import { useToast } from "@/components/toast";
 
 interface ProductOption {
   id: string;
@@ -233,10 +234,12 @@ export function ListingCopyTab() {
 
 function CopyButton({ text, label }: { text: string; label?: ReactNode }) {
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   function handleCopy() {
     navigator.clipboard.writeText(text);
     setCopied(true);
+    toast("Copied to clipboard", "success");
     setTimeout(() => setCopied(false), 1500);
   }
 

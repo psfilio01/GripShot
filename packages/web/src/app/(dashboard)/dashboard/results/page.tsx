@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ZoomableImage } from "@/components/zoomable-image";
+import { useToast } from "@/components/toast";
 
 interface JobImage {
   imageId: string;
@@ -27,6 +28,7 @@ export default function ResultsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const { toast } = useToast();
 
   function loadJobs() {
     fetch("/api/jobs")
@@ -52,9 +54,15 @@ export default function ResultsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageId, action }),
       });
-      if (res.ok) loadJobs();
+      if (res.ok) {
+        loadJobs();
+        toast(
+          action === "favorite" ? "Added to favorites" : "Image rejected",
+          action === "favorite" ? "success" : "info",
+        );
+      }
     } catch {
-      // silently fail
+      toast("Action failed", "error");
     }
   }
 
@@ -113,8 +121,8 @@ export default function ResultsPage() {
       a.click();
       a.remove();
       URL.revokeObjectURL(a.href);
+      toast("Image downloaded", "success");
     } catch {
-      // fall back to simple link
       window.open(url, "_blank");
     }
   }
@@ -146,8 +154,9 @@ export default function ResultsPage() {
       a.click();
       a.remove();
       URL.revokeObjectURL(a.href);
+      toast("ZIP downloaded", "success");
     } catch {
-      // silently fail
+      toast("Download failed", "error");
     } finally {
       setDownloading(false);
     }
