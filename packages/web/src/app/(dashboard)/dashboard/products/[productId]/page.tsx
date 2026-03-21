@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { useToast } from "@/components/toast";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const IMAGE_CATEGORIES = [
   { id: "primary", label: "Primary" },
@@ -64,6 +65,11 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [generatedJobs, setGeneratedJobs] = useState<GeneratedJob[]>([]);
   const [uploadCategory, setUploadCategory] = useState("primary");
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    action: () => void;
+  } | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,25 +132,31 @@ export default function ProductDetailPage() {
     }
   }
 
-  async function handleDelete(fileName: string) {
-    if (!confirm(`Delete ${fileName}?`)) return;
-    setDeleting(fileName);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/products/${productId}/images?name=${encodeURIComponent(fileName)}`,
-        { method: "DELETE" },
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Delete failed");
-      }
-      await loadImages();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
-    } finally {
-      setDeleting(null);
-    }
+  function handleDelete(fileName: string) {
+    setConfirmAction({
+      title: "Delete image",
+      message: `Are you sure you want to delete "${fileName}"? This cannot be undone.`,
+      action: async () => {
+        setDeleting(fileName);
+        setError(null);
+        try {
+          const res = await fetch(
+            `/api/products/${productId}/images?name=${encodeURIComponent(fileName)}`,
+            { method: "DELETE" },
+          );
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error ?? "Delete failed");
+          }
+          toast("Image deleted", "success");
+          await loadImages();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Delete failed");
+        } finally {
+          setDeleting(null);
+        }
+      },
+    });
   }
 
   async function handleCategoryChange(fileName: string, newCategory: string) {
@@ -199,20 +211,25 @@ export default function ProductDetailPage() {
     }
   }
 
-  async function handleDeleteProduct() {
-    if (!confirm(`Delete "${product?.name}"? This cannot be undone.`)) return;
-    try {
-      const res = await fetch(`/api/products/${productId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Delete failed");
-      }
-      router.push("/dashboard/products");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
-    }
+  function handleDeleteProduct() {
+    setConfirmAction({
+      title: "Delete product",
+      message: `Are you sure you want to delete "${product?.name}"? All data including reference images will be lost. This cannot be undone.`,
+      action: async () => {
+        try {
+          const res = await fetch(`/api/products/${productId}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error ?? "Delete failed");
+          }
+          router.push("/dashboard/products");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Delete failed");
+        }
+      },
+    });
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -556,6 +573,19 @@ export default function ProductDetailPage() {
         jobs={generatedJobs}
         productId={productId}
         productName={product.name}
+      />
+
+      <ConfirmDialog
+        open={!!confirmAction}
+        title={confirmAction?.title ?? ""}
+        message={confirmAction?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          confirmAction?.action();
+          setConfirmAction(null);
+        }}
+        onCancel={() => setConfirmAction(null)}
       />
     </div>
   );
