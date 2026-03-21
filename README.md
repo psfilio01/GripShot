@@ -40,6 +40,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Toast notification system | Done |
 | Skeleton loading states | Done |
 | Credit top-up purchases | Done |
+| Product image categorization | Done |
 
 ---
 
@@ -171,6 +172,8 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 ## Product reference images
 
 - Upload JPEG, PNG, or WebP reference images (max 10 MB each) via drag-and-drop or file picker
+- **Image categories**: primary, logo, packaging, angle, detail, other — assignable during upload or inline on each image
+- Category metadata stored in `.metadata.json` alongside images (backward compatible with uncategorized images)
 - Images are stored in `data/products/<productId>/reference/` — directly used by the workflow-core engine
 - Product cards link to a detail page showing product info and an image gallery
 - The image serving route supports both generated images (`data/generated/`) and product reference images (`data/products/`)

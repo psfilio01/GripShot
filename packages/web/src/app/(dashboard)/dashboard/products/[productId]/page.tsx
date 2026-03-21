@@ -4,6 +4,16 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ZoomableImage } from "@/components/zoomable-image";
+import { useToast } from "@/components/toast";
+
+const IMAGE_CATEGORIES = [
+  { id: "primary", label: "Primary" },
+  { id: "logo", label: "Logo" },
+  { id: "packaging", label: "Packaging" },
+  { id: "angle", label: "Angle" },
+  { id: "detail", label: "Detail" },
+  { id: "other", label: "Other" },
+];
 
 interface ProductData {
   id: string;
@@ -19,6 +29,7 @@ interface ImageData {
   url: string;
   size: number;
   updatedAt: string;
+  category: string;
 }
 
 interface GeneratedImage {
@@ -52,6 +63,8 @@ export default function ProductDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedJobs, setGeneratedJobs] = useState<GeneratedJob[]>([]);
+  const [uploadCategory, setUploadCategory] = useState("primary");
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProduct = useCallback(async () => {
@@ -93,6 +106,7 @@ export default function ProductDetailPage() {
       for (const file of Array.from(files)) {
         formData.append("files", file);
       }
+      formData.append("category", uploadCategory);
 
       const res = await fetch(`/api/products/${productId}/images`, {
         method: "POST",
@@ -130,6 +144,26 @@ export default function ProductDetailPage() {
       setError(err instanceof Error ? err.message : "Delete failed");
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function handleCategoryChange(fileName: string, newCategory: string) {
+    try {
+      const res = await fetch(`/api/products/${productId}/images`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fileName, category: newCategory }),
+      });
+      if (res.ok) {
+        setImages((prev) =>
+          prev.map((img) =>
+            img.name === fileName ? { ...img, category: newCategory } : img,
+          ),
+        );
+        toast("Category updated", "success");
+      }
+    } catch {
+      toast("Failed to update category", "error");
     }
   }
 
@@ -375,7 +409,24 @@ export default function ProductDetailPage() {
           </span>
         </div>
 
-        {/* Drop zone */}
+        {/* Upload category + drop zone */}
+        <div className="flex items-center gap-3 mb-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
+            Upload as:
+          </label>
+          <select
+            value={uploadCategory}
+            onChange={(e) => setUploadCategory(e.target.value)}
+            className="gs-input px-2 py-1 text-sm"
+          >
+            {IMAGE_CATEGORIES.map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+        </div>
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -444,8 +495,8 @@ export default function ProductDetailPage() {
                   className="aspect-square w-full object-cover"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition">
-                  <div className="flex items-end justify-between">
-                    <div>
+                  <div className="flex items-end justify-between gap-2">
+                    <div className="min-w-0">
                       <p className="truncate text-xs text-white">{img.name}</p>
                       <p className="text-xs text-white/70">
                         {formatSize(img.size)}
@@ -457,12 +508,33 @@ export default function ProductDetailPage() {
                         handleDelete(img.name);
                       }}
                       disabled={deleting === img.name}
-                      className="rounded p-1 text-white/80 hover:text-red-400 hover:bg-black/30 transition disabled:opacity-50"
+                      className="shrink-0 rounded p-1 text-white/80 hover:text-red-400 hover:bg-black/30 transition disabled:opacity-50"
                       title="Delete image"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
                   </div>
+                </div>
+                {/* Category badge */}
+                <div className="absolute top-2 left-2">
+                  <select
+                    value={img.category}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleCategoryChange(img.name, e.target.value);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded-full px-2 py-0.5 text-[10px] font-medium cursor-pointer border-0"
+                    style={{
+                      background: "rgba(0,0,0,0.55)",
+                      backdropFilter: "blur(4px)",
+                      color: "white",
+                    }}
+                  >
+                    {IMAGE_CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             ))}
