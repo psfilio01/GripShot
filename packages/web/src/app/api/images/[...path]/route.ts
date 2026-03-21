@@ -47,10 +47,15 @@ export async function GET(
   const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
 
   const buffer = await readFile(normalizedPath);
-  return new NextResponse(buffer, {
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=86400",
+  };
+
+  if (_req.nextUrl.searchParams.get("download") === "1") {
+    const fileName = segments[segments.length - 1] ?? "image";
+    headers["Content-Disposition"] = `attachment; filename="${fileName}"`;
+  }
+
+  return new NextResponse(buffer, { headers });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ZoomableImage } from "@/components/zoomable-image";
 
 interface JobImage {
@@ -18,11 +18,13 @@ interface Job {
   images: JobImage[];
 }
 
-type Filter = "all" | "neutral" | "favorite" | "rejected";
+type StatusFilter = "all" | "neutral" | "favorite" | "rejected";
 
 export default function ResultsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [productFilter, setProductFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   function loadJobs() {
@@ -55,20 +57,40 @@ export default function ResultsPage() {
     }
   }
 
-  const allImages = jobs.flatMap((j) =>
-    j.images.map((img) => ({
-      ...img,
-      productId: j.productId,
-      workflowType: j.workflowType,
-      jobId: j.jobId,
-      createdAt: j.createdAt,
-    })),
+  const allImages = useMemo(
+    () =>
+      jobs.flatMap((j) =>
+        j.images.map((img) => ({
+          ...img,
+          productId: j.productId,
+          workflowType: j.workflowType,
+          jobId: j.jobId,
+          createdAt: j.createdAt,
+        })),
+      ),
+    [jobs],
   );
 
-  const filteredImages =
-    filter === "all"
-      ? allImages
-      : allImages.filter((img) => img.status === filter);
+  const uniqueProducts = useMemo(
+    () => [...new Set(allImages.map((i) => i.productId))].sort(),
+    [allImages],
+  );
+
+  const uniqueTypes = useMemo(
+    () => [...new Set(allImages.map((i) => i.workflowType))].sort(),
+    [allImages],
+  );
+
+  const filteredImages = useMemo(() => {
+    let result = allImages;
+    if (statusFilter !== "all")
+      result = result.filter((img) => img.status === statusFilter);
+    if (productFilter !== "all")
+      result = result.filter((img) => img.productId === productFilter);
+    if (typeFilter !== "all")
+      result = result.filter((img) => img.workflowType === typeFilter);
+    return result;
+  }, [allImages, statusFilter, productFilter, typeFilter]);
 
   function imageUrl(filePath: string): string {
     const idx = filePath.indexOf("/generated/");
@@ -77,12 +99,37 @@ export default function ResultsPage() {
     return `/api/images/${relative}`;
   }
 
-  const FILTERS: { value: Filter; label: string }[] = [
+  async function handleDownload(filePath: string, imageId: string) {
+    const url = imageUrl(filePath);
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const ext = filePath.split(".").pop() ?? "png";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `grip-shot-${imageId.slice(0, 8)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      // fall back to simple link
+      window.open(url, "_blank");
+    }
+  }
+
+  const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
     { value: "all", label: "All" },
     { value: "neutral", label: "Neutral" },
     { value: "favorite", label: "Favorites" },
     { value: "rejected", label: "Rejected" },
   ];
+
+  const workflowLabel = (wt: string) =>
+    wt === "AMAZON_LIFESTYLE_SHOT" ? "Lifestyle" : "Product shot";
+
+  const hasFilters =
+    productFilter !== "all" || typeFilter !== "all" || statusFilter !== "all";
 
   return (
     <div className="space-y-6 gs-fade-in">
@@ -101,34 +148,81 @@ export default function ResultsPage() {
         <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
           {filteredImages.length} image
           {filteredImages.length !== 1 ? "s" : ""}
+          {hasFilters && ` of ${allImages.length}`}
         </p>
       </div>
 
+      {/* Status filter tabs */}
       <div
         className="flex gap-1 rounded-xl p-1"
         style={{ background: "var(--gs-surface-inset)" }}
       >
-        {FILTERS.map((f) => (
+        {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
-            onClick={() => setFilter(f.value)}
+            onClick={() => setStatusFilter(f.value)}
             className="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all"
             style={
-              filter === f.value
+              statusFilter === f.value
                 ? {
                     background: "var(--gs-surface)",
                     color: "var(--gs-text)",
                     boxShadow: "var(--gs-shadow-sm)",
                   }
-                : {
-                    color: "var(--gs-text-muted)",
-                  }
+                : { color: "var(--gs-text-muted)" }
             }
           >
             {f.label}
           </button>
         ))}
       </div>
+
+      {/* Product + type filters */}
+      {(uniqueProducts.length > 1 || uniqueTypes.length > 1) && (
+        <div className="flex flex-wrap gap-3">
+          {uniqueProducts.length > 1 && (
+            <select
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              className="gs-input px-3 py-1.5 text-sm"
+            >
+              <option value="all">All products</option>
+              {uniqueProducts.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          )}
+          {uniqueTypes.length > 1 && (
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="gs-input px-3 py-1.5 text-sm"
+            >
+              <option value="all">All types</option>
+              {uniqueTypes.map((t) => (
+                <option key={t} value={t}>
+                  {workflowLabel(t)}
+                </option>
+              ))}
+            </select>
+          )}
+          {hasFilters && (
+            <button
+              onClick={() => {
+                setStatusFilter("all");
+                setProductFilter("all");
+                setTypeFilter("all");
+              }}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg transition"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="py-12 text-center">
@@ -148,20 +242,35 @@ export default function ResultsPage() {
           }}
         >
           <p className="text-sm" style={{ color: "var(--gs-text-muted)" }}>
-            {filter === "all"
+            {!hasFilters
               ? "No images generated yet. Go to Generate to create your first."
-              : `No ${filter} images found.`}
+              : "No images match your filters."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredImages.map((img) => (
             <div key={img.imageId} className="gs-card group overflow-hidden">
-              <ZoomableImage
-                src={imageUrl(img.filePath)}
-                alt={`${img.productId} — ${img.imageId.slice(0, 6)}`}
-                className="aspect-[4/5] w-full object-cover"
-              />
+              <div className="relative">
+                <ZoomableImage
+                  src={imageUrl(img.filePath)}
+                  alt={`${img.productId} — ${img.imageId.slice(0, 6)}`}
+                  className="aspect-[4/5] w-full object-cover"
+                />
+                {/* Download button overlay */}
+                <button
+                  onClick={() => handleDownload(img.filePath, img.imageId)}
+                  title="Download image"
+                  className="absolute top-2 right-2 rounded-lg p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    background: "rgba(0,0,0,0.5)",
+                    backdropFilter: "blur(4px)",
+                    color: "white",
+                  }}
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                </button>
+              </div>
               <div className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span
@@ -172,10 +281,11 @@ export default function ResultsPage() {
                   </span>
                   <ImageStatusBadge status={img.status} />
                 </div>
-                <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
-                  {img.workflowType === "AMAZON_LIFESTYLE_SHOT"
-                    ? "Lifestyle"
-                    : "Product shot"}
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--gs-text-faint)" }}
+                >
+                  {workflowLabel(img.workflowType)}
                 </p>
                 {img.status === "neutral" && (
                   <div className="flex gap-2 pt-1">
@@ -211,6 +321,24 @@ export default function ResultsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+      />
+    </svg>
   );
 }
 
