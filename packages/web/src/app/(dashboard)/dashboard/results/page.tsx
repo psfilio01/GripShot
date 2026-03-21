@@ -26,6 +26,7 @@ export default function ResultsPage() {
   const [productFilter, setProductFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   function loadJobs() {
     fetch("/api/jobs")
@@ -118,6 +119,40 @@ export default function ResultsPage() {
     }
   }
 
+  async function handleBulkDownload() {
+    setDownloading(true);
+    try {
+      const body: Record<string, string> = {};
+      if (statusFilter !== "all") body.status = statusFilter;
+      if (productFilter !== "all") body.productId = productFilter;
+
+      const res = await fetch("/api/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) return;
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? "grip-shot-images.zip";
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      // silently fail
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
     { value: "all", label: "All" },
     { value: "neutral", label: "Neutral" },
@@ -145,11 +180,23 @@ export default function ResultsPage() {
             Browse, filter, and manage your generated images.
           </p>
         </div>
-        <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
-          {filteredImages.length} image
-          {filteredImages.length !== 1 ? "s" : ""}
-          {hasFilters && ` of ${allImages.length}`}
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+            {filteredImages.length} image
+            {filteredImages.length !== 1 ? "s" : ""}
+            {hasFilters && ` of ${allImages.length}`}
+          </p>
+          {filteredImages.length > 0 && (
+            <button
+              onClick={handleBulkDownload}
+              disabled={downloading}
+              className="gs-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
+            >
+              <DownloadIcon className="h-3.5 w-3.5" />
+              {downloading ? "Zipping…" : "Download ZIP"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Status filter tabs */}

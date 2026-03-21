@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fashionmentum/workflow-core": "workspace:*",
+    "archiver": "7.0.1",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.5",
     "firebase": "^11.4.0",
@@ -29,6 +30,7 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
+    "@types/archiver": "7.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
