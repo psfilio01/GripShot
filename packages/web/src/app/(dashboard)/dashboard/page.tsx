@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { DashboardSkeleton } from "@/components/skeleton";
 
 interface MeData {
   user: {
@@ -41,12 +42,16 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [recentGens, setRecentGens] = useState<RecentGeneration[]>([]);
   const [imageJobCount, setImageJobCount] = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : null))
-      .then(setMe)
-      .catch(() => {});
+      .then((data) => {
+        setMe(data);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
 
     fetch("/api/brands")
       .then((r) => (r.ok ? r.json() : null))
@@ -76,6 +81,8 @@ export default function DashboardPage() {
       })
       .catch(() => {});
   }, []);
+
+  if (!loaded) return <DashboardSkeleton />;
 
   const greeting = me?.user.displayName
     ? `Welcome back, ${me.user.displayName.split(" ")[0]}`

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { useToast } from "@/components/toast";
+import { ResultsSkeleton } from "@/components/skeleton";
 
 interface JobImage {
   imageId: string;
@@ -281,14 +282,7 @@ export default function ResultsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center">
-          <p
-            className="text-sm animate-pulse"
-            style={{ color: "var(--gs-text-faint)" }}
-          >
-            Loading results…
-          </p>
-        </div>
+        <ResultsSkeleton />
       ) : filteredImages.length === 0 ? (
         <div
           className="rounded-xl p-12 text-center"
