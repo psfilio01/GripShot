@@ -14,8 +14,14 @@ interface JobResult {
   images: JobImage[];
 }
 
-export function ImageGenerationTab() {
-  const [productId, setProductId] = useState("pilates-mini-ball");
+export function ImageGenerationTab({
+  prefillProductId,
+}: {
+  prefillProductId?: string;
+}) {
+  const [productId, setProductId] = useState(
+    prefillProductId ?? "pilates-mini-ball",
+  );
   const [workflowType, setWorkflowType] = useState<string>(
     "NEUTRAL_PRODUCT_SHOT",
   );

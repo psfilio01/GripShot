@@ -15,7 +15,11 @@ const MODULE_OPTIONS = [
   { id: "tech-specs", label: "Technical Specifications" },
 ];
 
-export function AplusContentTab() {
+export function AplusContentTab({
+  prefillProductId,
+}: {
+  prefillProductId?: string;
+}) {
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedModule, setSelectedModule] = useState("hero-banner");
@@ -34,7 +38,10 @@ export function AplusContentTab() {
       .then((d) => {
         if (d?.products) {
           setProducts(d.products);
-          if (d.products.length > 0) setSelectedProduct(d.products[0].id);
+          const match = prefillProductId
+            ? d.products.find((p: ProductOption) => p.id === prefillProductId)
+            : null;
+          setSelectedProduct(match?.id ?? d.products[0]?.id ?? "");
         }
       })
       .catch(() => {});

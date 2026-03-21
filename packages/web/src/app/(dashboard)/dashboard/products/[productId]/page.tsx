@@ -554,6 +554,7 @@ export default function ProductDetailPage() {
       {/* Generated Images */}
       <GeneratedImagesSection
         jobs={generatedJobs}
+        productId={productId}
         productName={product.name}
       />
     </div>
@@ -573,9 +574,11 @@ function workflowLabel(wt: string) {
 
 function GeneratedImagesSection({
   jobs,
+  productId,
   productName,
 }: {
   jobs: GeneratedJob[];
+  productId: string;
   productName: string;
 }) {
   const allImages = jobs.flatMap((j) =>
@@ -603,7 +606,7 @@ function GeneratedImagesSection({
             {allImages.length} image{allImages.length !== 1 ? "s" : ""}
           </span>
           <Link
-            href="/dashboard/generate"
+            href={`/dashboard/generate?productId=${encodeURIComponent(productId)}&tab=images`}
             className="gs-btn-primary px-3 py-1.5 text-xs"
           >
             Generate more

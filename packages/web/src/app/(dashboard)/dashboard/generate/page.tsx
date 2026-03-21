@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ListingCopyTab } from "./listing-copy-tab";
 import { ImageGenerationTab } from "./image-generation-tab";
 import { AplusContentTab } from "./aplus-content-tab";
@@ -9,7 +10,18 @@ const TABS = ["Listing copy", "A+ content", "Image generation"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function GeneratePage() {
-  const [tab, setTab] = useState<Tab>("Listing copy");
+  const searchParams = useSearchParams();
+  const prefillProductId = searchParams.get("productId") ?? undefined;
+  const prefillTab = searchParams.get("tab");
+
+  const initialTab: Tab =
+    prefillTab === "images"
+      ? "Image generation"
+      : prefillTab === "aplus"
+        ? "A+ content"
+        : "Listing copy";
+
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   return (
     <div className="space-y-6 gs-fade-in">
@@ -51,9 +63,15 @@ export default function GeneratePage() {
         ))}
       </div>
 
-      {tab === "Listing copy" && <ListingCopyTab />}
-      {tab === "A+ content" && <AplusContentTab />}
-      {tab === "Image generation" && <ImageGenerationTab />}
+      {tab === "Listing copy" && (
+        <ListingCopyTab prefillProductId={prefillProductId} />
+      )}
+      {tab === "A+ content" && (
+        <AplusContentTab prefillProductId={prefillProductId} />
+      )}
+      {tab === "Image generation" && (
+        <ImageGenerationTab prefillProductId={prefillProductId} />
+      )}
     </div>
   );
 }

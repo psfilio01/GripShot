@@ -21,7 +21,11 @@ interface HistoryItem {
   createdAt: { _seconds: number };
 }
 
-export function ListingCopyTab() {
+export function ListingCopyTab({
+  prefillProductId,
+}: {
+  prefillProductId?: string;
+}) {
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [keywords, setKeywords] = useState("");
@@ -46,7 +50,10 @@ export function ListingCopyTab() {
       .then((d) => {
         if (d?.products) {
           setProducts(d.products);
-          if (d.products.length > 0) setSelectedProduct(d.products[0].id);
+          const match = prefillProductId
+            ? d.products.find((p: ProductOption) => p.id === prefillProductId)
+            : null;
+          setSelectedProduct(match?.id ?? d.products[0]?.id ?? "");
         }
       })
       .catch(() => {});
