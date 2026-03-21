@@ -31,6 +31,14 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Dockerfile + Cloud Run readiness | Done |
 | Light/dark theme system | Done |
 | Results filtering + image download | Done |
+| Image generation controls (aspect ratio, resolution) | Done |
+| Product detail: generated image gallery | Done |
+| Bulk ZIP download for results | Done |
+| Listing copy per-section copy buttons | Done |
+| Dashboard recent activity feed | Done |
+| Keyboard navigation shortcuts | Done |
+| Toast notification system | Done |
+| Skeleton loading states | Done |
 
 ---
 
@@ -176,6 +184,48 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 - Quota automatically resets on each billing cycle via `invoice.payment_succeeded`
 - Generation routes check credits before running and consume one credit per successful generation
 - Settings page shows plan info, a usage bar, and upgrade/manage buttons
+
+---
+
+## Results dashboard
+
+- Filter by status (all, neutral, favorites, rejected), product, and workflow type
+- Download individual images via hover overlay button
+- Bulk download filtered results as ZIP via the "Download ZIP" button
+- Skeleton loading animation while results load
+- Toast notifications for downloads and feedback actions
+
+---
+
+## Image generation
+
+- Select product, workflow type (product shot or lifestyle), aspect ratio, and resolution from the UI
+- Aspect ratio options: 4:5 (Amazon main), 1:1, 3:4, 16:9, 9:16, 2:3, 3:2
+- Resolution options: 512px, 1K, 2K (default), 4K
+- Values passed through to the workflow-core engine and override runtime JSON defaults
+
+---
+
+## Keyboard shortcuts
+
+Press these keys anywhere in the dashboard (when no input is focused):
+
+| Key | Destination |
+|-----|-------------|
+| H | Overview |
+| P | Products |
+| G | Generate |
+| R | Results |
+| S | Settings |
+
+---
+
+## Theme system
+
+- Light and dark mode with a visible toggle on all pages
+- Token-based CSS custom properties (`--gs-*`) for consistent theming
+- Preference persists to `localStorage` and applies before hydration (no flash)
+- Both themes are independently designed — not just inverted colors
 
 ---
 
