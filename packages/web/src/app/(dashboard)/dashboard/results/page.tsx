@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { useToast } from "@/components/toast";
 import { EmptyState } from "@/components/empty-state";
@@ -30,6 +31,7 @@ export default function ResultsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [productNames, setProductNames] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   function loadJobs() {
@@ -44,6 +46,18 @@ export default function ResultsPage() {
 
   useEffect(() => {
     loadJobs();
+    fetch("/api/products")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.products) {
+          const map: Record<string, string> = {};
+          for (const p of d.products) {
+            map[p.id] = p.name;
+          }
+          setProductNames(map);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   async function handleFeedback(
@@ -247,7 +261,7 @@ export default function ResultsPage() {
               <option value="all">All products</option>
               {uniqueProducts.map((p) => (
                 <option key={p} value={p}>
-                  {p}
+                  {productNames[p] ?? p}
                 </option>
               ))}
             </select>
@@ -326,20 +340,30 @@ export default function ResultsPage() {
               </div>
               <div className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span
-                    className="text-xs font-medium"
+                  <Link
+                    href={`/dashboard/products/${encodeURIComponent(img.productId)}`}
+                    className="text-xs font-medium hover:underline"
                     style={{ color: "var(--gs-text-secondary)" }}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {img.productId}
-                  </span>
+                    {productNames[img.productId] ?? img.productId}
+                  </Link>
                   <ImageStatusBadge status={img.status} />
                 </div>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--gs-text-faint)" }}
-                >
-                  {workflowLabel(img.workflowType)}
-                </p>
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-xs"
+                    style={{ color: "var(--gs-text-faint)" }}
+                  >
+                    {workflowLabel(img.workflowType)}
+                  </span>
+                  <span
+                    className="text-[10px]"
+                    style={{ color: "var(--gs-text-faint)" }}
+                  >
+                    {formatRelativeTime(img.createdAt)}
+                  </span>
+                </div>
                 {img.status === "neutral" && (
                   <div className="flex gap-2 pt-1">
                     <button
@@ -424,4 +448,16 @@ function ImageStatusBadge({ status }: { status: string }) {
       {status}
     </span>
   );
+}
+
+function formatRelativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d`;
+  return new Date(iso).toLocaleDateString();
 }
