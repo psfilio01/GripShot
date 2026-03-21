@@ -21,6 +21,20 @@ interface ImageData {
   updatedAt: string;
 }
 
+interface GeneratedImage {
+  imageId: string;
+  status: string;
+  filePath: string;
+}
+
+interface GeneratedJob {
+  jobId: string;
+  workflowType: string;
+  status: string;
+  createdAt: string;
+  images: GeneratedImage[];
+}
+
 export default function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
   const router = useRouter();
@@ -37,6 +51,7 @@ export default function ProductDetailPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedJobs, setGeneratedJobs] = useState<GeneratedJob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProduct = useCallback(async () => {
@@ -56,10 +71,18 @@ export default function ProductDetailPage() {
     setImages(data.images ?? []);
   }, [productId]);
 
+  const loadGeneratedImages = useCallback(async () => {
+    const res = await fetch(`/api/jobs?productId=${encodeURIComponent(productId)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setGeneratedJobs(data.jobs ?? []);
+  }, [productId]);
+
   useEffect(() => {
     loadProduct();
     loadImages();
-  }, [loadProduct, loadImages]);
+    loadGeneratedImages();
+  }, [loadProduct, loadImages, loadGeneratedImages]);
 
   async function handleUpload(files: FileList | File[]) {
     setError(null);
@@ -455,7 +478,130 @@ export default function ProductDetailPage() {
           </p>
         )}
       </section>
+
+      {/* Generated Images */}
+      <GeneratedImagesSection
+        jobs={generatedJobs}
+        productName={product.name}
+      />
     </div>
+  );
+}
+
+function generatedImageUrl(filePath: string): string {
+  const idx = filePath.indexOf("/generated/");
+  if (idx === -1) return filePath;
+  const relative = filePath.substring(idx + "/generated/".length);
+  return `/api/images/${relative}`;
+}
+
+function workflowLabel(wt: string) {
+  return wt === "AMAZON_LIFESTYLE_SHOT" ? "Lifestyle" : "Product shot";
+}
+
+function GeneratedImagesSection({
+  jobs,
+  productName,
+}: {
+  jobs: GeneratedJob[];
+  productName: string;
+}) {
+  const allImages = jobs.flatMap((j) =>
+    j.images.map((img) => ({
+      ...img,
+      workflowType: j.workflowType,
+      createdAt: j.createdAt,
+    })),
+  );
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2
+          className="text-base font-semibold"
+          style={{ color: "var(--gs-text)" }}
+        >
+          Generated Images
+        </h2>
+        <div className="flex items-center gap-3">
+          <span
+            className="text-sm"
+            style={{ color: "var(--gs-text-faint)" }}
+          >
+            {allImages.length} image{allImages.length !== 1 ? "s" : ""}
+          </span>
+          <Link
+            href="/dashboard/generate"
+            className="gs-btn-primary px-3 py-1.5 text-xs"
+          >
+            Generate more
+          </Link>
+        </div>
+      </div>
+
+      {allImages.length === 0 ? (
+        <div
+          className="rounded-xl p-8 text-center"
+          style={{
+            border: "2px dashed var(--gs-border)",
+            background: "var(--gs-surface-inset)",
+          }}
+        >
+          <p
+            className="text-sm"
+            style={{ color: "var(--gs-text-muted)" }}
+          >
+            No images generated for {productName} yet.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {allImages.map((img) => (
+            <div
+              key={img.imageId}
+              className="gs-card group overflow-hidden"
+            >
+              <ZoomableImage
+                src={generatedImageUrl(img.filePath)}
+                alt={`Generated ${img.imageId.slice(0, 6)}`}
+                className="aspect-[4/5] w-full object-cover"
+              />
+              <div className="p-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-xs"
+                    style={{ color: "var(--gs-text-faint)" }}
+                  >
+                    {workflowLabel(img.workflowType)}
+                  </span>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-xs font-medium"
+                    style={
+                      img.status === "favorite"
+                        ? {
+                            background: "var(--gs-success-bg)",
+                            color: "var(--gs-success-text)",
+                          }
+                        : img.status === "rejected"
+                          ? {
+                              background: "var(--gs-error-bg)",
+                              color: "var(--gs-error-text)",
+                            }
+                          : {
+                              background: "var(--gs-surface-inset)",
+                              color: "var(--gs-text-muted)",
+                            }
+                    }
+                  >
+                    {img.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
