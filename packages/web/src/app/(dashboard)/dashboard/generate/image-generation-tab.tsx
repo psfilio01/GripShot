@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/toast";
+import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
 
 interface ProductOption {
   id: string;
@@ -134,10 +135,7 @@ export function ImageGenerationTab({
   }
 
   function imageUrl(filePath: string): string {
-    const dataRoot = filePath.indexOf("/generated/");
-    if (dataRoot === -1) return filePath;
-    const relative = filePath.substring(dataRoot + "/generated/".length);
-    return `/api/images/${encodeURIComponent(relative)}`;
+    return filePathToGeneratedImageUrl(filePath);
   }
 
   return (

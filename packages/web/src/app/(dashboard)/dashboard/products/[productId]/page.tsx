@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ZoomableImage } from "@/components/zoomable-image";
+import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
@@ -596,10 +597,7 @@ export default function ProductDetailPage() {
 }
 
 function generatedImageUrl(filePath: string): string {
-  const idx = filePath.indexOf("/generated/");
-  if (idx === -1) return filePath;
-  const relative = filePath.substring(idx + "/generated/".length);
-  return `/api/images/${relative}`;
+  return filePathToGeneratedImageUrl(filePath);
 }
 
 function workflowLabel(wt: string) {

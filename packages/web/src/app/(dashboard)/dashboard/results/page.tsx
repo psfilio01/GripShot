@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { ZoomableImage } from "@/components/zoomable-image";
+import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
 import { useToast } from "@/components/toast";
 import { EmptyState } from "@/components/empty-state";
 import { ResultsSkeleton } from "@/components/skeleton";
@@ -211,10 +212,7 @@ export default function ResultsPage() {
     : null;
 
   function imageUrl(filePath: string): string {
-    const idx = filePath.indexOf("/generated/");
-    if (idx === -1) return filePath;
-    const relative = filePath.substring(idx + "/generated/".length);
-    return `/api/images/${relative}`;
+    return filePathToGeneratedImageUrl(filePath);
   }
 
   async function handleDownload(filePath: string, imageId: string) {
