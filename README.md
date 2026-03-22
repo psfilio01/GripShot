@@ -50,6 +50,36 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Billing toast notifications | Done |
 | Product card quick actions | Done |
 | Results page image traceability | Done |
+| Hero Lock — color variant generation | Done |
+
+---
+
+## Hero Lock — Color Locked Variant Generation
+
+When an Amazon seller finds a generated image they love, they typically need the same creative in every product color. **Hero Lock** solves this:
+
+1. **Configure product colors** — On the product detail page, define colors with name, hex code, optional notes, and SKU.
+2. **Hero Lock an image** — In the results dashboard, click the Hero Lock button on any neutral image. This locks it as the master asset.
+3. **Automatic recolor generation** — The system extracts a structured "SceneLock" (image DNA) from the master, then generates same-scene variants for each configured color — keeping pose, composition, lighting, background, and styling identical. Only the product color changes.
+4. **Lineage tracking** — Every variant stores its parent master ID, target color, generation method, and status. The dashboard shows clear lineage: which image is the master and which are derived variants.
+
+### Technical approach
+
+- **Scene extraction** uses `gemini-2.5-flash` with structured JSON output (`responseMimeType: "application/json"` + JSON schema) to analyze the hero image and produce a typed `SceneLock` object containing scene description, subject, product placement, composition, camera, lighting, background, protected invariants, and detected product color.
+- **Recolor generation** uses the configured image model (e.g. `gemini-3.1-flash-image-preview`) to edit the master image with an invariant-focused recolor prompt. The prompt explicitly lists elements that must not change and specifies only the target color change.
+- **Fallback behavior**: If the model cannot guarantee pixel-perfect invariance (which generative models cannot), the SceneLock data serves as audit metadata and prompt guidance. The system builds the strongest reliability layer possible: invariant-focused prompts, structured scene analysis, validation, lineage tracking, and per-variant status tracking.
+- **Original color skip**: If a configured color matches the detected original color, it is automatically skipped to avoid duplicate generation.
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `packages/workflow-core/src/domain/sceneLock.ts` | SceneLock type + JSON schema + validator |
+| `packages/workflow-core/src/services/sceneExtractor.ts` | Gemini structured output extraction |
+| `packages/workflow-core/src/services/recolorGenerator.ts` | Gemini image editing for recolor |
+| `packages/workflow-core/src/services/heroLockOrchestrator.ts` | Full Hero Lock workflow orchestration |
+| `packages/web/src/lib/db/product-colors.ts` | Product color CRUD + Zod validation |
+| `packages/web/src/app/api/products/[productId]/colors/route.ts` | Colors REST API |
 
 ---
 

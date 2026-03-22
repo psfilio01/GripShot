@@ -1,15 +1,18 @@
 import { metadataStore } from "./metadataStore";
 import { moveImage } from "./resultStorage";
+import { executeHeroLock, type HeroLockResult } from "./heroLockOrchestrator";
 import type { FeedbackEvent } from "../types/api";
 import type { ImageVariant } from "../domain/imageVariant";
 
 interface HandleFeedbackInternalResult {
   updatedVariant: ImageVariant | null;
-  // Placeholder for future color variant job IDs.
   newJobIds: string[];
+  heroLockResult?: HeroLockResult;
 }
 
-export async function handleFeedbackInternal(event: FeedbackEvent): Promise<HandleFeedbackInternalResult> {
+export async function handleFeedbackInternal(
+  event: FeedbackEvent,
+): Promise<HandleFeedbackInternalResult> {
   const variant = await metadataStore.getVariantById(event.imageId);
   if (!variant) {
     return { updatedVariant: null, newJobIds: [] };
@@ -17,15 +20,15 @@ export async function handleFeedbackInternal(event: FeedbackEvent): Promise<Hand
 
   if (event.action === "favorite" || event.action === "reject") {
     const bucket = event.action === "favorite" ? "favorites" : "rejected";
-    // Map bucket name (folder) to variant status (domain enum).
-    const newStatus: ImageVariant["status"] = event.action === "favorite" ? "favorite" : "rejected";
+    const newStatus: ImageVariant["status"] =
+      event.action === "favorite" ? "favorite" : "rejected";
 
     const newPath = await moveImage(
       variant.filePath,
       bucket,
       variant.productId,
       variant.jobId,
-      variant.id
+      variant.id,
     );
 
     await metadataStore.updateVariantStatus(variant.id, newStatus);
@@ -34,17 +37,45 @@ export async function handleFeedbackInternal(event: FeedbackEvent): Promise<Hand
       updatedVariant: {
         ...variant,
         status: newStatus,
-        filePath: newPath
+        filePath: newPath,
       },
-      newJobIds: []
+      newJobIds: [],
     };
   }
 
-  if (event.action === "generate_all_colors") {
-    // For MVP we just acknowledge; variant generation will be added later.
+  if (event.action === "hero_lock") {
+    if (!event.targetColors || event.targetColors.length === 0) {
+      return {
+        updatedVariant: variant,
+        newJobIds: [],
+      };
+    }
+
+    const newPath = await moveImage(
+      variant.filePath,
+      "favorites",
+      variant.productId,
+      variant.jobId,
+      variant.id,
+    );
+
+    await metadataStore.updateVariantStatus(variant.id, "hero_lock");
+    const updatedVariant: ImageVariant = {
+      ...variant,
+      status: "hero_lock",
+      filePath: newPath,
+      heroLockId: variant.id,
+    };
+
+    const heroLockResult = await executeHeroLock(
+      { ...updatedVariant },
+      event.targetColors,
+    );
+
     return {
-      updatedVariant: variant,
-      newJobIds: []
+      updatedVariant,
+      newJobIds: [heroLockResult.variantJobId],
+      heroLockResult,
     };
   }
 

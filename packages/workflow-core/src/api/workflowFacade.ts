@@ -183,7 +183,9 @@ export async function getJob(jobId: string): Promise<GetJobResult> {
     imageId: v.id,
     status: v.status,
     filePath: v.filePath,
-    colorVariant: v.colorVariant ?? undefined
+    colorVariant: v.colorVariant ?? undefined,
+    heroLockId: v.heroLockId,
+    colorLineage: v.colorLineage,
   }));
 
   return {

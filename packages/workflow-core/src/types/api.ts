@@ -34,9 +34,16 @@ export interface StartImageJobResult {
 
 export interface GetJobResultImage {
   imageId: string;
-  status: "neutral" | "favorite" | "rejected" | "variant";
+  status: "neutral" | "favorite" | "rejected" | "variant" | "hero_lock";
   filePath: string;
   colorVariant?: string | null;
+  heroLockId?: string;
+  colorLineage?: {
+    parentVariantId: string;
+    targetColorName: string;
+    targetColorHex: string;
+    generationMethod: string;
+  };
 }
 
 export interface GetJobResult {
@@ -45,11 +52,19 @@ export interface GetJobResult {
   images: GetJobResultImage[];
 }
 
-export type FeedbackAction = "favorite" | "reject" | "generate_all_colors";
+export type FeedbackAction = "favorite" | "reject" | "hero_lock";
+
+export interface ProductColorDef {
+  id: string;
+  name: string;
+  hex: string;
+}
 
 export interface FeedbackEvent {
   imageId: string;
   action: FeedbackAction;
+  /** Required for hero_lock: the product colors to generate variants for. */
+  targetColors?: ProductColorDef[];
 }
 
 export interface HandleFeedbackResult {

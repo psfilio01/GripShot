@@ -569,6 +569,9 @@ export default function ProductDetailPage() {
         )}
       </section>
 
+      {/* Product Colors */}
+      <ProductColorsSection productId={productId} />
+
       {/* Generated Images */}
       <GeneratedImagesSection
         jobs={generatedJobs}
@@ -600,7 +603,314 @@ function generatedImageUrl(filePath: string): string {
 }
 
 function workflowLabel(wt: string) {
-  return wt === "AMAZON_LIFESTYLE_SHOT" ? "Lifestyle" : "Product shot";
+  if (wt === "AMAZON_LIFESTYLE_SHOT") return "Lifestyle";
+  if (wt === "HERO_LOCK_RECOLOR") return "Color variant";
+  return "Product shot";
+}
+
+/* ---------- Product Colors Section ---------- */
+
+interface ProductColor {
+  id: string;
+  name: string;
+  hex: string;
+  notes: string;
+  sku: string;
+}
+
+function ProductColorsSection({ productId }: { productId: string }) {
+  const [colors, setColors] = useState<ProductColor[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newColor, setNewColor] = useState({ name: "", hex: "#", notes: "", sku: "" });
+  const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ name: "", hex: "", notes: "", sku: "" });
+  const { toast } = useToast();
+
+  const loadColors = useCallback(async () => {
+    const res = await fetch(`/api/products/${productId}/colors`);
+    if (res.ok) {
+      const data = await res.json();
+      setColors(data.colors ?? []);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    loadColors();
+  }, [loadColors]);
+
+  const hexValid = /^#[0-9a-fA-F]{6}$/.test(newColor.hex);
+
+  async function addColor() {
+    if (!newColor.name.trim() || !hexValid) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/products/${productId}/colors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newColor),
+      });
+      if (res.ok) {
+        toast("Color added", "success");
+        setNewColor({ name: "", hex: "#", notes: "", sku: "" });
+        setShowAdd(false);
+        await loadColors();
+      } else {
+        const data = await res.json().catch(() => null);
+        toast(data?.error ?? "Failed to add color", "error");
+      }
+    } catch {
+      toast("Failed to add color", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editId) return;
+    const hexOk = /^#[0-9a-fA-F]{6}$/.test(editData.hex);
+    if (!editData.name.trim() || !hexOk) return;
+    try {
+      const res = await fetch(`/api/products/${productId}/colors`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editId, ...editData }),
+      });
+      if (res.ok) {
+        toast("Color updated", "success");
+        setEditId(null);
+        await loadColors();
+      }
+    } catch {
+      toast("Update failed", "error");
+    }
+  }
+
+  async function deleteColor(colorId: string) {
+    try {
+      const res = await fetch(
+        `/api/products/${productId}/colors?id=${encodeURIComponent(colorId)}`,
+        { method: "DELETE" },
+      );
+      if (res.ok) {
+        toast("Color deleted", "success");
+        setColors((prev) => prev.filter((c) => c.id !== colorId));
+      }
+    } catch {
+      toast("Delete failed", "error");
+    }
+  }
+
+  return (
+    <section className="space-y-4" id="colors">
+      <div className="flex items-center justify-between">
+        <h2
+          className="text-base font-semibold"
+          style={{ color: "var(--gs-text)" }}
+        >
+          Product Colors
+        </h2>
+        <div className="flex items-center gap-2">
+          <span className="text-sm" style={{ color: "var(--gs-text-faint)" }}>
+            {colors.length} color{colors.length !== 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="gs-btn-primary px-3 py-1.5 text-xs"
+          >
+            {showAdd ? "Cancel" : "+ Add color"}
+          </button>
+        </div>
+      </div>
+
+      <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+        Define colors for Hero Lock variant generation. Each color will produce a
+        same-scene variant when you Hero Lock an image.
+      </p>
+
+      {showAdd && (
+        <div
+          className="rounded-xl p-4 space-y-3"
+          style={{
+            background: "var(--gs-surface)",
+            border: "1px solid var(--gs-border)",
+          }}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: "var(--gs-text-secondary)" }}>
+                Color name *
+              </label>
+              <input
+                type="text"
+                value={newColor.name}
+                onChange={(e) => setNewColor((c) => ({ ...c, name: e.target.value }))}
+                placeholder="e.g. Navy Blue"
+                className="gs-input w-full px-3 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: "var(--gs-text-secondary)" }}>
+                Hex code *
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newColor.hex}
+                  onChange={(e) => setNewColor((c) => ({ ...c, hex: e.target.value }))}
+                  placeholder="#1A2B3C"
+                  className="gs-input flex-1 px-3 py-1.5 text-sm font-mono"
+                  maxLength={7}
+                />
+                <span
+                  className="h-8 w-8 rounded-lg border shrink-0"
+                  style={{
+                    backgroundColor: hexValid ? newColor.hex : "#ccc",
+                    borderColor: "var(--gs-border)",
+                  }}
+                />
+              </div>
+              {newColor.hex.length > 1 && !hexValid && (
+                <p className="text-[10px] mt-0.5" style={{ color: "var(--gs-error-text)" }}>
+                  Format: #RRGGBB
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: "var(--gs-text-secondary)" }}>
+                Notes
+              </label>
+              <input
+                type="text"
+                value={newColor.notes}
+                onChange={(e) => setNewColor((c) => ({ ...c, notes: e.target.value }))}
+                placeholder="Optional notes"
+                className="gs-input w-full px-3 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: "var(--gs-text-secondary)" }}>
+                SKU
+              </label>
+              <input
+                type="text"
+                value={newColor.sku}
+                onChange={(e) => setNewColor((c) => ({ ...c, sku: e.target.value }))}
+                placeholder="Optional SKU"
+                className="gs-input w-full px-3 py-1.5 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={addColor}
+              disabled={saving || !newColor.name.trim() || !hexValid}
+              className="gs-btn-primary px-4 py-1.5 text-sm"
+            >
+              {saving ? "Adding…" : "Add color"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {colors.length > 0 && (
+        <div className="grid gap-2">
+          {colors.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 transition"
+              style={{
+                background: "var(--gs-surface)",
+                border: "1px solid var(--gs-border)",
+              }}
+            >
+              <span
+                className="h-6 w-6 rounded-lg border shrink-0"
+                style={{
+                  backgroundColor: c.hex,
+                  borderColor: "var(--gs-border)",
+                }}
+              />
+              {editId === c.id ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editData.name}
+                    onChange={(e) => setEditData((d) => ({ ...d, name: e.target.value }))}
+                    className="gs-input px-2 py-1 text-sm w-28"
+                  />
+                  <input
+                    type="text"
+                    value={editData.hex}
+                    onChange={(e) => setEditData((d) => ({ ...d, hex: e.target.value }))}
+                    className="gs-input px-2 py-1 text-sm w-24 font-mono"
+                    maxLength={7}
+                  />
+                  <button onClick={saveEdit} className="text-xs font-medium" style={{ color: "var(--gs-accent-text)" }}>
+                    Save
+                  </button>
+                  <button onClick={() => setEditId(null)} className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium" style={{ color: "var(--gs-text)" }}>
+                      {c.name}
+                    </span>
+                    <span className="ml-2 text-xs font-mono" style={{ color: "var(--gs-text-faint)" }}>
+                      {c.hex}
+                    </span>
+                    {c.notes && (
+                      <span className="ml-2 text-xs" style={{ color: "var(--gs-text-muted)" }}>
+                        — {c.notes}
+                      </span>
+                    )}
+                    {c.sku && (
+                      <span className="ml-2 text-[10px] font-mono" style={{ color: "var(--gs-text-faint)" }}>
+                        SKU: {c.sku}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditId(c.id);
+                      setEditData({ name: c.name, hex: c.hex, notes: c.notes ?? "", sku: c.sku ?? "" });
+                    }}
+                    className="text-xs shrink-0"
+                    style={{ color: "var(--gs-text-muted)" }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteColor(c.id)}
+                    className="text-xs shrink-0"
+                    style={{ color: "var(--gs-error-text)" }}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {colors.length === 0 && !showAdd && (
+        <div
+          className="rounded-xl px-4 py-6 text-center"
+          style={{ background: "var(--gs-surface)", border: "1px solid var(--gs-border)" }}
+        >
+          <p className="text-sm" style={{ color: "var(--gs-text-faint)" }}>
+            No colors configured. Add colors to enable Hero Lock variant generation.
+          </p>
+        </div>
+      )}
+    </section>
+  );
 }
 
 function GeneratedImagesSection({

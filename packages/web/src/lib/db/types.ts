@@ -43,8 +43,17 @@ export interface ProductDoc {
   category: string;
   description: string;
   status: "draft" | "active" | "archived";
+  colors?: ProductColorEntry[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface ProductColorEntry {
+  id: string;
+  name: string;
+  hex: string;
+  notes?: string;
+  sku?: string;
 }
 
 /** Firestore: workspaces/{wid}/jobs/{jobId} */

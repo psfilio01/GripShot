@@ -80,6 +80,9 @@ export const metadataStore = {
     const v = store.variants.find((x) => x.id === variantId);
     if (v) {
       v.status = status;
+      if (status === "hero_lock") {
+        v.heroLockId = variantId;
+      }
       await saveStore(store);
     }
   },
