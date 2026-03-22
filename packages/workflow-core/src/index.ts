@@ -4,3 +4,4 @@ export { extractSceneLock } from "./services/sceneExtractor";
 export type { SceneLock } from "./domain/sceneLock";
 export type { HeroLockResult } from "./services/heroLockOrchestrator";
 export type { ProductColorDef } from "./types/api";
+export { resolveChosenModelId } from "./services/modelLoader";

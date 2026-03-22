@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: GridIcon, shortcut: "H" },
   { href: "/dashboard/onboarding", label: "Brand Setup", icon: SparkleIcon },
   { href: "/dashboard/products", label: "Products", icon: BoxIcon, shortcut: "P" },
+  { href: "/dashboard/human-models", label: "Models", icon: PersonIcon, shortcut: "M" },
   { href: "/dashboard/generate", label: "Generate", icon: WandIcon, shortcut: "G" },
   { href: "/dashboard/results", label: "Results", icon: ImageIcon, shortcut: "R" },
   { href: "/dashboard/settings", label: "Settings", icon: GearIcon, shortcut: "S" },
@@ -275,6 +276,25 @@ function BoxIcon({ className, style }: { className?: string; style?: React.CSSPr
         strokeLinecap="round"
         strokeLinejoin="round"
         d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"
+      />
+    </svg>
+  );
+}
+
+function PersonIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg
+      className={className}
+      style={style}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
       />
     </svg>
   );

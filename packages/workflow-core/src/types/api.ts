@@ -13,8 +13,14 @@ export interface SceneOptions {
 export interface StartImageJobInput {
   productId: string;
   workflowType: WorkflowType;
-  /** If not set, a random model from available references is chosen. */
+  /** If not set, a random model is chosen (see allowedModelIds). */
   modelId?: string;
+  /**
+   * When set, random model selection is restricted to this id list only.
+   * Empty array means no model reference images for lifestyle shots.
+   * When omitted, falls back to scanning the filesystem under data/models/.
+   */
+  allowedModelIds?: string[];
   /** Use the golden background reference image (AuréLéa). */
   useGoldenBackground?: boolean;
   /** Override defaults for outfit, barefoot, mat. Omitted = use AuréLéa defaults. */

@@ -49,3 +49,20 @@ export function pickRandomModelId(modelIds: string[]): string | undefined {
   if (modelIds.length === 0) return undefined;
   return modelIds[Math.floor(Math.random() * modelIds.length)];
 }
+
+/**
+ * Resolves which model id to use for lifestyle generation.
+ * - Explicit modelId wins when non-empty.
+ * - Otherwise if allowedPool is defined, pick randomly from that pool (may be empty).
+ * - Otherwise pick randomly from all models found on disk under data/models/.
+ */
+export function resolveChosenModelId(
+  explicitModelId: string | undefined,
+  allowedPool: string[] | undefined,
+  allFilesystemModelIds: string[],
+): string | undefined {
+  const trimmed = explicitModelId?.trim();
+  if (trimmed) return trimmed;
+  if (allowedPool !== undefined) return pickRandomModelId(allowedPool);
+  return pickRandomModelId(allFilesystemModelIds);
+}

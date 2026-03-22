@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useToast } from "@/components/toast";
 
 interface ProductOption {
   id: string;
   name: string;
+}
+
+interface HumanModelOption {
+  id: string;
+  displayName: string;
 }
 
 interface JobImage {
@@ -34,6 +40,9 @@ export function ImageGenerationTab({
   const [creativeFreedom, setCreativeFreedom] = useState(false);
   const [aspectRatio, setAspectRatio] = useState("4:5");
   const [resolution, setResolution] = useState("2K");
+  const [humanModels, setHumanModels] = useState<HumanModelOption[]>([]);
+  /** Empty string = random among workspace models */
+  const [humanModelId, setHumanModelId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<JobResult | null>(null);
@@ -62,10 +71,27 @@ export function ImageGenerationTab({
         if (prefs.defaultAspectRatio) setAspectRatio(prefs.defaultAspectRatio);
         if (prefs.defaultResolution) setResolution(prefs.defaultResolution);
         if (prefs.defaultWorkflowType) setWorkflowType(prefs.defaultWorkflowType);
+        if (prefs.defaultHumanModelId !== undefined && prefs.defaultHumanModelId !== null) {
+          setHumanModelId(prefs.defaultHumanModelId);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/human-models")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.models) setHumanModels(d.models);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!humanModelId || humanModels.length === 0) return;
+    if (!humanModels.some((m) => m.id === humanModelId)) {
+      setHumanModelId("");
+    }
+  }, [humanModels, humanModelId]);
 
   async function handleGenerate(e: FormEvent) {
     e.preventDefault();
@@ -84,6 +110,9 @@ export function ImageGenerationTab({
           creativeFreedom,
           aspectRatio,
           resolution,
+          ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && humanModelId.trim()
+            ? { modelId: humanModelId.trim() }
+            : {}),
         }),
       });
 
@@ -219,38 +248,89 @@ export function ImageGenerationTab({
         </div>
 
         {workflowType === "AMAZON_LIFESTYLE_SHOT" && (
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useGoldenBg}
-                onChange={(e) => setUseGoldenBg(e.target.checked)}
-                className="h-4 w-4 rounded"
-                style={{ accentColor: "var(--gs-accent)" }}
-              />
-              <span
-                className="text-sm"
+          <div className="space-y-4">
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
                 style={{ color: "var(--gs-text-secondary)" }}
               >
-                Golden background
-              </span>
-            </label>
+                Human model
+              </label>
+              <select
+                value={humanModelId}
+                onChange={(e) => setHumanModelId(e.target.value)}
+                className="gs-input block w-full max-w-md px-3 py-2 text-sm"
+              >
+                <option value="">
+                  Random (from your workspace models)
+                </option>
+                {humanModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                {humanModels.length === 0 ? (
+                  <>
+                    No models yet —{" "}
+                    <Link
+                      href="/dashboard/human-models"
+                      className="font-medium underline"
+                      style={{ color: "var(--gs-accent-text)" }}
+                    >
+                      add reference photos
+                    </Link>{" "}
+                    for lifestyle shots with a consistent face/body.
+                  </>
+                ) : (
+                  <>
+                    Manage models in{" "}
+                    <Link
+                      href="/dashboard/human-models"
+                      className="font-medium underline"
+                      style={{ color: "var(--gs-accent-text)" }}
+                    >
+                      Models
+                    </Link>
+                    .
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useGoldenBg}
+                  onChange={(e) => setUseGoldenBg(e.target.checked)}
+                  className="h-4 w-4 rounded"
+                  style={{ accentColor: "var(--gs-accent)" }}
+                />
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--gs-text-secondary)" }}
+                >
+                  Golden background
+                </span>
+              </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={creativeFreedom}
-                onChange={(e) => setCreativeFreedom(e.target.checked)}
-                className="h-4 w-4 rounded"
-                style={{ accentColor: "var(--gs-accent)" }}
-              />
-              <span
-                className="text-sm"
-                style={{ color: "var(--gs-text-secondary)" }}
-              >
-                Creative freedom
-              </span>
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={creativeFreedom}
+                  onChange={(e) => setCreativeFreedom(e.target.checked)}
+                  className="h-4 w-4 rounded"
+                  style={{ accentColor: "var(--gs-accent)" }}
+                />
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--gs-text-secondary)" }}
+                >
+                  Creative freedom
+                </span>
+              </label>
+            </div>
           </div>
         )}
 
@@ -285,6 +365,7 @@ export function ImageGenerationTab({
                     defaultAspectRatio: aspectRatio,
                     defaultResolution: resolution,
                     defaultWorkflowType: workflowType,
+                    defaultHumanModelId: humanModelId,
                   }),
                 });
                 toast("Defaults saved", "success");

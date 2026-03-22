@@ -20,6 +20,7 @@ export interface WorkspaceDoc {
   quotaLimit: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  defaultHumanModelId?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -32,6 +33,14 @@ export interface BrandDoc {
   targetAudience: string;
   productCategory: string;
   tone: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/** Firestore: workspaces/{wid}/humanModels/{modelId} */
+export interface HumanModelDoc {
+  displayName: string;
+  notes: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

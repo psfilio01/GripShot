@@ -5,6 +5,8 @@ export interface GenerationPreferences {
   defaultAspectRatio?: string;
   defaultResolution?: string;
   defaultWorkflowType?: string;
+  /** Human model id; empty string = random among workspace models */
+  defaultHumanModelId?: string;
 }
 
 export async function getPreferences(
@@ -20,6 +22,7 @@ export async function getPreferences(
     defaultAspectRatio: data?.defaultAspectRatio,
     defaultResolution: data?.defaultResolution,
     defaultWorkflowType: data?.defaultWorkflowType,
+    defaultHumanModelId: data?.defaultHumanModelId,
   };
 }
 
@@ -39,6 +42,9 @@ export async function updatePreferences(
   }
   if (prefs.defaultWorkflowType !== undefined) {
     update.defaultWorkflowType = prefs.defaultWorkflowType;
+  }
+  if (prefs.defaultHumanModelId !== undefined) {
+    update.defaultHumanModelId = prefs.defaultHumanModelId;
   }
 
   await getDb().collection("workspaces").doc(workspaceId).update(update);

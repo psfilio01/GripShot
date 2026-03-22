@@ -51,6 +51,13 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Product card quick actions | Done |
 | Results page image traceability | Done |
 | Hero Lock — color variant generation | Done |
+| Human models setup + lifestyle model picker | Done |
+
+---
+
+## Human models (lifestyle shots)
+
+Create **Models** in the dashboard with a display name and optional notes. Upload **reference photos** to `data/models/{modelId}/reference/`. For **Amazon lifestyle** generation, choose a specific model or **Random** to pick from your workspace’s models only (never another tenant’s folders). Workspace model IDs are stored in Firestore (`humanModels`); the API validates `modelId` before each job.
 
 ---
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
+import { listHumanModelIds } from "@/lib/db/human-models";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -21,6 +22,8 @@ const RequestSchema = z.object({
   creativeFreedom: z.boolean().default(false),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
   resolution: z.enum(RESOLUTIONS).optional(),
+  /** Human model id from workspace; omit or empty for random among workspace models. */
+  modelId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -45,6 +48,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const input = RequestSchema.parse(body);
 
+    const allowedModelIds = await listHumanModelIds(session.user.workspaceId);
+    const trimmedModelId = input.modelId?.trim();
+    if (trimmedModelId && !allowedModelIds.includes(trimmedModelId)) {
+      return NextResponse.json(
+        { error: "Selected model is not in your workspace." },
+        { status: 400 },
+      );
+    }
+
     const { startImageJob, getJob } = await import(
       "@fashionmentum/workflow-core"
     );
@@ -56,6 +68,8 @@ export async function POST(req: NextRequest) {
       creativeFreedom: input.creativeFreedom,
       aspectRatio: input.aspectRatio,
       resolution: input.resolution,
+      modelId: trimmedModelId || undefined,
+      allowedModelIds,
     });
 
     const job = await getJob(jobId);

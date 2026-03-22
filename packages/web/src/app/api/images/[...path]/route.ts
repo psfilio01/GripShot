@@ -14,7 +14,7 @@ const MIME_TYPES: Record<string, string> = {
   ".gif": "image/gif",
 };
 
-const ALLOWED_ROOTS = ["generated", "products"];
+const ALLOWED_ROOTS = ["generated", "products", "models"];
 
 function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");

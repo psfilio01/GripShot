@@ -17,6 +17,7 @@ const UpdateSchema = z.object({
   defaultAspectRatio: z.string().optional(),
   defaultResolution: z.string().optional(),
   defaultWorkflowType: z.string().optional(),
+  defaultHumanModelId: z.string().optional(),
 });
 
 export async function PUT(req: NextRequest) {

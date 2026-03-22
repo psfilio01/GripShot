@@ -12,7 +12,11 @@ import { buildProductFromId } from "../domain/product";
 import { loadReferenceImages } from "../services/referenceImageLoader";
 import { loadBrandRules } from "../services/brandRuleLoader";
 import { loadBrandDna } from "../services/brandDnaLoader";
-import { listModels, loadModelReferences, pickRandomModelId } from "../services/modelLoader";
+import {
+  listModels,
+  loadModelReferences,
+  resolveChosenModelId,
+} from "../services/modelLoader";
 import { loadGoldenBackground } from "../services/backgroundLoader";
 import { loadRuntimeInput } from "../services/runtimeInputLoader";
 import { loadGlobalHardRules, loadProductHardRules } from "../services/hardRulesLoader";
@@ -86,8 +90,12 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       const useGoldenBackground = input.useGoldenBackground === true;
       const goldenBg = useGoldenBackground ? await loadGoldenBackground(dataRoot) : null;
 
-      const modelIds = await listModels(dataRoot);
-      const chosenModelId = input.modelId ?? pickRandomModelId(modelIds);
+      const filesystemModelIds = await listModels(dataRoot);
+      const chosenModelId = resolveChosenModelId(
+        input.modelId,
+        input.allowedModelIds,
+        filesystemModelIds,
+      );
       const modelRefs = chosenModelId ? await loadModelReferences(dataRoot, chosenModelId) : [];
 
       const maxProductRefs = 3;
