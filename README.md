@@ -237,6 +237,11 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 - Images are stored in `data/products/<productId>/reference/` — directly used by the workflow-core engine
 - Product cards link to a detail page showing product info and an image gallery
 - The image serving route supports both generated images (`data/generated/`) and product reference images (`data/products/`)
+- **Duplicate product folder names:** URLs use the Firestore product id (e.g. `pilates-mini-ball`). If older runs wrote files under a human-readable folder (e.g. `Pilates Mini Ball`), the API still resolves images by scanning `data/generated/*/<jobId>/...`. To clean disk and metadata, merge into the canonical id folder:
+
+  `pnpm merge-product-folders "Pilates Mini Ball" pilates-mini-ball`
+
+  (Optional third arg: absolute path to `data/` if not repo `data/`.)
 
 ---
 

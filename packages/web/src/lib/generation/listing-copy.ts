@@ -71,19 +71,54 @@ Requirements:
 export function parseListingCopyResponse(raw: string): ListingCopyResult {
   let text = raw.trim();
 
-  // Strip markdown code fences (```json ... ``` or ``` ... ```)
-  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
-  if (fenceMatch) {
-    text = fenceMatch[1].trim();
+  // Strip markdown code fences — handle both closed and unclosed fences
+  const closedFence = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (closedFence) {
+    text = closedFence[1].trim();
+  } else {
+    const openFence = text.match(/```(?:json)?\s*\n?([\s\S]+)/);
+    if (openFence) {
+      text = openFence[1].trim();
+    }
   }
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    console.error("No JSON found in Gemini response. Raw:", raw.slice(0, 500));
+    console.error("No JSON found in Gemini response. Raw:", raw.slice(0, 1000));
     throw new Error("No JSON found in response");
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  let jsonStr = jsonMatch[0];
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    // Attempt to repair truncated JSON: close open strings, arrays, objects
+    let repaired = jsonStr;
+    const openBraces = (repaired.match(/\{/g) ?? []).length;
+    const closeBraces = (repaired.match(/\}/g) ?? []).length;
+    const openBrackets = (repaired.match(/\[/g) ?? []).length;
+    const closeBrackets = (repaired.match(/\]/g) ?? []).length;
+
+    // Close an unterminated string value
+    const trailingQuotes = (repaired.match(/"/g) ?? []).length;
+    if (trailingQuotes % 2 !== 0) {
+      repaired += '"';
+    }
+    for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
+    for (let i = 0; i < openBraces - closeBraces; i++) repaired += "}";
+
+    try {
+      parsed = JSON.parse(repaired);
+    } catch {
+      console.error(
+        "JSON repair failed. Raw (first 1500):",
+        raw.slice(0, 1500),
+      );
+      throw new Error("Could not parse Gemini response as JSON");
+    }
+  }
 
   if (!parsed.title || !Array.isArray(parsed.bulletPoints) || !parsed.description) {
     throw new Error("Response missing required fields");

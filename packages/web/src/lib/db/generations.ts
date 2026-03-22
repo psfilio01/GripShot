@@ -35,21 +35,35 @@ export async function listGenerations(
   type?: "listing-copy" | "aplus",
   limit = 20,
 ): Promise<GenerationRecord[]> {
-  let query = getDb()
+  const base = getDb()
     .collection("workspaces")
     .doc(workspaceId)
-    .collection("generations")
-    .orderBy("createdAt", "desc")
-    .limit(limit) as FirebaseFirestore.Query;
+    .collection("generations");
 
-  if (type) {
-    query = query.where("type", "==", type);
+  let query: FirebaseFirestore.Query = type
+    ? base.where("type", "==", type).orderBy("createdAt", "desc").limit(limit)
+    : base.orderBy("createdAt", "desc").limit(limit);
+
+  try {
+    const snap = await query.get();
+    return snap.docs.map(
+      (d) => ({ id: d.id, ...d.data() }) as GenerationRecord,
+    );
+  } catch (err: unknown) {
+    const code = (err as { code?: number }).code;
+    if (code === 9 && type) {
+      console.warn(
+        "Composite index missing for generations (type + createdAt). " +
+          "Falling back to unfiltered query. Create the index via the link in the error above.",
+      );
+      const fallback = await base.orderBy("createdAt", "desc").limit(limit * 2).get();
+      return fallback.docs
+        .map((d) => ({ id: d.id, ...d.data() }) as GenerationRecord)
+        .filter((r) => r.type === type)
+        .slice(0, limit);
+    }
+    throw err;
   }
-
-  const snap = await query.get();
-  return snap.docs.map(
-    (d) => ({ id: d.id, ...d.data() }) as GenerationRecord,
-  );
 }
 
 export async function getGeneration(

@@ -2,6 +2,8 @@
 .env.local
 data/generated/
 data/metadata.json
+data/models/
+data/products/
 node_modules/
 dist/
 .next/

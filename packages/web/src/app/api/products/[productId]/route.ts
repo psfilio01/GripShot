@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const UpdateProductSchema = z.object({
   name: z.string().min(1).max(200).optional(),
+  brandId: z.string().min(1).max(200).optional(),
   category: z.string().max(200).optional(),
   description: z.string().max(2000).optional(),
   status: z.enum(["draft", "active", "archived"]).optional(),

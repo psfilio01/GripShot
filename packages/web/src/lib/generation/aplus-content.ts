@@ -160,14 +160,38 @@ export function buildAplusPrompt(input: AplusGenerationInput): string {
 
 export function parseAplusResponse(raw: string): Record<string, unknown> {
   let cleaned = raw.trim();
-  const fenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
-  if (fenceMatch) {
-    cleaned = fenceMatch[1].trim();
+
+  const closedFence = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (closedFence) {
+    cleaned = closedFence[1].trim();
+  } else {
+    const openFence = cleaned.match(/```(?:json)?\s*\n?([\s\S]+)/);
+    if (openFence) {
+      cleaned = openFence[1].trim();
+    }
+  }
+
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
   }
 
   try {
     return JSON.parse(cleaned);
   } catch {
-    throw new Error(`Failed to parse A+ content response as JSON. Raw: ${raw.slice(0, 200)}`);
+    // Attempt to repair truncated JSON
+    let repaired = cleaned;
+    const trailingQuotes = (repaired.match(/"/g) ?? []).length;
+    if (trailingQuotes % 2 !== 0) repaired += '"';
+    const openBrackets = (repaired.match(/\[/g) ?? []).length - (repaired.match(/\]/g) ?? []).length;
+    for (let i = 0; i < openBrackets; i++) repaired += "]";
+    const openBraces = (repaired.match(/\{/g) ?? []).length - (repaired.match(/\}/g) ?? []).length;
+    for (let i = 0; i < openBraces; i++) repaired += "}";
+
+    try {
+      return JSON.parse(repaired);
+    } catch {
+      throw new Error(`Failed to parse A+ content response as JSON. Raw: ${raw.slice(0, 500)}`);
+    }
   }
 }

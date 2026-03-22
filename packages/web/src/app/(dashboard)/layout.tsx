@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: GridIcon, shortcut: "H" },
-  { href: "/dashboard/onboarding", label: "Brand Setup", icon: SparkleIcon },
+  { href: "/dashboard/brands", label: "Brands", icon: SparkleIcon, shortcut: "B" },
   { href: "/dashboard/products", label: "Products", icon: BoxIcon, shortcut: "P" },
   { href: "/dashboard/human-models", label: "Models", icon: PersonIcon, shortcut: "M" },
   { href: "/dashboard/generate", label: "Generate", icon: WandIcon, shortcut: "G" },

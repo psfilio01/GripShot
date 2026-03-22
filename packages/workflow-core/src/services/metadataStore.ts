@@ -75,11 +75,18 @@ export const metadataStore = {
     await saveStore(store);
   },
 
-  async updateVariantStatus(variantId: string, status: ImageVariant["status"]): Promise<void> {
+  async updateVariantStatus(
+    variantId: string,
+    status: ImageVariant["status"],
+    newFilePath?: string,
+  ): Promise<void> {
     const store = await loadStore();
     const v = store.variants.find((x) => x.id === variantId);
     if (v) {
       v.status = status;
+      if (newFilePath) {
+        v.filePath = newFilePath;
+      }
       if (status === "hero_lock") {
         v.heroLockId = variantId;
       }

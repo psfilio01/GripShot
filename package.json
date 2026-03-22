@@ -14,7 +14,8 @@
     "build:core": "pnpm -C packages/workflow-core build",
     "build:web": "pnpm -C packages/web build",
     "test:web": "pnpm -C packages/web test",
-    "test:e2e": "pnpm -C packages/web test:e2e"
+    "test:e2e": "pnpm -C packages/web test:e2e",
+    "merge-product-folders": "node scripts/merge-product-data-folders.mjs"
   },
   "devDependencies": {
     "ts-node": "^10.9.2"

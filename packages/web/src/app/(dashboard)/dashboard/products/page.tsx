@@ -22,6 +22,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [brandFilter, setBrandFilter] = useState<string>("all");
 
   useEffect(() => {
     loadProducts();
@@ -42,6 +43,15 @@ export default function ProductsPage() {
       .catch(() => {});
   }
 
+  const brandMap = Object.fromEntries(brands.map((b) => [b.id, b.name]));
+
+  const filteredProducts =
+    brandFilter === "all"
+      ? products
+      : products.filter((p) => p.brandId === brandFilter);
+
+  const hasFilter = brandFilter !== "all";
+
   return (
     <div className="space-y-6 gs-fade-in">
       <div className="flex items-center justify-between">
@@ -56,23 +66,57 @@ export default function ProductsPage() {
             Manage your products and their reference images.
           </p>
         </div>
-        {brands.length > 0 && (
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className={showForm ? "gs-btn-secondary px-4 py-2 text-sm" : "gs-btn-primary px-4 py-2 text-sm"}
-          >
-            {showForm ? "Cancel" : "+ New product"}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {hasFilter && (
+            <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+              {filteredProducts.length} of {products.length}
+            </p>
+          )}
+          {brands.length > 0 && (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className={showForm ? "gs-btn-secondary px-4 py-2 text-sm" : "gs-btn-primary px-4 py-2 text-sm"}
+            >
+              {showForm ? "Cancel" : "+ New product"}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Brand filter */}
+      {brands.length > 1 && products.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={brandFilter}
+            onChange={(e) => setBrandFilter(e.target.value)}
+            className="gs-input px-3 py-1.5 text-sm"
+          >
+            <option value="all">All brands</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+          {hasFilter && (
+            <button
+              onClick={() => setBrandFilter("all")}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg transition"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              Clear filter
+            </button>
+          )}
+        </div>
+      )}
 
       {brands.length === 0 && (
         <EmptyState
           icon="🏷️"
           title="Create a brand first"
-          description="Before adding products, you need at least one brand. Head to the onboarding flow to get started."
-          actionLabel="Set up brand"
-          actionHref="/dashboard/onboarding"
+          description="Before adding products, you need at least one brand. Create one on the Brands page."
+          actionLabel="Create brand"
+          actionHref="/dashboard/brands"
         />
       )}
 
@@ -86,22 +130,30 @@ export default function ProductsPage() {
         />
       )}
 
-      {products.length > 0 ? (
+      {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {filteredProducts.map((p) => (
+            <ProductCard key={p.id} product={p} brandName={brandMap[p.brandId]} />
           ))}
         </div>
       ) : (
         brands.length > 0 &&
         !showForm && (
-          <EmptyState
-            icon="📦"
-            title="No products yet"
-            description="Add your first product to start generating images and listing copy. Upload reference photos and let AI do the rest."
-            actionLabel="+ New product"
-            onAction={() => setShowForm(true)}
-          />
+          hasFilter ? (
+            <EmptyState
+              icon="🔍"
+              title="No products match this brand"
+              description="Try selecting a different brand or clear the filter."
+            />
+          ) : (
+            <EmptyState
+              icon="📦"
+              title="No products yet"
+              description="Add your first product to start generating images and listing copy. Upload reference photos and let AI do the rest."
+              actionLabel="+ New product"
+              onAction={() => setShowForm(true)}
+            />
+          )
         )
       )}
     </div>
@@ -252,7 +304,7 @@ function CreateProductForm({
   );
 }
 
-function ProductCard({ product }: { product: ProductData }) {
+function ProductCard({ product, brandName }: { product: ProductData; brandName?: string }) {
   return (
     <div className="gs-card group relative p-5 space-y-3">
       <Link href={`/dashboard/products/${product.id}`} className="absolute inset-0" />
@@ -265,6 +317,11 @@ function ProductCard({ product }: { product: ProductData }) {
         </h3>
         <StatusBadge status={product.status} />
       </div>
+      {brandName && (
+        <p className="text-xs font-medium" style={{ color: "var(--gs-accent-text)" }}>
+          {brandName}
+        </p>
+      )}
       {product.category && (
         <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
           {product.category}

@@ -18,6 +18,11 @@ const IMAGE_CATEGORIES = [
   { id: "other", label: "Other" },
 ];
 
+interface BrandOption {
+  id: string;
+  name: string;
+}
+
 interface ProductData {
   id: string;
   name: string;
@@ -53,6 +58,7 @@ export default function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
   const router = useRouter();
   const [product, setProduct] = useState<ProductData | null>(null);
+  const [brands, setBrands] = useState<BrandOption[]>([]);
   const [images, setImages] = useState<ImageData[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -62,6 +68,7 @@ export default function ProductDetailPage() {
     name: "",
     category: "",
     description: "",
+    brandId: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +110,12 @@ export default function ProductDetailPage() {
     loadProduct();
     loadImages();
     loadGeneratedImages();
+    fetch("/api/brands")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.brands) setBrands(d.brands);
+      })
+      .catch(() => {});
   }, [loadProduct, loadImages, loadGeneratedImages]);
 
   async function handleUpload(files: FileList | File[]) {
@@ -187,6 +200,7 @@ export default function ProductDetailPage() {
       name: product.name,
       category: product.category,
       description: product.description,
+      brandId: product.brandId,
     });
     setEditing(true);
   }
@@ -282,21 +296,50 @@ export default function ProductDetailPage() {
       <section className="gs-card-static p-6">
         {editing ? (
           <div className="space-y-4">
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: "var(--gs-text-secondary)" }}
-              >
-                Name
-              </label>
-              <input
-                type="text"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, name: e.target.value }))
-                }
-                className="gs-input block w-full px-3 py-2 text-sm"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--gs-text-secondary)" }}
+                >
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  className="gs-input block w-full px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--gs-text-secondary)" }}
+                >
+                  Brand
+                </label>
+                <select
+                  value={editForm.brandId}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, brandId: e.target.value }))
+                  }
+                  className="gs-input block w-full px-3 py-2 text-sm"
+                >
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                  {!brands.find((b) => b.id === editForm.brandId) &&
+                    editForm.brandId && (
+                      <option value={editForm.brandId}>
+                        {editForm.brandId} (unknown)
+                      </option>
+                    )}
+                </select>
+              </div>
             </div>
             <div>
               <label
@@ -356,14 +399,30 @@ export default function ProductDetailPage() {
                 >
                   {product.name}
                 </h1>
-                {product.category && (
-                  <p
-                    className="mt-1 text-sm"
-                    style={{ color: "var(--gs-text-faint)" }}
-                  >
-                    {product.category}
-                  </p>
-                )}
+                <div className="mt-1 flex items-center gap-3 flex-wrap">
+                  {(() => {
+                    const brandName = brands.find(
+                      (b) => b.id === product.brandId,
+                    )?.name;
+                    return brandName ? (
+                      <Link
+                        href={`/dashboard/brands/${encodeURIComponent(product.brandId)}`}
+                        className="text-sm font-medium hover:underline"
+                        style={{ color: "var(--gs-accent-text)" }}
+                      >
+                        {brandName}
+                      </Link>
+                    ) : null;
+                  })()}
+                  {product.category && (
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--gs-text-faint)" }}
+                    >
+                      {product.category}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <span

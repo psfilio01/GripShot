@@ -338,7 +338,7 @@ export default function DashboardPage() {
             Set up your brand to start generating Amazon-ready images and copy.
           </p>
           <Link
-            href="/dashboard/onboarding"
+            href="/dashboard/brands"
             className="gs-btn-primary mt-5 inline-block px-6 py-2.5 text-sm"
           >
             Set up your brand
@@ -354,7 +354,7 @@ export default function DashboardPage() {
               Your brands
             </h2>
             <Link
-              href="/dashboard/onboarding"
+              href="/dashboard/brands"
               className="text-sm font-medium transition"
               style={{ color: "var(--gs-accent-text)" }}
             >
@@ -363,9 +363,10 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-2">
             {brands.map((b) => (
-              <div
+              <Link
                 key={b.id}
-                className="flex items-center justify-between rounded-lg px-4 py-3 transition-colors"
+                href={`/dashboard/brands/${encodeURIComponent(b.id)}`}
+                className="flex items-center justify-between rounded-lg px-4 py-3 transition-colors hover:opacity-90"
                 style={{
                   border: "1px solid var(--gs-border-subtle)",
                   background: "var(--gs-surface-inset)",
@@ -388,15 +389,12 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <span
-                  className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  style={{
-                    background: "var(--gs-success-bg)",
-                    color: "var(--gs-success-text)",
-                  }}
+                  className="text-xs font-medium"
+                  style={{ color: "var(--gs-accent-text)" }}
                 >
-                  Active
+                  Manage →
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

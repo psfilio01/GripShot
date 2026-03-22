@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync, readdirSync } from "fs";
 import { join, extname, resolve, sep } from "path";
 import { config } from "dotenv";
 
@@ -48,6 +48,65 @@ function isPathInsideRoot(filePath: string, root: string): boolean {
   );
 }
 
+/** Safe segment for job id / bucket / file name (no traversal). */
+const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/;
+
+const ALL_BUCKETS = ["neutral", "favorites", "rejected", "variants"];
+
+/**
+ * Legacy layouts used human-readable folder names (e.g. "Pilates Mini Ball")
+ * while Firestore uses ids (e.g. "pilates-mini-ball"). If the exact path
+ * misses, locate `generated/<any>/<jobId>/<bucket>/<file>` under the same data root.
+ *
+ * Also tries alternate buckets because feedback moves files between
+ * neutral/favorites/rejected while metadata may still reference the old bucket.
+ */
+function findGeneratedByJobPath(
+  segments: string[],
+  dataRoot: string,
+): string | null {
+  if (segments[0] !== "generated" || segments.length !== 5) {
+    return null;
+  }
+  const [, _productSegment, jobId, bucket, fileName] = segments;
+  if (
+    !SAFE_SEGMENT.test(jobId) ||
+    !SAFE_SEGMENT.test(bucket) ||
+    !SAFE_SEGMENT.test(fileName)
+  ) {
+    return null;
+  }
+
+  const genRoot = join(dataRoot, "generated");
+  if (!existsSync(genRoot)) {
+    return null;
+  }
+
+  let subdirs: string[];
+  try {
+    subdirs = readdirSync(genRoot, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
+      .filter((name) => !name.startsWith("."));
+  } catch {
+    return null;
+  }
+
+  const bucketsToTry = [bucket, ...ALL_BUCKETS.filter((b) => b !== bucket)];
+
+  for (const productDir of subdirs) {
+    if (/[/\\]/.test(productDir)) continue;
+    for (const tryBucket of bucketsToTry) {
+      const candidate = resolve(join(genRoot, productDir, jobId, tryBucket, fileName));
+      if (!isPathInsideRoot(candidate, genRoot)) continue;
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  return null;
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
@@ -70,6 +129,47 @@ export async function GET(
     if (existsSync(normalizedPath)) {
       resolvedFile = normalizedPath;
       break;
+    }
+  }
+
+  // For generated images: try alternate buckets at exact product path
+  // (files move between neutral/favorites/rejected on feedback)
+  if (
+    !resolvedFile &&
+    segments[0] === "generated" &&
+    segments.length === 5
+  ) {
+    const [, productId, jobId, bucket, fileName] = segments;
+    if (
+      SAFE_SEGMENT.test(jobId) &&
+      SAFE_SEGMENT.test(bucket) &&
+      SAFE_SEGMENT.test(fileName)
+    ) {
+      const altBuckets = ALL_BUCKETS.filter((b) => b !== bucket);
+      for (const dataRoot of candidateDataRoots()) {
+        for (const altBucket of altBuckets) {
+          const altPath = resolve(
+            join(dataRoot, "generated", productId, jobId, altBucket, fileName),
+          );
+          if (!isPathInsideRoot(altPath, dataRoot)) continue;
+          if (existsSync(altPath)) {
+            resolvedFile = altPath;
+            break;
+          }
+        }
+        if (resolvedFile) break;
+      }
+    }
+  }
+
+  // Fallback: scan all product directories for the jobId/bucket/file combo
+  if (!resolvedFile && segments[0] === "generated") {
+    for (const dataRoot of candidateDataRoots()) {
+      const found = findGeneratedByJobPath(segments, dataRoot);
+      if (found) {
+        resolvedFile = found;
+        break;
+      }
     }
   }
 

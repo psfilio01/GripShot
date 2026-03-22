@@ -31,7 +31,7 @@ export async function handleFeedbackInternal(
       variant.id,
     );
 
-    await metadataStore.updateVariantStatus(variant.id, newStatus);
+    await metadataStore.updateVariantStatus(variant.id, newStatus, newPath);
 
     return {
       updatedVariant: {
@@ -59,7 +59,7 @@ export async function handleFeedbackInternal(
       variant.id,
     );
 
-    await metadataStore.updateVariantStatus(variant.id, "hero_lock");
+    await metadataStore.updateVariantStatus(variant.id, "hero_lock", newPath);
     const updatedVariant: ImageVariant = {
       ...variant,
       status: "hero_lock",
