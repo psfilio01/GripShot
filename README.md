@@ -155,6 +155,8 @@ Required variables for the web app:
 
 For the workflow engine, also set variables in the root `.env` (see `.env.example`).
 
+| `WORKFLOW_DATA_ROOT` | Optional. Absolute path to the repo `data/` folder. If unset, the engine uses repo `data/` when Next runs from `packages/web`, and the image API also falls back to `packages/web/data` so older generated files still load. **Recommended:** set once to your monorepo `data` directory to avoid split storage. |
+
 ### Run the web app
 
 ```bash

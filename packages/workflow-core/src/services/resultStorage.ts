@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import { join } from "node:path";
 import type { Product } from "../domain/product";
+import { getEnv } from "../config/env";
 
 export type Bucket = "neutral" | "favorites" | "rejected" | "variants";
 
@@ -19,7 +20,7 @@ export function getGeneratedRoot(dataRoot: string): string {
 
 export async function storeImage(args: StoreImageArgs): Promise<string> {
   const { product, jobId, bucket, imageId, extension = "png", buffer } = args;
-  const dataRoot = process.env.WORKFLOW_DATA_ROOT ?? process.cwd() + "/data";
+  const dataRoot = getEnv().WORKFLOW_DATA_ROOT;
   const generatedRoot = getGeneratedRoot(dataRoot);
   const dir = join(generatedRoot, product.id, jobId, bucket);
   await fs.ensureDir(dir);
@@ -36,7 +37,7 @@ export async function moveImage(
   jobId: string,
   imageId: string
 ): Promise<string> {
-  const dataRoot = process.env.WORKFLOW_DATA_ROOT ?? process.cwd() + "/data";
+  const dataRoot = getEnv().WORKFLOW_DATA_ROOT;
   const generatedRoot = getGeneratedRoot(dataRoot);
   const ext = currentPath.split(".").pop() ?? "png";
   const targetDir = join(generatedRoot, productId, jobId, targetBucket);
