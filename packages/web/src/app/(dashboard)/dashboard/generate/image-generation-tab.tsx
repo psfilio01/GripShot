@@ -192,6 +192,8 @@ export function ImageGenerationTab({
               value={workflowType}
               onChange={(e) => setWorkflowType(e.target.value)}
               className="gs-input block w-full px-3 py-2 text-sm"
+              data-testid="image-gen-workflow-type"
+              aria-label="Workflow type"
             >
               <option value="NEUTRAL_PRODUCT_SHOT">
                 Neutral product shot
@@ -260,6 +262,8 @@ export function ImageGenerationTab({
                 value={humanModelId}
                 onChange={(e) => setHumanModelId(e.target.value)}
                 className="gs-input block w-full max-w-md px-3 py-2 text-sm"
+                data-testid="image-gen-human-model"
+                aria-label="Human model"
               >
                 <option value="">
                   Random (from your workspace models)

@@ -178,12 +178,14 @@ export default function HumanModelDetailPage() {
           <div className="space-y-3 flex-1 min-w-[200px]">
             <div>
               <label
+                htmlFor="human-model-detail-name"
                 className="block text-sm font-medium mb-1.5"
                 style={{ color: "var(--gs-text-secondary)" }}
               >
                 Display name
               </label>
               <input
+                id="human-model-detail-name"
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
@@ -192,12 +194,14 @@ export default function HumanModelDetailPage() {
             </div>
             <div>
               <label
+                htmlFor="human-model-detail-notes"
                 className="block text-sm font-medium mb-1.5"
                 style={{ color: "var(--gs-text-secondary)" }}
               >
                 Notes
               </label>
               <input
+                id="human-model-detail-notes"
                 type="text"
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}

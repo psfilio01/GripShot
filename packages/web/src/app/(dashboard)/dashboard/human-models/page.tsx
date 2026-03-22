@@ -90,28 +90,33 @@ export default function HumanModelsPage() {
         </h2>
         <div>
           <label
+            htmlFor="human-model-new-name"
             className="block text-sm font-medium mb-1.5"
             style={{ color: "var(--gs-text-secondary)" }}
           >
             Display name
           </label>
           <input
+            id="human-model-new-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Studio model A"
             className="gs-input block w-full px-3 py-2 text-sm"
             maxLength={120}
+            data-testid="human-model-display-name"
           />
         </div>
         <div>
           <label
+            htmlFor="human-model-new-notes"
             className="block text-sm font-medium mb-1.5"
             style={{ color: "var(--gs-text-secondary)" }}
           >
             Notes (optional)
           </label>
           <input
+            id="human-model-new-notes"
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -124,6 +129,7 @@ export default function HumanModelsPage() {
           type="submit"
           disabled={creating || !name.trim()}
           className="gs-btn-primary px-4 py-2 text-sm"
+          data-testid="human-model-create-submit"
         >
           {creating ? "Creating…" : "Create & upload references"}
         </button>

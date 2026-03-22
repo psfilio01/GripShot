@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test("unauthenticated user is redirected to login", async ({ page }) => {
   await page.goto("/dashboard");
   await page.waitForURL(/\/login/);
-  await expect(page.locator("h1")).toContainText("Grip Shot");
+  await expect(page.getByRole("heading", { name: /welcome back/i })).toBeVisible();
 });
 
 test("login page renders email and password fields", async ({ page }) => {

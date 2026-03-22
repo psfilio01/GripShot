@@ -170,6 +170,17 @@ pnpm test:web          # Web package unit tests
 pnpm test:e2e          # Playwright E2E tests
 ```
 
+**Playwright:** Smoke tests (login redirect, login form) run without extra setup. The **human models** flow (`e2e/human-models.spec.ts`) is **skipped** unless you set a Firebase **email/password** test user:
+
+```bash
+cd packages/web
+export E2E_EMAIL="your-test-user@example.com"
+export E2E_PASSWORD="your-secure-password"
+pnpm test:e2e
+```
+
+Requires valid `packages/web/.env.local` (Firebase client + Admin) so the dev server can sign in and write to Firestore. Each run creates a uniquely named model in that user’s workspace (safe to delete later from **Models**).
+
 ### Build
 
 ```bash
