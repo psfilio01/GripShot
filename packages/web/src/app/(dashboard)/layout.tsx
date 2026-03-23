@@ -8,14 +8,24 @@ import { clsx } from "clsx";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  shortcut?: string;
+  adminOnly?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: GridIcon, shortcut: "H" },
   { href: "/dashboard/brands", label: "Brands", icon: SparkleIcon, shortcut: "B" },
   { href: "/dashboard/products", label: "Products", icon: BoxIcon, shortcut: "P" },
   { href: "/dashboard/human-models", label: "Models", icon: PersonIcon, shortcut: "M" },
+  { href: "/dashboard/backgrounds", label: "Backgrounds", icon: BackdropIcon, shortcut: "K" },
   { href: "/dashboard/generate", label: "Generate", icon: WandIcon, shortcut: "G" },
   { href: "/dashboard/results", label: "Results", icon: ImageIcon, shortcut: "R" },
   { href: "/dashboard/settings", label: "Settings", icon: GearIcon, shortcut: "S" },
+  { href: "/dashboard/admin/logs", label: "Gen Logs", icon: TerminalIcon, shortcut: "L", adminOnly: true },
 ];
 
 export default function DashboardLayout({
@@ -27,6 +37,25 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkAdmin() {
+      try {
+        const res = await fetch("/api/me");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setIsAdmin(data.isAdmin === true);
+      } catch { /* ignore */ }
+    }
+    checkAdmin();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => !item.adminOnly || isAdmin,
+  );
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -34,7 +63,7 @@ export default function DashboardLayout({
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      const match = NAV_ITEMS.find(
+      const match = visibleNavItems.find(
         (item) => item.shortcut?.toLowerCase() === e.key.toLowerCase(),
       );
       if (match) {
@@ -45,7 +74,7 @@ export default function DashboardLayout({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [router]);
+  }, [router, visibleNavItems]);
 
   return (
     <div className="flex h-full">
@@ -86,7 +115,7 @@ export default function DashboardLayout({
 
         {/* Nav */}
         <nav className="flex-1 space-y-0.5 px-3 py-3">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const active =
               item.href === "/dashboard"
                 ? pathname === "/dashboard"
@@ -174,6 +203,14 @@ export default function DashboardLayout({
               >
                 {user?.email ?? "—"}
               </p>
+              {isAdmin && (
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: "var(--gs-accent)" }}
+                >
+                  Admin
+                </p>
+              )}
             </div>
             <button
               onClick={signOut}
@@ -376,6 +413,49 @@ function GearIcon({ className, style }: { className?: string; style?: React.CSSP
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+      />
+    </svg>
+  );
+}
+
+function BackdropIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg
+      className={className}
+      style={style}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
+      />
+    </svg>
+  );
+}
+
+function TerminalIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg
+      className={className}
+      style={style}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 17.25V6.75A2.25 2.25 0 0 0 18.75 4.5H5.25A2.25 2.25 0 0 0 3 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Z"
       />
     </svg>
   );

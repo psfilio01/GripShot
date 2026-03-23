@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const limits = getPlanLimits(session.workspace.plan);
+    const limits = getPlanLimits(session.workspace.plan, {
+      isAdmin: session.isAdmin,
+    });
     const existingBrands = await listBrands(session.user.workspaceId);
     if (existingBrands.length >= limits.maxBrands) {
       return NextResponse.json(

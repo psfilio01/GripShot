@@ -6,6 +6,16 @@ export interface CreateHumanModelInput {
   workspaceId: string;
   displayName: string;
   notes?: string;
+  source?: "human" | "ai";
+  aiPrompt?: string;
+  gender?: string;
+  ageRange?: string;
+  bodyBuild?: string;
+  ethnicity?: string;
+  hairColor?: string;
+  hairLength?: string;
+  skinTone?: string;
+  height?: string;
 }
 
 function collection(workspaceId: string) {
@@ -51,12 +61,23 @@ export async function createHumanModel(
 ): Promise<string> {
   const ref = collection(input.workspaceId).doc();
   const now = FieldValue.serverTimestamp();
-  await ref.set({
+  const doc: Record<string, unknown> = {
     displayName: input.displayName.trim(),
     notes: (input.notes ?? "").trim(),
+    source: input.source ?? "human",
     createdAt: now,
     updatedAt: now,
-  });
+  };
+  if (input.aiPrompt) doc.aiPrompt = input.aiPrompt;
+  if (input.gender) doc.gender = input.gender;
+  if (input.ageRange) doc.ageRange = input.ageRange;
+  if (input.bodyBuild) doc.bodyBuild = input.bodyBuild;
+  if (input.ethnicity) doc.ethnicity = input.ethnicity;
+  if (input.hairColor) doc.hairColor = input.hairColor;
+  if (input.hairLength) doc.hairLength = input.hairLength;
+  if (input.skinTone) doc.skinTone = input.skinTone;
+  if (input.height) doc.height = input.height;
+  await ref.set(doc);
   return ref.id;
 }
 

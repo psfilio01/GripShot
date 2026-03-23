@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const limits = getPlanLimits(session.workspace.plan);
+    const limits = getPlanLimits(session.workspace.plan, {
+      isAdmin: session.isAdmin,
+    });
     const existingProducts = await listProducts(session.user.workspaceId);
     if (existingProducts.length >= limits.maxProducts) {
       return NextResponse.json(

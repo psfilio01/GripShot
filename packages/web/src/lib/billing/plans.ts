@@ -82,6 +82,16 @@ export function getPlanById(id: string): PlanDefinition | undefined {
 
 const DEFAULT_LIMITS: PlanLimits = { maxBrands: 1, maxProducts: 3, aplusEnabled: false };
 
-export function getPlanLimits(planId: string): PlanLimits {
+const ADMIN_LIMITS: PlanLimits = {
+  maxBrands: Infinity,
+  maxProducts: Infinity,
+  aplusEnabled: true,
+};
+
+export function getPlanLimits(
+  planId: string,
+  opts?: { isAdmin?: boolean },
+): PlanLimits {
+  if (opts?.isAdmin) return ADMIN_LIMITS;
   return getPlanById(planId)?.limits ?? DEFAULT_LIMITS;
 }

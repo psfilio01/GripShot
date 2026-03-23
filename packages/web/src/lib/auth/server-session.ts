@@ -2,11 +2,13 @@ import { cookies } from "next/headers";
 import { getAdminAuth } from "@/lib/firebase/admin";
 import { getUserByUid, getWorkspace } from "@/lib/db/users";
 import { SESSION_COOKIE_NAME } from "./session";
+import { isAdminUid } from "./admin";
 import type { UserDoc, WorkspaceDoc } from "@/lib/db/types";
 
 export interface ServerUser {
   user: UserDoc;
   workspace: WorkspaceDoc;
+  isAdmin: boolean;
 }
 
 export async function getServerSession(): Promise<ServerUser | null> {
@@ -26,7 +28,7 @@ export async function getServerSession(): Promise<ServerUser | null> {
     const workspace = await getWorkspace(user.workspaceId);
     if (!workspace) return null;
 
-    return { user, workspace };
+    return { user, workspace, isAdmin: isAdminUid(decoded.uid) };
   } catch {
     return null;
   }

@@ -11,11 +11,15 @@ import { generateText } from "@/lib/generation/gemini-text";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { getPlanLimits } from "@/lib/billing/plans";
 import { saveGeneration } from "@/lib/db/generations";
+import { insertGenerationLog, updateGenerationLog } from "@/lib/db/generation-logs";
+import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
 
 config({ path: resolve(process.cwd(), "../../.env") });
+
+const log = createLogger("generate:aplus");
 
 const RequestSchema = z.object({
   productId: z.string().min(1),
@@ -30,7 +34,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const planLimits = getPlanLimits(session.workspace.plan);
+    const planLimits = getPlanLimits(session.workspace.plan, {
+      isAdmin: session.isAdmin,
+    });
     if (!planLimits.aplusEnabled) {
       return NextResponse.json(
         { error: "A+ content requires a Starter or Pro plan. Upgrade to unlock." },
@@ -38,7 +44,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const quota = await checkQuota(session.user.workspaceId);
+    const quota = await checkQuota(session.user.workspaceId, {
+      isAdmin: session.isAdmin,
+    });
     if (!quota.allowed) {
       return NextResponse.json(
         { error: "Quota exceeded", used: quota.used, limit: quota.limit },
@@ -79,10 +87,35 @@ export async function POST(req: NextRequest) {
       additionalNotes: input.additionalNotes || undefined,
     });
 
+    log.info("A+ content generation started", {
+      userId: session.user.uid,
+      moduleId: input.moduleId,
+      productId: input.productId,
+    });
+    log.debug("Full prompt", { prompt });
+
+    const startTime = Date.now();
+    const logId = await insertGenerationLog({
+      type: "aplus",
+      workspaceId: session.user.workspaceId,
+      userId: session.user.uid,
+      userEmail: session.user.email,
+      prompt,
+      input: { moduleId: input.moduleId, productId: input.productId, additionalNotes: input.additionalNotes },
+      model: process.env.GEMINI_TEXT_MODEL ?? "gemini-2.5-flash",
+      status: "started",
+    });
+
     const rawResponse = await generateText(prompt);
     const result = parseAplusResponse(rawResponse);
+    const durationMs = Date.now() - startTime;
 
-    await consumeCredit(session.user.workspaceId);
+    await updateGenerationLog(logId, { status: "completed", durationMs });
+    log.info("A+ content generation completed", { durationMs, logId });
+
+    if (!session.isAdmin) {
+      await consumeCredit(session.user.workspaceId);
+    }
 
     const generationId = await saveGeneration(session.user.workspaceId, {
       type: "aplus",
@@ -108,7 +141,10 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    console.error("A+ content generation failed:", err);
+    log.error("A+ content generation failed", {
+      error: err instanceof Error ? err.message : String(err),
+      userId: session.user.uid,
+    });
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Generation failed" },
       { status: 500 },

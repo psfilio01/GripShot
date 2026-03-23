@@ -87,8 +87,17 @@ export async function generateImagesWithNanoBanana(
     );
 
     const outParts = response.data?.candidates?.[0]?.content?.parts ?? [];
-    console.log("Gemini response finishReason:", response.data?.candidates?.[0]?.finishReason);
-    console.log("Gemini response parts (truncated):", JSON.stringify(outParts, null, 2).slice(0, 2000));
+    const finishReason = response.data?.candidates?.[0]?.finishReason;
+    const imagePartCount = outParts.filter(
+      (p: any) => p.inlineData?.mimeType?.startsWith("image/") || p.inline_data?.mime_type?.startsWith("image/"),
+    ).length;
+    const textParts = outParts
+      .filter((p: any) => p.text)
+      .map((p: any) => p.text)
+      .join(" ");
+    console.log(
+      `\x1b[36m[workflow-core:gemini]\x1b[0m Response: finishReason=${finishReason}, images=${imagePartCount}, textParts=${textParts ? `"${textParts.slice(0, 200)}"` : "(none)"}`,
+    );
 
     const images: GeneratedImage[] = outParts
       .filter(
@@ -104,9 +113,9 @@ export async function generateImagesWithNanoBanana(
       });
 
     if (images.length === 0) {
-      console.error("Gemini response contained no image parts.", {
-        finishReason: response.data?.candidates?.[0]?.finishReason
-      });
+      console.error(
+        `\x1b[31m[workflow-core:gemini]\x1b[0m No images in response. finishReason=${finishReason}, text=${textParts.slice(0, 500)}`,
+      );
       throw new Error("Gemini response contained no images.");
     }
 

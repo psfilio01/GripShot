@@ -53,6 +53,8 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Hero Lock — color variant generation | Done |
 | Human models setup + lifestyle model picker | Done |
 | Playwright E2E: human models flow (optional auth) | Done |
+| Admin / superuser with unlimited access | Done |
+| Structured generation logging + admin logs UI | Done |
 
 ---
 
@@ -153,6 +155,13 @@ Required variables for the web app:
 | `NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID` | Stripe Starter plan price ID |
 | `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | Stripe Pro plan price ID |
 
+Optional admin and logging variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_UIDS` | Comma-separated Firebase UIDs for admin access (unlimited, no quota) |
+| `LOG_LEVEL` | Logging level: `debug`, `info` (default), `warn`, `error` |
+
 For the workflow engine, also set variables in the root `.env` (see `.env.example`).
 
 | `WORKFLOW_DATA_ROOT` | Optional. Absolute path to the repo `data/` folder. If unset, the engine uses repo `data/` when Next runs from `packages/web`, and the image API also falls back to `packages/web/data` so older generated files still load. **Recommended:** set once to your monorepo `data` directory to avoid split storage. |
@@ -216,6 +225,55 @@ See `USAGE.md` for full details on the image generation CLI workflow.
 - Middleware redirects unauthenticated users to `/login`
 - First sign-in automatically creates a Firestore user document and workspace
 - Each user gets a workspace with a free-tier quota (50 credits)
+
+### Admin / Superuser
+
+Set `ADMIN_UIDS` in your `.env` (comma-separated Firebase UIDs) to grant unlimited access to specific accounts. Admin users:
+
+- **Skip all quota checks** — generation never blocked by credits
+- **Skip credit consumption** — no credits deducted for any generation
+- **Bypass plan limits** — unlimited brands, products, A+ content access
+- **See the "Gen Logs" page** — admin-only dashboard for browsing full generation prompts
+
+Admin status is resolved exclusively server-side from the env var. There is no Firestore field to manipulate and no client-side exposure beyond a UI badge. Safe for production — admin privileges cannot be escalated through the database.
+
+```bash
+# In .env or .env.local
+ADMIN_UIDS=abc123FirebaseUid,def456AnotherUid
+```
+
+---
+
+## Generation logging
+
+Every generation (image, listing copy, A+ content, background, human model) is logged to Firestore with:
+
+- Full prompt text
+- Input parameters
+- Model used, aspect ratio, resolution
+- Duration (ms)
+- Success/failure status and error messages
+- User and workspace context
+
+### Admin logs dashboard
+
+Navigate to **Gen Logs** in the sidebar (admin only) to browse all generation activity. Each log entry expands to show:
+
+- Full prompt (with copy button)
+- Input parameters as JSON
+- Timing, model, and metadata
+- Error details for failed generations
+
+### Console logging
+
+The app uses a structured logger with configurable levels:
+
+```bash
+# In .env or .env.local (default: info)
+LOG_LEVEL=debug
+```
+
+In development, logs are colorized with timestamps and scoped labels. In production, logs are JSON for aggregation. The workflow-core engine also logs full prompts to the console with clear delimiters (`── FULL PROMPT ──` / `── END PROMPT ──`).
 
 ---
 
@@ -283,10 +341,14 @@ Press these keys anywhere in the dashboard (when no input is focused):
 | Key | Destination |
 |-----|-------------|
 | H | Overview |
+| B | Brands |
 | P | Products |
+| M | Models |
+| K | Backgrounds |
 | G | Generate |
 | R | Results |
 | S | Settings |
+| L | Gen Logs (admin only) |
 
 ---
 

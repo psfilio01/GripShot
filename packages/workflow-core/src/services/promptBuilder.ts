@@ -140,6 +140,8 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
     blocks.push("Use the background reference image as the visual environment and composition guide for the scene. The floor should be smooth warm golden exposed concrete with a subtle soft reflection, creating a clean and minimal studio look.");
   } else if (useGoldenBackground) {
     blocks.push("Use a warm golden / sand-toned background consistent with the brand.");
+  } else if (imageLayout.hasBackgroundRef) {
+    blocks.push("Use the background reference image as the visual environment and composition guide for the scene. Replicate the colours, lighting, and atmosphere from the background reference.");
   } else {
     blocks.push("Use a calm, minimal background consistent with the brand DNA (soft neutral, warm light).");
   }

@@ -41,6 +41,25 @@ export interface BrandDoc {
 export interface HumanModelDoc {
   displayName: string;
   notes: string;
+  source?: "human" | "ai";
+  aiPrompt?: string;
+  gender?: string;
+  ageRange?: string;
+  bodyBuild?: string;
+  ethnicity?: string;
+  hairColor?: string;
+  hairLength?: string;
+  skinTone?: string;
+  height?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/** Firestore: workspaces/{wid}/backgrounds/{backgroundId} */
+export interface BackgroundDoc {
+  name: string;
+  type: "canvas" | "freestyle" | "upload";
+  description: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

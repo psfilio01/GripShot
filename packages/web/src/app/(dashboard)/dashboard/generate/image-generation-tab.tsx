@@ -15,6 +15,13 @@ interface HumanModelOption {
   displayName: string;
 }
 
+interface BackgroundOption {
+  id: string;
+  name: string;
+  type: string;
+  previewUrl?: string | null;
+}
+
 interface JobImage {
   imageId: string;
   status: string;
@@ -37,12 +44,12 @@ export function ImageGenerationTab({
   const [workflowType, setWorkflowType] = useState<string>(
     "NEUTRAL_PRODUCT_SHOT",
   );
-  const [useGoldenBg, setUseGoldenBg] = useState(false);
+  const [backgroundId, setBackgroundId] = useState("");
+  const [backgrounds, setBackgrounds] = useState<BackgroundOption[]>([]);
   const [creativeFreedom, setCreativeFreedom] = useState(false);
   const [aspectRatio, setAspectRatio] = useState("4:5");
   const [resolution, setResolution] = useState("2K");
   const [humanModels, setHumanModels] = useState<HumanModelOption[]>([]);
-  /** Empty string = random among workspace models */
   const [humanModelId, setHumanModelId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +91,13 @@ export function ImageGenerationTab({
         if (d?.models) setHumanModels(d.models);
       })
       .catch(() => {});
+
+    fetch("/api/backgrounds")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.backgrounds) setBackgrounds(d.backgrounds);
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -107,12 +121,14 @@ export function ImageGenerationTab({
         body: JSON.stringify({
           productId,
           workflowType,
-          useGoldenBackground: useGoldenBg,
           creativeFreedom,
           aspectRatio,
           resolution,
           ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && humanModelId.trim()
             ? { modelId: humanModelId.trim() }
+            : {}),
+          ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && backgroundId.trim()
+            ? { backgroundId: backgroundId.trim() }
             : {}),
         }),
       });
@@ -300,23 +316,55 @@ export function ImageGenerationTab({
                 )}
               </p>
             </div>
-            <div className="flex flex-wrap gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useGoldenBg}
-                  onChange={(e) => setUseGoldenBg(e.target.checked)}
-                  className="h-4 w-4 rounded"
-                  style={{ accentColor: "var(--gs-accent)" }}
-                />
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--gs-text-secondary)" }}
-                >
-                  Golden background
-                </span>
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
+                Background
               </label>
+              <select
+                value={backgroundId}
+                onChange={(e) => setBackgroundId(e.target.value)}
+                className="gs-input block w-full max-w-md px-3 py-2 text-sm"
+              >
+                <option value="">None (neutral / default)</option>
+                {backgrounds.map((bg) => (
+                  <option key={bg.id} value={bg.id}>
+                    {bg.name} ({bg.type})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                {backgrounds.length === 0 ? (
+                  <>
+                    No backgrounds yet —{" "}
+                    <Link
+                      href="/dashboard/backgrounds"
+                      className="font-medium underline"
+                      style={{ color: "var(--gs-accent-text)" }}
+                    >
+                      create one
+                    </Link>{" "}
+                    to use a custom background for your shots.
+                  </>
+                ) : (
+                  <>
+                    Manage backgrounds in{" "}
+                    <Link
+                      href="/dashboard/backgrounds"
+                      className="font-medium underline"
+                      style={{ color: "var(--gs-accent-text)" }}
+                    >
+                      Backgrounds
+                    </Link>
+                    .
+                  </>
+                )}
+              </p>
+            </div>
 
+            <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"

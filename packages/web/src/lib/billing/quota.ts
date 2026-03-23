@@ -8,7 +8,19 @@ export interface QuotaCheckResult {
   remaining: number;
 }
 
-export async function checkQuota(workspaceId: string): Promise<QuotaCheckResult> {
+const ADMIN_UNLIMITED: QuotaCheckResult = {
+  allowed: true,
+  used: 0,
+  limit: Infinity,
+  remaining: Infinity,
+};
+
+export async function checkQuota(
+  workspaceId: string,
+  opts?: { isAdmin?: boolean },
+): Promise<QuotaCheckResult> {
+  if (opts?.isAdmin) return ADMIN_UNLIMITED;
+
   const snap = await getDb().collection("workspaces").doc(workspaceId).get();
   if (!snap.exists) {
     return { allowed: false, used: 0, limit: 0, remaining: 0 };

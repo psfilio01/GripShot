@@ -23,6 +23,8 @@ export interface StartImageJobInput {
   allowedModelIds?: string[];
   /** Use the golden background reference image (AuréLéa). */
   useGoldenBackground?: boolean;
+  /** User-managed background id. When set, loads the background image from data/backgrounds/{id}/ */
+  backgroundId?: string;
   /** Override defaults for outfit, barefoot, mat. Omitted = use AuréLéa defaults. */
   sceneOptions?: SceneOptions;
   /** If true, allow AI to adapt styling within brand DNA. */
@@ -36,6 +38,10 @@ export interface StartImageJobInput {
 export interface StartImageJobResult {
   jobId: string;
   status: "pending" | "running" | "completed" | "failed";
+  /** Full prompt text used for generation (for logging/debugging). */
+  promptText?: string;
+  /** Number of reference images sent to Gemini. */
+  referenceImageCount?: number;
 }
 
 export interface GetJobResultImage {

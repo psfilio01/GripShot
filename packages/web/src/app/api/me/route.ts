@@ -21,5 +21,6 @@ export async function GET() {
       quotaUsed: session.workspace.quotaUsed,
       quotaLimit: session.workspace.quotaLimit,
     },
+    isAdmin: session.isAdmin,
   });
 }

@@ -17,7 +17,7 @@ import {
   loadModelReferences,
   resolveChosenModelId,
 } from "../services/modelLoader";
-import { loadGoldenBackground } from "../services/backgroundLoader";
+import { loadGoldenBackground, loadUserBackground } from "../services/backgroundLoader";
 import { loadRuntimeInput } from "../services/runtimeInputLoader";
 import { loadGlobalHardRules, loadProductHardRules } from "../services/hardRulesLoader";
 import { buildPrompt } from "../services/promptBuilder";
@@ -77,9 +77,9 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       generationSettings.resolution = input.resolution as typeof generationSettings.resolution;
     }
 
-    console.log(`Grip Shot: generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}`);
+    console.log(`\x1b[36m[workflow-core]\x1b[0m Generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}`);
     if (runtimeInput) {
-      console.log("Grip Shot: runtime input loaded", Object.keys(runtimeInput));
+      console.log(`\x1b[36m[workflow-core]\x1b[0m Runtime input keys: ${Object.keys(runtimeInput).join(", ")}`);
     }
 
     let prompt;
@@ -87,8 +87,19 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
 
     if (input.workflowType === "AMAZON_LIFESTYLE_SHOT") {
       const brandDna = await loadBrandDna(dataRoot);
-      const useGoldenBackground = input.useGoldenBackground === true;
-      const goldenBg = useGoldenBackground ? await loadGoldenBackground(dataRoot) : null;
+
+      // Background: user-managed backgroundId takes precedence over legacy golden toggle
+      let bgRef: { path: string } | null = null;
+      let useGoldenBackground = false;
+      if (input.backgroundId) {
+        bgRef = await loadUserBackground(dataRoot, input.backgroundId);
+        if (bgRef) {
+          console.log(`\x1b[36m[workflow-core]\x1b[0m Using user background: ${input.backgroundId}`);
+        }
+      } else if (input.useGoldenBackground === true) {
+        useGoldenBackground = true;
+        bgRef = await loadGoldenBackground(dataRoot);
+      }
 
       const filesystemModelIds = await listModels(dataRoot);
       const chosenModelId = resolveChosenModelId(
@@ -103,11 +114,11 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       const productPaths = selectedProductRefs.map((r) => r.path);
 
       const imagePaths: string[] = [...productPaths];
-      if (goldenBg) imagePaths.push(goldenBg.path);
+      if (bgRef) imagePaths.push(bgRef.path);
       modelRefs.forEach((r) => imagePaths.push(r.path));
 
       const hasModelRefs = modelRefs.length > 0;
-      const hasBackgroundRef = goldenBg != null;
+      const hasBackgroundRef = bgRef != null;
       prompt = buildPrompt({
         workflowType: "AMAZON_LIFESTYLE_SHOT",
         product,
@@ -127,6 +138,10 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         productHardRules
       });
       referencePaths = imagePaths;
+
+      console.log(`\x1b[36m[workflow-core]\x1b[0m Lifestyle prompt template: ${prompt.templateId} v${prompt.templateVersion}`);
+      console.log(`\x1b[36m[workflow-core]\x1b[0m Reference images: ${referencePaths.length} (product: ${productPaths.length}, bg: ${hasBackgroundRef ? 1 : 0}, model: ${modelRefs.length})`);
+      console.log(`\x1b[36m[workflow-core]\x1b[0m \x1b[1m── FULL PROMPT ──\x1b[0m\n${prompt.text}\n\x1b[36m[workflow-core]\x1b[0m \x1b[1m── END PROMPT ──\x1b[0m`);
     } else {
       const baseReference = references[0];
       prompt = buildPrompt({
@@ -139,6 +154,9 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         productHardRules
       });
       referencePaths = [baseReference.path];
+
+      console.log(`\x1b[36m[workflow-core]\x1b[0m Neutral prompt template: ${prompt.templateId} v${prompt.templateVersion}`);
+      console.log(`\x1b[36m[workflow-core]\x1b[0m \x1b[1m── FULL PROMPT ──\x1b[0m\n${prompt.text}\n\x1b[36m[workflow-core]\x1b[0m \x1b[1m── END PROMPT ──\x1b[0m`);
     }
 
     const generatedImages = await generateImagesWithNanoBanana(prompt, referencePaths, generationSettings);
@@ -168,7 +186,12 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     }
 
     await metadataStore.updateJobStatus(jobId, "completed");
-    return { jobId, status: "completed" };
+    return {
+      jobId,
+      status: "completed",
+      promptText: prompt.text,
+      referenceImageCount: referencePaths.length,
+    };
   } catch (err) {
     await metadataStore.updateJobStatus(jobId, "failed");
     throw err;
