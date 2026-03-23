@@ -251,7 +251,7 @@ ADMIN_UIDS=abc123FirebaseUid,def456AnotherUid
 Every generation (image, listing copy, A+ content, background, human model) is logged to Firestore with:
 
 - Full prompt text
-- Input parameters
+- Input parameters (`undefined` keys are omitted so Firestore never rejects writes)
 - Model used, aspect ratio, resolution
 - Duration (ms)
 - Success/failure status and error messages

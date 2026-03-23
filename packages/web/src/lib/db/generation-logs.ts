@@ -45,6 +45,15 @@ export interface GenerationLogEntry {
 
 const COLLECTION = "generationLogs";
 
+/** Firestore rejects `undefined` anywhere in a document (including nested `input`). */
+export function omitUndefinedRecord(
+  obj: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined),
+  );
+}
+
 export async function insertGenerationLog(
   entry: Omit<GenerationLogEntry, "id" | "promptPreview" | "createdAt">,
 ): Promise<string> {
@@ -52,10 +61,25 @@ export async function insertGenerationLog(
   const ref = db.collection(COLLECTION).doc();
 
   const doc: Record<string, unknown> = {
-    ...entry,
+    type: entry.type,
+    workspaceId: entry.workspaceId,
+    userId: entry.userId,
+    userEmail: entry.userEmail,
+    prompt: entry.prompt,
+    input: omitUndefinedRecord(entry.input as Record<string, unknown>),
+    status: entry.status,
     promptPreview: entry.prompt.slice(0, 200),
     createdAt: FieldValue.serverTimestamp(),
   };
+
+  if (entry.model !== undefined) doc.model = entry.model;
+  if (entry.referenceImageCount !== undefined) {
+    doc.referenceImageCount = entry.referenceImageCount;
+  }
+  if (entry.aspectRatio !== undefined) doc.aspectRatio = entry.aspectRatio;
+  if (entry.resolution !== undefined) doc.resolution = entry.resolution;
+  if (entry.durationMs !== undefined) doc.durationMs = entry.durationMs;
+  if (entry.errorMessage !== undefined) doc.errorMessage = entry.errorMessage;
 
   await ref.set(doc);
   return ref.id;
@@ -65,7 +89,9 @@ export async function updateGenerationLog(
   logId: string,
   update: Partial<Pick<GenerationLogEntry, "status" | "durationMs" | "errorMessage">>,
 ): Promise<void> {
-  await getDb().collection(COLLECTION).doc(logId).update(update);
+  const payload = omitUndefinedRecord(update as Record<string, unknown>);
+  if (Object.keys(payload).length === 0) return;
+  await getDb().collection(COLLECTION).doc(logId).update(payload);
 }
 
 export interface GenerationLogQuery {

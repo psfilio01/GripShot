@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
 
     const allowedModelIds = await listHumanModelIds(session.user.workspaceId);
     const trimmedModelId = input.modelId?.trim();
+    const trimmedBackgroundId = input.backgroundId?.trim();
     if (trimmedModelId && !allowedModelIds.includes(trimmedModelId)) {
       return NextResponse.json(
         { error: "Selected model is not in your workspace." },
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
       resolution: input.resolution,
       modelId: trimmedModelId || undefined,
       allowedModelIds,
-      backgroundId: input.backgroundId?.trim() || undefined,
+      backgroundId: trimmedBackgroundId || undefined,
     });
 
     const job = await getJob(result.jobId);
@@ -123,10 +124,12 @@ export async function POST(req: NextRequest) {
       input: {
         workflowType: input.workflowType,
         productId: input.productId,
-        modelId: trimmedModelId,
-        backgroundId: input.backgroundId,
+        ...(trimmedModelId ? { modelId: trimmedModelId } : {}),
+        ...(trimmedBackgroundId ? { backgroundId: trimmedBackgroundId } : {}),
         useGoldenBackground: input.useGoldenBackground,
         creativeFreedom: input.creativeFreedom,
+        ...(input.aspectRatio ? { aspectRatio: input.aspectRatio } : {}),
+        ...(input.resolution ? { resolution: input.resolution } : {}),
       },
       model: process.env.NANOBANANA_MODEL ?? "unknown",
       aspectRatio: input.aspectRatio,
