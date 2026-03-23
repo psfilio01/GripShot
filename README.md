@@ -320,6 +320,7 @@ In development, logs are colorized with timestamps and scoped labels. In product
 
 - Filter by status (all, neutral, favorites, rejected), product, and workflow type
 - **In-flight image generations**: while Gemini is working, each run appears as a placeholder card with an indeterminate progress bar (shown when the status filter is “All”). The list refreshes every few seconds until the job completes; failed runs can be dismissed.
+- **Fullscreen gallery**: click a thumbnail (or focus it and press Enter/Space) to open the **gallery overlay** (scale-from-tile open, carousel transitions, optional side previews). **← / →**, glass nav, or **side previews** (from ~480px width) move through the **current filtered** set. **Click the main image** again to open **`react-medium-image-zoom`** on that photo only (classic medium.com-style zoom); close it to return to the gallery. Escape closes RMIZ first, then the gallery. Respects **`prefers-reduced-motion`** where applicable.
 - Download individual images via hover overlay button
 - Bulk download filtered results as ZIP via the "Download ZIP" button
 - Skeleton loading animation while results load
@@ -374,7 +375,8 @@ Press these keys anywhere in the dashboard (when no input is focused):
 | EmptyState | `components/empty-state.tsx` | Friendly placeholder with CTA for empty pages |
 | ToastProvider | `components/toast.tsx` | Global non-blocking notification system |
 | Skeleton | `components/skeleton.tsx` | Loading state placeholders |
-| ZoomableImage | `components/zoomable-image.tsx` | Click-to-zoom image viewer |
+| ZoomableImage | `components/zoomable-image.tsx` | Click-to-zoom image viewer (product/model pages) |
+| ResultsImageLightbox | `components/results-image-lightbox.tsx` | Results fullscreen gallery with prev/next and keyboard |
 
 ---
 

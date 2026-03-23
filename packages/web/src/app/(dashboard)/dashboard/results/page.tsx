@@ -1,8 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  type MouseEvent,
+} from "react";
 import Link from "next/link";
-import { ZoomableImage } from "@/components/zoomable-image";
+import {
+  ResultsImageLightbox,
+  resultsLightboxThumbClass,
+  resultsLightboxThumbKeyDown,
+  type ResultsLightboxOrigin,
+} from "@/components/results-image-lightbox";
 import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
 import { useToast } from "@/components/toast";
 import { EmptyState } from "@/components/empty-state";
@@ -67,6 +78,10 @@ export default function ResultsPage() {
   const [heroLockColors, setHeroLockColors] = useState<ProductColor[]>([]);
   const [heroLocking, setHeroLocking] = useState(false);
   const [detailImage, setDetailImage] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxOrigin, setLightboxOrigin] =
+    useState<ResultsLightboxOrigin | null>(null);
   const { toast } = useToast();
 
   const loadJobs = useCallback(() => {
@@ -248,6 +263,21 @@ export default function ResultsPage() {
       list = list.filter((p) => p.workflowType === typeFilter);
     return list;
   }, [pendingImageGenerations, statusFilter, productFilter, typeFilter]);
+
+  const lightboxItems = useMemo(
+    () =>
+      filteredImages.map((img) => ({
+        src: filePathToGeneratedImageUrl(img.filePath),
+        alt: `${productNames[img.productId] ?? img.productId} — ${img.imageId.slice(0, 8)}`,
+      })),
+    [filteredImages, productNames],
+  );
+
+  useEffect(() => {
+    if (lightboxOpen && lightboxItems.length === 0) {
+      setLightboxOpen(false);
+    }
+  }, [lightboxOpen, lightboxItems.length]);
 
   const heroLockedIds = useMemo(
     () => new Set(allImages.filter((i) => i.status === "hero_lock").map((i) => i.imageId)),
@@ -504,10 +534,26 @@ export default function ResultsPage() {
               />
             </div>
           ))}
-          {filteredImages.map((img) => {
+          {filteredImages.map((img, gridIndex) => {
             const derivedCount = variantsByParent.get(img.imageId)?.length ?? 0;
             const isHeroLocked = img.status === "hero_lock";
             const isColorVariant = !!img.colorLineage;
+
+            const openFromClick = (e: MouseEvent<HTMLImageElement>) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              setLightboxOrigin({
+                x: r.left + r.width / 2,
+                y: r.top + r.height / 2,
+              });
+              setLightboxIndex(gridIndex);
+              setLightboxOpen(true);
+            };
+
+            const openFromKeyboard = () => {
+              setLightboxOrigin(null);
+              setLightboxIndex(gridIndex);
+              setLightboxOpen(true);
+            };
 
             return (
               <div
@@ -524,10 +570,18 @@ export default function ResultsPage() {
                 }
               >
                 <div className="relative">
-                  <ZoomableImage
+                  <img
                     src={imageUrl(img.filePath)}
                     alt={`${img.productId} — ${img.imageId.slice(0, 6)}`}
-                    className="aspect-[4/5] w-full object-cover"
+                    className={`aspect-[4/5] w-full object-cover ${resultsLightboxThumbClass}`}
+                    tabIndex={0}
+                    role="button"
+                    title="View large — arrow keys browse the gallery"
+                    aria-label="Open fullscreen image gallery"
+                    onClick={openFromClick}
+                    onKeyDown={(e) =>
+                      resultsLightboxThumbKeyDown(e, openFromKeyboard)
+                    }
                   />
                   {/* Download button overlay */}
                   <button
@@ -709,6 +763,18 @@ export default function ResultsPage() {
           onClose={() => setDetailImage(null)}
         />
       )}
+
+      <ResultsImageLightbox
+        open={lightboxOpen && lightboxItems.length > 0}
+        items={lightboxItems}
+        index={lightboxIndex}
+        openOriginCenter={lightboxOrigin}
+        onClose={() => {
+          setLightboxOpen(false);
+          setLightboxOrigin(null);
+        }}
+        onIndexChange={setLightboxIndex}
+      />
     </div>
   );
 }
