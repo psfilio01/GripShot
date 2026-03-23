@@ -53,6 +53,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Hero Lock — color variant generation | Done |
 | Human models setup + lifestyle model picker | Done |
 | Playwright E2E: human models flow (optional auth) | Done |
+| Playwright E2E: Results dashboard shell (optional auth) | Done |
 | Admin / superuser with unlimited access | Done |
 | Structured generation logging + admin logs UI | Done |
 | Generate tabs: robust API error messages (JSON + non-JSON bodies) | Done |

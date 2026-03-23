@@ -91,6 +91,10 @@ pnpm test:e2e
 
 Playwright auto-starts the dev server on port 3000.
 
+**Optional authenticated flows** (`human-models.spec.ts`, `results-dashboard.spec.ts`): export `E2E_EMAIL` and `E2E_PASSWORD` for a Firebase email/password user; without them those tests are skipped so CI and local runs stay green.
+
+If port `3000` is already in use (e.g. `pnpm dev` running), unset `CI` for that shell so Playwright’s `reuseExistingServer` applies; with `CI=true`, it always tries to start a second server and may fail on the busy port.
+
 ---
 
 ## Building
