@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "path";
+import { formatGoogleGenerativeLanguageApiError } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -48,9 +49,14 @@ export async function generateImageFromPrompt(
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(
-      `Gemini API error ${response.status}: ${text.slice(0, 500)}`,
-    );
+    let body: unknown = text;
+    try {
+      body = text ? (JSON.parse(text) as unknown) : text;
+    } catch {
+      body = text;
+    }
+    const detail = formatGoogleGenerativeLanguageApiError(response.status, body);
+    throw new Error(detail || `Gemini API error ${response.status}`);
   }
 
   const data = await response.json();

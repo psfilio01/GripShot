@@ -10,6 +10,7 @@ import { generateText } from "@/lib/generation/gemini-text";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { saveGeneration } from "@/lib/db/generations";
 import { insertGenerationLog, updateGenerationLog } from "@/lib/db/generation-logs";
+import { formatGenerationError } from "@/lib/errors/format-generation-error";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { config } from "dotenv";
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+
+  const routeStart = Date.now();
+  let logId: string | undefined;
 
   try {
     const quota = await checkQuota(session.user.workspaceId, {
@@ -80,7 +84,7 @@ export async function POST(req: NextRequest) {
     log.debug("Full prompt", { prompt });
 
     const startTime = Date.now();
-    const logId = await insertGenerationLog({
+    logId = await insertGenerationLog({
       type: "listing-copy",
       workspaceId: session.user.workspaceId,
       userId: session.user.uid,
@@ -119,13 +123,18 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    const errorMsg = formatGenerationError(err);
     log.error("Listing copy generation failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: errorMsg,
       userId: session.user.uid,
     });
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Generation failed" },
-      { status: 500 },
-    );
+    if (logId) {
+      await updateGenerationLog(logId, {
+        status: "failed",
+        durationMs: Date.now() - routeStart,
+        errorMessage: errorMsg,
+      }).catch(() => {});
+    }
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

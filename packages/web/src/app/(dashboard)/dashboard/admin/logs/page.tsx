@@ -19,6 +19,7 @@ interface GenerationLog {
   resolution?: string;
   durationMs?: number;
   status: "started" | "completed" | "failed";
+  /** Persisted API / pipeline error (full text in list + detail) */
   errorMessage?: string;
   createdAt: { _seconds: number } | null;
 }
@@ -245,12 +246,24 @@ export default function AdminLogsPage() {
                   {entry.status}
                 </span>
 
-                {/* Prompt preview */}
+                {/* Prompt preview or API error (failed jobs) */}
                 <span
                   className="flex-1 truncate text-sm"
-                  style={{ color: "var(--gs-text)" }}
+                  style={{
+                    color:
+                      entry.status === "failed" && entry.errorMessage
+                        ? "#f87171"
+                        : "var(--gs-text)",
+                  }}
+                  title={
+                    entry.status === "failed" && entry.errorMessage
+                      ? entry.errorMessage
+                      : entry.promptPreview
+                  }
                 >
-                  {entry.promptPreview}
+                  {entry.status === "failed" && entry.errorMessage
+                    ? entry.errorMessage
+                    : entry.promptPreview}
                 </span>
 
                 {/* Meta */}
@@ -333,6 +346,44 @@ export default function AdminLogsPage() {
                     )}
                   </div>
 
+                  {/* Full error (copy-friendly) */}
+                  {fullLog.errorMessage && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4
+                          className="text-xs font-semibold uppercase tracking-wider"
+                          style={{ color: "#ef4444" }}
+                        >
+                          Fehlerdetails
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(fullLog.errorMessage!);
+                          }}
+                          className="rounded px-2 py-1 text-xs"
+                          style={{
+                            background: "var(--gs-bg)",
+                            color: "var(--gs-text-muted)",
+                            border: "1px solid var(--gs-border-subtle)",
+                          }}
+                        >
+                          Kopieren
+                        </button>
+                      </div>
+                      <pre
+                        className="rounded-lg p-4 text-sm whitespace-pre-wrap overflow-x-auto leading-relaxed"
+                        style={{
+                          background: "rgba(239, 68, 68, 0.08)",
+                          color: "#ef4444",
+                          border: "1px solid rgba(239, 68, 68, 0.25)",
+                        }}
+                      >
+                        {fullLog.errorMessage}
+                      </pre>
+                    </div>
+                  )}
+
                   {/* Input params */}
                   {fullLog.input &&
                     Object.keys(fullLog.input).length > 0 && (
@@ -393,27 +444,6 @@ export default function AdminLogsPage() {
                     </pre>
                   </div>
 
-                  {/* Error message if failed */}
-                  {fullLog.errorMessage && (
-                    <div>
-                      <h4
-                        className="text-xs font-semibold uppercase tracking-wider mb-2"
-                        style={{ color: "#ef4444" }}
-                      >
-                        Error
-                      </h4>
-                      <pre
-                        className="rounded-lg p-3 text-xs"
-                        style={{
-                          background: "rgba(239, 68, 68, 0.1)",
-                          color: "#ef4444",
-                          border: "1px solid rgba(239, 68, 68, 0.2)",
-                        }}
-                      >
-                        {fullLog.errorMessage}
-                      </pre>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

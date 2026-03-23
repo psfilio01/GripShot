@@ -3,6 +3,7 @@ import { getServerSession } from "@/lib/auth/server-session";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { listHumanModelIds } from "@/lib/db/human-models";
 import { insertGenerationLog } from "@/lib/db/generation-logs";
+import { formatGenerationError } from "@/lib/errors/format-generation-error";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { config } from "dotenv";
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ job });
   } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = formatGenerationError(err);
     log.error("Image generation failed", {
       error: errorMsg,
       userId: session.user.uid,

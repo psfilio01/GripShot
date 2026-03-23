@@ -3,6 +3,7 @@ import { getServerSession } from "@/lib/auth/server-session";
 import { createHumanModel } from "@/lib/db/human-models";
 import { generateImageFromPrompt } from "@/lib/generation/gemini-image";
 import { insertGenerationLog, updateGenerationLog } from "@/lib/db/generation-logs";
+import { formatGenerationError } from "@/lib/errors/format-generation-error";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { resolve, join } from "path";
@@ -96,6 +97,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  const routeStart = Date.now();
+  let logId: string | undefined;
+
   try {
     const body = await req.json();
     const data = GenerateSchema.parse(body);
@@ -126,7 +130,7 @@ export async function POST(req: NextRequest) {
     logger.debug("Full prompt", { prompt });
 
     const startTime = Date.now();
-    const logId = await insertGenerationLog({
+    logId = await insertGenerationLog({
       type: "human-model",
       workspaceId: session.user.workspaceId,
       userId: session.user.uid,
@@ -167,13 +171,18 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    const errorMsg = formatGenerationError(err);
     logger.error("Human model generation failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: errorMsg,
       userId: session.user.uid,
     });
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Generation failed" },
-      { status: 500 },
-    );
+    if (logId) {
+      await updateGenerationLog(logId, {
+        status: "failed",
+        durationMs: Date.now() - routeStart,
+        errorMessage: errorMsg,
+      }).catch(() => {});
+    }
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "@/lib/auth/server-session";
 import { getBackground } from "@/lib/db/backgrounds";
 import { generateImageFromPrompt } from "@/lib/generation/gemini-image";
 import { insertGenerationLog, updateGenerationLog } from "@/lib/db/generation-logs";
+import { formatGenerationError } from "@/lib/errors/format-generation-error";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { resolve, join } from "path";
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  const routeStart = Date.now();
+  let logId: string | undefined;
+
   try {
     const body = await req.json();
     const data = Schema.parse(body);
@@ -76,7 +80,7 @@ export async function POST(req: NextRequest) {
     log.debug("Full prompt", { prompt });
 
     const startTime = Date.now();
-    const logId = await insertGenerationLog({
+    logId = await insertGenerationLog({
       type: "background",
       workspaceId: session.user.workspaceId,
       userId: session.user.uid,
@@ -110,13 +114,18 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    const errorMsg = formatGenerationError(err);
     log.error("Background generation failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: errorMsg,
       userId: session.user.uid,
     });
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Generation failed" },
-      { status: 500 },
-    );
+    if (logId) {
+      await updateGenerationLog(logId, {
+        status: "failed",
+        durationMs: Date.now() - routeStart,
+        errorMessage: errorMsg,
+      }).catch(() => {});
+    }
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

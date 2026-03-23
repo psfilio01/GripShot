@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatGoogleGenerativeLanguageApiError } from "@fashionmentum/workflow-core";
 
 const envSchema = z.object({
   GEMINI_API_KEY: z.string().min(1).optional(),
@@ -59,9 +60,16 @@ export async function generateText(prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    console.error(`Gemini text API error ${response.status}:`, body);
-    throw new Error(`Gemini API returned ${response.status}`);
+    const raw = await response.text();
+    let parsed: unknown = raw;
+    try {
+      parsed = raw ? (JSON.parse(raw) as unknown) : raw;
+    } catch {
+      parsed = raw;
+    }
+    const detail = formatGoogleGenerativeLanguageApiError(response.status, parsed);
+    console.error(`Gemini text API error ${response.status}:`, raw.slice(0, 2000));
+    throw new Error(detail || `Gemini API returned ${response.status}`);
   }
 
   const data = await response.json();

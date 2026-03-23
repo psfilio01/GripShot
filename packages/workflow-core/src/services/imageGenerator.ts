@@ -4,6 +4,7 @@ import path from "node:path";
 import { getEnv } from "../config/env";
 import type { BuiltPrompt } from "../domain/prompt";
 import type { GenerationSettings } from "./runtimeInputLoader";
+import { formatGoogleGenerativeLanguageApiError } from "../utils/googleGenerativeLanguageError";
 
 export interface GeneratedImage {
   buffer: Buffer;
@@ -123,20 +124,23 @@ export async function generateImagesWithNanoBanana(
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
-      const statusText = error.response?.statusText;
       const data = error.response?.data;
       const finishReason = (data as any)?.candidates?.[0]?.finishReason;
       const respParts = (data as any)?.candidates?.[0]?.content?.parts;
-      console.error("Gemini API request failed.", {
-        status,
-        statusText,
-        data: typeof data === "string" ? data.slice(0, 2000) : data,
-        finishReason,
-        partsPreview: respParts != null ? JSON.stringify(respParts, null, 2).slice(0, 2000) : undefined
-      });
-    } else {
-      console.error("Unexpected error when calling Gemini API.", error);
+      const formatted = formatGoogleGenerativeLanguageApiError(status, data);
+      console.error(
+        `\x1b[31m[workflow-core:gemini]\x1b[0m API error: ${formatted || error.message}`,
+        {
+          status,
+          data: typeof data === "string" ? data.slice(0, 2000) : data,
+          finishReason,
+          partsPreview:
+            respParts != null ? JSON.stringify(respParts, null, 2).slice(0, 2000) : undefined,
+        },
+      );
+      throw new Error(formatted || error.message || "Gemini API request failed");
     }
+    console.error("Unexpected error when calling Gemini API.", error);
     throw error;
   }
 }
