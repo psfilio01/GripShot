@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
+import { listAndPrunePendingImageGenerations } from "@/lib/db/pending-image-generations";
 import { config } from "dotenv";
 import { resolve } from "path";
 
@@ -39,7 +40,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ jobs: results });
+    let pendingImageGenerations = await listAndPrunePendingImageGenerations(
+      session.user.workspaceId,
+    );
+    if (productIdFilter) {
+      pendingImageGenerations = pendingImageGenerations.filter(
+        (p) => p.productId === productIdFilter,
+      );
+    }
+
+    return NextResponse.json({ jobs: results, pendingImageGenerations });
   } catch (err) {
     console.error("Failed to list jobs:", err);
     return NextResponse.json({ error: "Failed to load jobs" }, { status: 500 });

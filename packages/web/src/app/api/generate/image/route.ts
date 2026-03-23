@@ -1,8 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { listHumanModelIds } from "@/lib/db/human-models";
 import { insertGenerationLog } from "@/lib/db/generation-logs";
+import {
+  createPendingImageGeneration,
+  deletePendingImageGeneration,
+  failPendingImageGeneration,
+} from "@/lib/db/pending-image-generations";
 import { formatGenerationError } from "@/lib/errors/format-generation-error";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
@@ -29,6 +35,8 @@ const RequestSchema = z.object({
   resolution: z.enum(RESOLUTIONS).optional(),
   modelId: z.string().optional(),
   backgroundId: z.string().optional(),
+  /** Client-generated id for Results placeholders & parallel runs */
+  requestId: z.string().uuid().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -38,6 +46,8 @@ export async function POST(req: NextRequest) {
   }
 
   const startTime = Date.now();
+  let pendingRequestId: string | null = null;
+
   try {
     const quota = await checkQuota(session.user.workspaceId, {
       isAdmin: session.isAdmin,
@@ -75,6 +85,15 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    const requestId = input.requestId ?? randomUUID();
+    await createPendingImageGeneration(session.user.workspaceId, requestId, {
+      productId: input.productId,
+      workflowType: input.workflowType,
+      aspectRatio: input.aspectRatio,
+      resolution: input.resolution,
+    });
+    pendingRequestId = requestId;
 
     const { startImageJob, getJob } = await import(
       "@fashionmentum/workflow-core"
@@ -128,13 +147,26 @@ export async function POST(req: NextRequest) {
       await consumeCredit(session.user.workspaceId);
     }
 
-    return NextResponse.json({ job });
+    await deletePendingImageGeneration(
+      session.user.workspaceId,
+      requestId,
+    ).catch(() => {});
+
+    return NextResponse.json({ job, requestId });
   } catch (err) {
     const errorMsg = formatGenerationError(err);
     log.error("Image generation failed", {
       error: errorMsg,
       userId: session.user.uid,
     });
+
+    if (pendingRequestId) {
+      await failPendingImageGeneration(
+        session.user.workspaceId,
+        pendingRequestId,
+        errorMsg,
+      ).catch(() => {});
+    }
 
     await insertGenerationLog({
       type: "image",

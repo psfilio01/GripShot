@@ -55,6 +55,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Playwright E2E: human models flow (optional auth) | Done |
 | Admin / superuser with unlimited access | Done |
 | Structured generation logging + admin logs UI | Done |
+| Generate tabs: robust API error messages (JSON + non-JSON bodies) | Done |
 
 ---
 
@@ -318,6 +319,7 @@ In development, logs are colorized with timestamps and scoped labels. In product
 ## Results dashboard
 
 - Filter by status (all, neutral, favorites, rejected), product, and workflow type
+- **In-flight image generations**: while Gemini is working, each run appears as a placeholder card with an indeterminate progress bar (shown when the status filter is “All”). The list refreshes every few seconds until the job completes; failed runs can be dismissed.
 - Download individual images via hover overlay button
 - Bulk download filtered results as ZIP via the "Download ZIP" button
 - Skeleton loading animation while results load
@@ -327,6 +329,9 @@ In development, logs are colorized with timestamps and scoped labels. In product
 
 ## Image generation
 
+- **Parallel runs**: you can start another image generation while one is still in flight; the Generate tab stays usable and shows how many runs are active with a link to **Results** for live placeholders.
+- Each request sends a client `requestId` (UUID) so pending state lines up with placeholders; optional `DELETE /api/generate/image/pending/[requestId]` removes a failed placeholder from the dashboard.
+- On failure, errors are surfaced via **toast** with the same detailed API/Gemini messaging as other tabs (`readFetchResponseBody` / `messageFromApiFailure`).
 - Select product, workflow type (product shot or lifestyle), aspect ratio, and resolution from the UI
 - Aspect ratio options: 4:5 (Amazon main), 1:1, 3:4, 16:9, 9:16, 2:3, 3:2
 - Resolution options: 512px, 1K, 2K (default), 4K

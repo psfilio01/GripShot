@@ -4,6 +4,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/toast";
 import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
+import {
+  readFetchResponseBody,
+  messageFromApiFailure,
+} from "@/lib/api/fetch-response-body";
 
 interface ProductOption {
   id: string;
@@ -51,8 +55,8 @@ export function ImageGenerationTab({
   const [resolution, setResolution] = useState("2K");
   const [humanModels, setHumanModels] = useState<HumanModelOption[]>([]);
   const [humanModelId, setHumanModelId] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /** Parallel runs: each submit increments until its fetch finishes */
+  const [inFlightCount, setInFlightCount] = useState(0);
   const [job, setJob] = useState<JobResult | null>(null);
   const { toast } = useToast();
 
@@ -108,46 +112,62 @@ export function ImageGenerationTab({
     }
   }, [humanModels, humanModelId]);
 
-  async function handleGenerate(e: FormEvent) {
+  function handleGenerate(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setJob(null);
-    setBusy(true);
+    if (!productId.trim()) return;
 
-    try {
-      const res = await fetch("/api/generate/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          workflowType,
-          creativeFreedom,
-          aspectRatio,
-          resolution,
-          ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && humanModelId.trim()
-            ? { modelId: humanModelId.trim() }
-            : {}),
-          ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && backgroundId.trim()
-            ? { backgroundId: backgroundId.trim() }
-            : {}),
-        }),
-      });
+    const requestId = crypto.randomUUID();
+    setInFlightCount((c) => c + 1);
 
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 429) {
+    void (async () => {
+      try {
+        const res = await fetch("/api/generate/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId,
+            workflowType,
+            creativeFreedom,
+            aspectRatio,
+            resolution,
+            requestId,
+            ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && humanModelId.trim()
+              ? { modelId: humanModelId.trim() }
+              : {}),
+            ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && backgroundId.trim()
+              ? { backgroundId: backgroundId.trim() }
+              : {}),
+          }),
+        });
+
+        const { data, rawText } = await readFetchResponseBody(res);
+        if (!res.ok) {
+          if (res.status === 429) {
+            const q = data as { used?: number; limit?: number } | null;
+            throw new Error(
+              typeof q?.used === "number"
+                ? `Quota exceeded (${q.used}/${q.limit ?? "?"} credits used). Upgrade your plan for more credits.`
+                : messageFromApiFailure(res, data, rawText, "Quota exceeded"),
+            );
+          }
           throw new Error(
-            `Quota exceeded (${data.used}/${data.limit} credits used). Upgrade your plan for more credits.`,
+            messageFromApiFailure(res, data, rawText, "Generation failed"),
           );
         }
-        throw new Error(data.error ?? "Generation failed");
+        const payload = data as { job?: JobResult };
+        if (!payload?.job) {
+          throw new Error("Invalid response: missing job");
+        }
+        setJob(payload.job);
+        toast("Image generation finished", "success");
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Something went wrong";
+        toast(msg, "error");
+      } finally {
+        setInFlightCount((c) => Math.max(0, c - 1));
       }
-      setJob(data.job);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setBusy(false);
-    }
+    })();
   }
 
   function imageUrl(filePath: string): string {
@@ -384,25 +404,40 @@ export function ImageGenerationTab({
           </div>
         )}
 
-        {error && (
-          <p
+        {inFlightCount > 0 && (
+          <div
             className="rounded-lg p-3 text-sm"
             style={{
-              background: "var(--gs-error-bg)",
-              color: "var(--gs-error-text)",
+              background: "var(--gs-accent-subtle)",
+              color: "var(--gs-text-secondary)",
             }}
           >
-            {error}
-          </p>
+            <span
+              className="font-medium"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              {inFlightCount} generation{inFlightCount !== 1 ? "s" : ""}{" "}
+              running.
+            </span>{" "}
+            Track progress on{" "}
+            <Link
+              href="/dashboard/results"
+              className="font-medium underline"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              Results
+            </Link>
+            . You can start another run below.
+          </div>
         )}
 
         <div className="flex items-center gap-3">
           <button
             type="submit"
-            disabled={busy || !productId.trim()}
+            disabled={!productId.trim() || products.length === 0}
             className="gs-btn-primary px-5 py-2.5 text-sm"
           >
-            {busy ? "Generating…" : "Generate image"}
+            Generate image
           </button>
           <button
             type="button"

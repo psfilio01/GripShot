@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import {
+  readFetchResponseBody,
+  messageFromApiFailure,
+} from "@/lib/api/fetch-response-body";
 
 interface ProductOption {
   id: string;
@@ -64,20 +68,38 @@ export function AplusContentTab({
         }),
       });
 
-      const data = await res.json();
+      const { data, rawText } = await readFetchResponseBody(res);
       if (!res.ok) {
         if (res.status === 429) {
+          const q = data as { used?: number; limit?: number } | null;
           throw new Error(
-            `Quota exceeded (${data.used}/${data.limit} credits used). Upgrade your plan for more credits.`,
+            typeof q?.used === "number"
+              ? `Quota exceeded (${q.used}/${q.limit ?? "?"} credits used). Upgrade your plan for more credits.`
+              : messageFromApiFailure(res, data, rawText, "Quota exceeded"),
           );
         }
-        throw new Error(data.error ?? "Generation failed");
+        throw new Error(
+          messageFromApiFailure(res, data, rawText, "Generation failed"),
+        );
+      }
+
+      const payload = data as {
+        moduleName?: string;
+        amazonModuleType?: string;
+        content?: Record<string, unknown>;
+      };
+      if (
+        !payload?.moduleName ||
+        !payload?.amazonModuleType ||
+        payload.content == null
+      ) {
+        throw new Error("Invalid response: missing A+ fields");
       }
 
       setResult({
-        moduleName: data.moduleName,
-        amazonModuleType: data.amazonModuleType,
-        content: data.content,
+        moduleName: payload.moduleName,
+        amazonModuleType: payload.amazonModuleType,
+        content: payload.content,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

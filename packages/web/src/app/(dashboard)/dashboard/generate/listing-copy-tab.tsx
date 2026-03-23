@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useCallback, type FormEvent, type ReactNode } from "react";
 import { useToast } from "@/components/toast";
+import {
+  readFetchResponseBody,
+  messageFromApiFailure,
+} from "@/lib/api/fetch-response-body";
 
 interface ProductOption {
   id: string;
@@ -78,16 +82,25 @@ export function ListingCopyTab({
         }),
       });
 
-      const data = await res.json();
+      const { data, rawText } = await readFetchResponseBody(res);
       if (!res.ok) {
         if (res.status === 429) {
+          const q = data as { used?: number; limit?: number } | null;
           throw new Error(
-            `Quota exceeded (${data.used}/${data.limit} credits used). Upgrade your plan for more credits.`,
+            typeof q?.used === "number"
+              ? `Quota exceeded (${q.used}/${q.limit ?? "?"} credits used). Upgrade your plan for more credits.`
+              : messageFromApiFailure(res, data, rawText, "Quota exceeded"),
           );
         }
-        throw new Error(data.error ?? "Generation failed");
+        throw new Error(
+          messageFromApiFailure(res, data, rawText, "Generation failed"),
+        );
       }
-      setResult(data.result);
+      const payload = data as { result?: unknown };
+      if (payload?.result == null) {
+        throw new Error("Invalid response: missing result");
+      }
+      setResult(payload.result as ListingCopyResult);
       loadHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

@@ -103,6 +103,12 @@ pnpm build:core        # workflow-core TypeScript build
 
 ---
 
+## Dashboard API errors (maintainers)
+
+Generate-tab fetch handlers use `readFetchResponseBody` and `messageFromApiFailure` in `packages/web/src/lib/api/fetch-response-body.ts`. That way callers still show useful text when the response is not JSON (e.g. proxy HTML) while preferring `{ "error": "..." }` from Next API routes.
+
+---
+
 ## Docker guidance (planned)
 
 Containerize from a single Dockerfile at the repo root:

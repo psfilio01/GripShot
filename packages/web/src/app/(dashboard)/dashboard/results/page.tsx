@@ -8,6 +8,16 @@ import { useToast } from "@/components/toast";
 import { EmptyState } from "@/components/empty-state";
 import { ResultsSkeleton } from "@/components/skeleton";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { GenerationPlaceholderCard } from "@/components/generation-placeholder-card";
+
+interface PendingImageGeneration {
+  requestId: string;
+  productId: string;
+  workflowType: string;
+  status: "running" | "failed";
+  startedAt: string;
+  errorMessage?: string;
+}
 
 interface JobImage {
   imageId: string;
@@ -41,6 +51,9 @@ type StatusFilter = "all" | "neutral" | "favorite" | "rejected" | "hero_lock";
 
 export default function ResultsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [pendingImageGenerations, setPendingImageGenerations] = useState<
+    PendingImageGeneration[]
+  >([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [productFilter, setProductFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -61,6 +74,11 @@ export default function ResultsPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d?.jobs) setJobs(d.jobs);
+        if (Array.isArray(d?.pendingImageGenerations)) {
+          setPendingImageGenerations(d.pendingImageGenerations);
+        } else {
+          setPendingImageGenerations([]);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -81,6 +99,36 @@ export default function ResultsPage() {
       })
       .catch(() => {});
   }, [loadJobs]);
+
+  const runningPendingCount = useMemo(
+    () => pendingImageGenerations.filter((p) => p.status === "running").length,
+    [pendingImageGenerations],
+  );
+
+  const hasRunningPending = runningPendingCount > 0;
+
+  useEffect(() => {
+    if (!hasRunningPending) return;
+    const id = setInterval(() => loadJobs(), 2500);
+    return () => clearInterval(id);
+  }, [hasRunningPending, loadJobs]);
+
+  async function dismissPendingGeneration(requestId: string) {
+    try {
+      const res = await fetch(
+        `/api/generate/image/pending/${encodeURIComponent(requestId)}`,
+        { method: "DELETE" },
+      );
+      if (res.ok) {
+        loadJobs();
+        toast("Removed", "info");
+      } else {
+        toast("Could not dismiss", "error");
+      }
+    } catch {
+      toast("Could not dismiss", "error");
+    }
+  }
 
   async function handleFeedback(
     imageId: string,
@@ -190,6 +238,17 @@ export default function ResultsPage() {
     return result;
   }, [allImages, statusFilter, productFilter, typeFilter]);
 
+  /** In-flight / failed image jobs from Firestore (only when not filtering by image status). */
+  const filteredPending = useMemo(() => {
+    if (statusFilter !== "all") return [];
+    let list = pendingImageGenerations;
+    if (productFilter !== "all")
+      list = list.filter((p) => p.productId === productFilter);
+    if (typeFilter !== "all")
+      list = list.filter((p) => p.workflowType === typeFilter);
+    return list;
+  }, [pendingImageGenerations, statusFilter, productFilter, typeFilter]);
+
   const heroLockedIds = useMemo(
     () => new Set(allImages.filter((i) => i.status === "hero_lock").map((i) => i.imageId)),
     [allImages],
@@ -298,10 +357,20 @@ export default function ResultsPage() {
             Results
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
-            Browse, filter, and manage your generated images.
+            Browse, filter, and manage your generated images. In-progress runs
+            appear as placeholders until Gemini returns.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+          {runningPendingCount > 0 && (
+            <p
+              className="text-xs font-medium"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              {runningPendingCount} generation
+              {runningPendingCount !== 1 ? "s" : ""} in progress
+            </p>
+          )}
           <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
             {filteredImages.length} image
             {filteredImages.length !== 1 ? "s" : ""}
@@ -394,7 +463,7 @@ export default function ResultsPage() {
 
       {loading ? (
         <ResultsSkeleton />
-      ) : filteredImages.length === 0 ? (
+      ) : filteredImages.length === 0 && filteredPending.length === 0 ? (
         !hasFilters ? (
           <EmptyState
             icon="🎨"
@@ -412,6 +481,29 @@ export default function ResultsPage() {
         )
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredPending.map((p) => (
+            <div key={p.requestId} className="flex flex-col">
+              <GenerationPlaceholderCard
+                variant={p.status === "running" ? "running" : "failed"}
+                title={
+                  p.status === "running"
+                    ? "Generating…"
+                    : "Generation failed"
+                }
+                subtitle={
+                  p.status === "running"
+                    ? "Waiting for Gemini to return images. You can start more runs from Generate."
+                    : (p.errorMessage ?? "Something went wrong.")
+                }
+                footer={`${productNames[p.productId] ?? p.productId} · ${workflowLabel(p.workflowType)}`}
+                onDismiss={
+                  p.status === "failed"
+                    ? () => dismissPendingGeneration(p.requestId)
+                    : undefined
+                }
+              />
+            </div>
+          ))}
           {filteredImages.map((img) => {
             const derivedCount = variantsByParent.get(img.imageId)?.length ?? 0;
             const isHeroLocked = img.status === "hero_lock";
