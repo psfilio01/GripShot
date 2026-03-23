@@ -11,3 +11,6 @@ dist/
 playwright-report/
 test-results/
 *.tsbuildinfo
+
+# Accidental local archives (do not commit)
+Archive.zip
