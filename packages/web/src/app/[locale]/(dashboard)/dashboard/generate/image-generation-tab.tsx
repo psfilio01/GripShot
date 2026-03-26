@@ -2,12 +2,18 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useToast } from "@/components/toast";
 import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
 import {
   readFetchResponseBody,
   messageFromApiFailure,
 } from "@/lib/api/fetch-response-body";
+
+const LIFESTYLE_WORKFLOW_TYPES = new Set([
+  "AMAZON_LIFESTYLE_SHOT",
+  "LIFESTYLE",
+]);
 
 interface ProductOption {
   id: string;
@@ -59,6 +65,9 @@ export function ImageGenerationTab({
   const [inFlightCount, setInFlightCount] = useState(0);
   const [job, setJob] = useState<JobResult | null>(null);
   const { toast } = useToast();
+  const t = useTranslations("Generate");
+
+  const isLifestyleType = LIFESTYLE_WORKFLOW_TYPES.has(workflowType);
 
   useEffect(() => {
     fetch("/api/products")
@@ -131,10 +140,10 @@ export function ImageGenerationTab({
             aspectRatio,
             resolution,
             requestId,
-            ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && humanModelId.trim()
+            ...(isLifestyleType && humanModelId.trim()
               ? { modelId: humanModelId.trim() }
               : {}),
-            ...(workflowType === "AMAZON_LIFESTYLE_SHOT" && backgroundId.trim()
+            ...(isLifestyleType && backgroundId.trim()
               ? { backgroundId: backgroundId.trim() }
               : {}),
           }),
@@ -220,21 +229,22 @@ export function ImageGenerationTab({
               className="block text-sm font-medium mb-1.5"
               style={{ color: "var(--gs-text-secondary)" }}
             >
-              Workflow type
+              {t("workflowType")}
             </label>
             <select
               value={workflowType}
               onChange={(e) => setWorkflowType(e.target.value)}
               className="gs-input block w-full px-3 py-2 text-sm"
               data-testid="image-gen-workflow-type"
-              aria-label="Workflow type"
+              aria-label={t("workflowType")}
             >
-              <option value="NEUTRAL_PRODUCT_SHOT">
-                Neutral product shot
-              </option>
-              <option value="AMAZON_LIFESTYLE_SHOT">
-                Amazon lifestyle shot
-              </option>
+              <option value="MAIN_IMAGE">{t("wtMainImage")}</option>
+              <option value="NEUTRAL_PRODUCT_SHOT">{t("wtNeutralProductShot")}</option>
+              <option value="AMAZON_LIFESTYLE_SHOT">{t("wtAmazonLifestyleShot")}</option>
+              <option value="LIFESTYLE">{t("wtLifestyle")}</option>
+              <option value="SCALE_REFERENCE">{t("wtScaleReference")}</option>
+              <option value="DETAIL_CLOSEUP">{t("wtDetailCloseup")}</option>
+              <option value="A_PLUS_VISUAL">{t("wtAPlusVisual")}</option>
             </select>
           </div>
         </div>
@@ -283,7 +293,7 @@ export function ImageGenerationTab({
           </div>
         </div>
 
-        {workflowType === "AMAZON_LIFESTYLE_SHOT" && (
+        {isLifestyleType && (
           <div className="space-y-4">
             <div>
               <label
