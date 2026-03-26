@@ -4,6 +4,8 @@ export { executeHeroLock } from "./services/heroLockOrchestrator";
 export { metadataStore } from "./services/metadataStore";
 export { extractSceneLock } from "./services/sceneExtractor";
 export { scoreImageQuality } from "./services/qualityScorer";
+export { compileUserPromptBlock } from "./services/promptBlockCompiler";
+export type { CompiledPromptBlock } from "./services/promptBlockCompiler";
 export { findCompositionTemplate, getAllCompositionTemplates } from "./data/compositionTemplates";
 export {
   getCategoryProfile,

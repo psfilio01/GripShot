@@ -151,6 +151,8 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       runtimeInput,
       globalHardRules,
       productHardRules,
+      userPromptBlock: input.userPromptBlock,
+      poseDescription: input.poseDescription,
     });
 
     const referencePaths = imagePaths;

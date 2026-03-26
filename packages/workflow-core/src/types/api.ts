@@ -49,6 +49,10 @@ export interface StartImageJobInput {
   resolution?: string;
   /** When true, runs quality scoring after generation and stores the result. */
   scoreQuality?: boolean;
+  /** Pre-compiled (English) user prompt block from product settings. Injected into every workflow. */
+  userPromptBlock?: string;
+  /** Free-text pose description from the Generate page. Overrides default pose in lifestyle workflows. */
+  poseDescription?: string;
 }
 
 export interface StartImageJobResult {

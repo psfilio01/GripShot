@@ -27,6 +27,10 @@ export interface BuildPromptArgs {
   globalHardRules?: HardRules | null;
   /** Product-specific hard rules. */
   productHardRules?: HardRules | null;
+  /** Pre-compiled user prompt block (English). Applied to every workflow type. */
+  userPromptBlock?: string | null;
+  /** Free-text pose description from Generate page. Overrides default pose for lifestyle types. */
+  poseDescription?: string | null;
 }
 
 const AURELEA_DEFAULT_OUTFIT = "minimal beige activewear, cropped top and short leggings";
@@ -57,19 +61,22 @@ export function buildPrompt(args: BuildPromptArgs): BuiltPrompt {
   const brandName = brandRules?.brandName ?? product.name ?? product.id;
   const referenceHint =
     references.length > 0 ? "Use the provided reference images as guidance." : "No reference images available.";
-  const text = [
+  const lines = [
     `High quality neutral product shot of a ${product.name ?? product.id}.`,
     `Brand: ${brandName}.`,
     "Plain, clean background suitable for ecommerce.",
-    referenceHint
-  ].join(" ");
+    referenceHint,
+  ];
+  if (args.userPromptBlock?.trim()) {
+    lines.push(`USER CUSTOM RULES (must be enforced):\n${args.userPromptBlock}`);
+  }
 
   return {
     id: nanoid(),
     templateId: "neutral_product_shot_v1",
     templateVersion: 1,
     workflowType,
-    text
+    text: lines.join(" "),
   };
 }
 
@@ -121,15 +128,20 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
     blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
   }
 
+  // --- Layer 2.5: User custom rules (compiled, cross-workflow) ---
+  if (args.userPromptBlock?.trim()) {
+    blocks.push(`USER CUSTOM RULES (must be enforced in every image):\n${args.userPromptBlock}`);
+  }
+
   // --- Layer 3: Scene defaults (may be overridden by runtime) ---
   const rt = runtimeInput ?? {};
   const outfit = rt.outfit ?? sceneOptions?.outfit ?? AURELEA_DEFAULT_OUTFIT;
   const feetStyle = rt.feet_style ?? (sceneOptions?.barefoot ?? AURELEA_DEFAULT_BAREFOOT ? "barefoot" : "with appropriate footwear");
   const mat = sceneOptions?.mat ?? AURELEA_DEFAULT_MAT;
-  const pose = rt.pose;
+  const pose = args.poseDescription?.trim() || rt.pose;
   const gaze = rt.gaze;
 
-  if (creativeFreedom === true && !runtimeInput) {
+  if (creativeFreedom === true && !runtimeInput && !args.poseDescription?.trim()) {
     blocks.push(
       "Choose a sporty, elegant Pilates exercise pose that naturally integrates the ${product.name} and styling that fits the brand; outfit and setting can vary within the brand DNA."
     );
@@ -241,6 +253,9 @@ function buildMainImagePrompt(args: BuildPromptArgs): BuiltPrompt {
   if (productHardRules?.text) {
     blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
   }
+  if (args.userPromptBlock?.trim()) {
+    blocks.push(`USER CUSTOM RULES (must be enforced in every image):\n${args.userPromptBlock}`);
+  }
   if (globalHardRules?.text) {
     blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
   }
@@ -290,6 +305,9 @@ function buildScaleReferencePrompt(args: BuildPromptArgs): BuiltPrompt {
 
   if (productHardRules?.text) {
     blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (args.userPromptBlock?.trim()) {
+    blocks.push(`USER CUSTOM RULES (must be enforced in every image):\n${args.userPromptBlock}`);
   }
   if (globalHardRules?.text) {
     blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
@@ -343,6 +361,9 @@ function buildDetailCloseupPrompt(args: BuildPromptArgs): BuiltPrompt {
 
   if (productHardRules?.text) {
     blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (args.userPromptBlock?.trim()) {
+    blocks.push(`USER CUSTOM RULES (must be enforced in every image):\n${args.userPromptBlock}`);
   }
   if (globalHardRules?.text) {
     blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
@@ -406,6 +427,9 @@ function buildAPlusVisualPrompt(args: BuildPromptArgs): BuiltPrompt {
 
   if (productHardRules?.text) {
     blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (args.userPromptBlock?.trim()) {
+    blocks.push(`USER CUSTOM RULES (must be enforced in every image):\n${args.userPromptBlock}`);
   }
   if (globalHardRules?.text) {
     blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
