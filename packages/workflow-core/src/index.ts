@@ -12,6 +12,6 @@ export type { QualityScore, QualityScorerInput } from "./domain/qualityScore";
 export type { CompositionTemplate } from "./data/compositionTemplates";
 export type { ProductCategory, CategoryProfile } from "./domain/product";
 export type { HeroLockResult } from "./services/heroLockOrchestrator";
-export type { ProductColorDef } from "./types/api";
+export type { ProductColorDef, StartImageJobInput, WorkflowType } from "./types/api";
 export { resolveChosenModelId } from "./services/modelLoader";
 export { formatGoogleGenerativeLanguageApiError } from "./utils/googleGenerativeLanguageError";

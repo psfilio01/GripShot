@@ -25,6 +25,8 @@ export interface SceneOptions {
 export interface StartImageJobInput {
   productId: string;
   workflowType: WorkflowType;
+  /** Product category from Firestore — drives composition template + prompt selection. */
+  productCategory?: string;
   /** If not set, a random model is chosen (see allowedModelIds). */
   modelId?: string;
   /**
@@ -45,6 +47,8 @@ export interface StartImageJobInput {
   aspectRatio?: string;
   /** Override resolution (e.g. "2K", "4K"). Falls back to runtime JSON or default. */
   resolution?: string;
+  /** When true, runs quality scoring after generation and stores the result. */
+  scoreQuality?: boolean;
 }
 
 export interface StartImageJobResult {
@@ -67,6 +71,13 @@ export interface GetJobResultImage {
     targetColorName: string;
     targetColorHex: string;
     generationMethod: string;
+  };
+  qualityScore?: {
+    overallScore: number;
+    productVisible: boolean;
+    proportionsPlausible: boolean;
+    goalMet: boolean;
+    issues: string[];
   };
 }
 

@@ -9,6 +9,7 @@ import type {
 } from "../types/api";
 import { getEnv } from "../config/env";
 import { buildProductFromId } from "../domain/product";
+import type { ProductCategory } from "../domain/product";
 import { loadReferenceImages } from "../services/referenceImageLoader";
 import { loadBrandRules } from "../services/brandRuleLoader";
 import { loadBrandDna } from "../services/brandDnaLoader";
@@ -22,11 +23,16 @@ import { loadRuntimeInput } from "../services/runtimeInputLoader";
 import { loadGlobalHardRules, loadProductHardRules } from "../services/hardRulesLoader";
 import { buildPrompt } from "../services/promptBuilder";
 import { generateImagesWithNanoBanana } from "../services/imageGenerator";
+import { scoreImageQuality } from "../services/qualityScorer";
 import { storeImage } from "../services/resultStorage";
 import { metadataStore } from "../services/metadataStore";
 import type { ImageJob } from "../domain/imageJob";
 import type { ImageVariant } from "../domain/imageVariant";
 import { handleFeedbackInternal } from "../services/feedbackHandler";
+
+const LIFESTYLE_TYPES = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE"]);
+const USES_MODEL_REFS = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE"]);
+const USES_BACKGROUND = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE", "A_PLUS_VISUAL"]);
 
 /** Randomly pick between 1 and maxCount items from array (or all if array is smaller). */
 function pickRandomSubset<T>(arr: T[], maxCount: number): T[] {
@@ -39,7 +45,8 @@ function pickRandomSubset<T>(arr: T[], maxCount: number): T[] {
 export async function startImageJob(input: StartImageJobInput): Promise<StartImageJobResult> {
   const env = getEnv();
   const dataRoot = env.WORKFLOW_DATA_ROOT;
-  const product = buildProductFromId(input.productId, dataRoot);
+  const category = (input.productCategory ?? undefined) as ProductCategory | undefined;
+  const product = buildProductFromId(input.productId, dataRoot, category);
 
   const jobId = nanoid();
   const now = new Date().toISOString();
@@ -56,6 +63,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
   await metadataStore.insertJob(job);
 
   try {
+    // ── Common loading (all workflow types) ──────────────────────────
     const references = await loadReferenceImages(product);
     if (references.length === 0) {
       throw new Error(
@@ -64,8 +72,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     }
 
     const brandRules = await loadBrandRules(product);
-
-    // Grip Shot layers: runtime input + hard rules + generation settings
+    const brandDna = await loadBrandDna(dataRoot);
     const { input: runtimeInput, generationSettings } = await loadRuntimeInput(dataRoot);
     const globalHardRules = await loadGlobalHardRules(dataRoot);
     const productHardRules = await loadProductHardRules(product);
@@ -81,20 +88,20 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     if (runtimeInput) {
       console.log(`\x1b[36m[workflow-core]\x1b[0m Runtime input keys: ${Object.keys(runtimeInput).join(", ")}`);
     }
+    if (category) {
+      console.log(`\x1b[36m[workflow-core]\x1b[0m Product category: ${category}`);
+    }
 
-    let prompt;
-    let referencePaths: string[];
+    // ── Multiple product refs for ALL types ──────────────────────────
+    const maxProductRefs = 3;
+    const selectedProductRefs = pickRandomSubset(references, maxProductRefs);
+    const productPaths = selectedProductRefs.map((r) => r.path);
+    const imagePaths: string[] = [...productPaths];
 
-    const isLifestylePipeline =
-      input.workflowType === "AMAZON_LIFESTYLE_SHOT" ||
-      input.workflowType === "LIFESTYLE";
-
-    if (isLifestylePipeline) {
-      const brandDna = await loadBrandDna(dataRoot);
-
-      // Background: user-managed backgroundId takes precedence over legacy golden toggle
-      let bgRef: { path: string } | null = null;
-      let useGoldenBackground = false;
+    // ── Background (lifestyle + A+ visual) ───────────────────────────
+    let bgRef: { path: string } | null = null;
+    let useGoldenBackground = false;
+    if (USES_BACKGROUND.has(input.workflowType)) {
       if (input.backgroundId) {
         bgRef = await loadUserBackground(dataRoot, input.backgroundId);
         if (bgRef) {
@@ -104,65 +111,52 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         useGoldenBackground = true;
         bgRef = await loadGoldenBackground(dataRoot);
       }
+      if (bgRef) imagePaths.push(bgRef.path);
+    }
 
+    // ── Human model refs (lifestyle only) ────────────────────────────
+    let modelRefs: { path: string }[] = [];
+    if (USES_MODEL_REFS.has(input.workflowType)) {
       const filesystemModelIds = await listModels(dataRoot);
       const chosenModelId = resolveChosenModelId(
         input.modelId,
         input.allowedModelIds,
         filesystemModelIds,
       );
-      const modelRefs = chosenModelId ? await loadModelReferences(dataRoot, chosenModelId) : [];
-
-      const maxProductRefs = 3;
-      const selectedProductRefs = pickRandomSubset(references, maxProductRefs);
-      const productPaths = selectedProductRefs.map((r) => r.path);
-
-      const imagePaths: string[] = [...productPaths];
-      if (bgRef) imagePaths.push(bgRef.path);
+      modelRefs = chosenModelId ? await loadModelReferences(dataRoot, chosenModelId) : [];
       modelRefs.forEach((r) => imagePaths.push(r.path));
-
-      const hasModelRefs = modelRefs.length > 0;
-      const hasBackgroundRef = bgRef != null;
-      prompt = buildPrompt({
-        workflowType: input.workflowType,
-        product,
-        brandRules,
-        references: selectedProductRefs,
-        brandDna: brandDna.text ? brandDna : null,
-        sceneOptions: input.sceneOptions,
-        useGoldenBackground,
-        creativeFreedom: input.creativeFreedom,
-        imageLayout: {
-          hasProductRefs: true,
-          hasBackgroundRef,
-          hasModelRefs
-        },
-        runtimeInput,
-        globalHardRules,
-        productHardRules
-      });
-      referencePaths = imagePaths;
-
-      console.log(`\x1b[36m[workflow-core]\x1b[0m Lifestyle prompt template: ${prompt.templateId} v${prompt.templateVersion}`);
-      console.log(`\x1b[36m[workflow-core]\x1b[0m Reference images: ${referencePaths.length} (product: ${productPaths.length}, bg: ${hasBackgroundRef ? 1 : 0}, model: ${modelRefs.length})`);
-      console.log(`\x1b[36m[workflow-core]\x1b[0m \x1b[1m── FULL PROMPT ──\x1b[0m\n${prompt.text}\n\x1b[36m[workflow-core]\x1b[0m \x1b[1m── END PROMPT ──\x1b[0m`);
-    } else {
-      const baseReference = references[0];
-      prompt = buildPrompt({
-        workflowType: input.workflowType,
-        product,
-        brandRules,
-        references,
-        runtimeInput,
-        globalHardRules,
-        productHardRules
-      });
-      referencePaths = [baseReference.path];
-
-      console.log(`\x1b[36m[workflow-core]\x1b[0m Neutral prompt template: ${prompt.templateId} v${prompt.templateVersion}`);
-      console.log(`\x1b[36m[workflow-core]\x1b[0m \x1b[1m── FULL PROMPT ──\x1b[0m\n${prompt.text}\n\x1b[36m[workflow-core]\x1b[0m \x1b[1m── END PROMPT ──\x1b[0m`);
     }
 
+    const hasBackgroundRef = bgRef != null;
+    const hasModelRefs = modelRefs.length > 0;
+
+    // ── Build prompt (all context available to every type) ───────────
+    const prompt = buildPrompt({
+      workflowType: input.workflowType,
+      product,
+      brandRules,
+      references: selectedProductRefs,
+      brandDna: brandDna.text ? brandDna : null,
+      sceneOptions: input.sceneOptions,
+      useGoldenBackground,
+      creativeFreedom: input.creativeFreedom,
+      imageLayout: {
+        hasProductRefs: true,
+        hasBackgroundRef,
+        hasModelRefs,
+      },
+      runtimeInput,
+      globalHardRules,
+      productHardRules,
+    });
+
+    const referencePaths = imagePaths;
+
+    console.log(`\x1b[36m[workflow-core]\x1b[0m Prompt template: ${prompt.templateId} v${prompt.templateVersion} [${input.workflowType}]`);
+    console.log(`\x1b[36m[workflow-core]\x1b[0m Reference images: ${referencePaths.length} (product: ${productPaths.length}, bg: ${hasBackgroundRef ? 1 : 0}, model: ${modelRefs.length})`);
+    console.log(`\x1b[36m[workflow-core]\x1b[0m \x1b[1m── FULL PROMPT ──\x1b[0m\n${prompt.text}\n\x1b[36m[workflow-core]\x1b[0m \x1b[1m── END PROMPT ──\x1b[0m`);
+
+    // ── Generate images ──────────────────────────────────────────────
     const generatedImages = await generateImagesWithNanoBanana(prompt, referencePaths, generationSettings);
 
     const variants: ImageVariant[] = [];
@@ -187,6 +181,26 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       };
       await metadataStore.insertVariant(variant);
       variants.push(variant);
+    }
+
+    // ── Quality scoring (opt-in) ─────────────────────────────────────
+    if (input.scoreQuality) {
+      console.log(`\x1b[36m[workflow-core]\x1b[0m Running quality scoring on ${variants.length} image(s)…`);
+      for (const variant of variants) {
+        try {
+          const score = await scoreImageQuality({
+            imagePath: variant.filePath,
+            workflowType: input.workflowType,
+            productCategory: category,
+            productName: product.name,
+          });
+          variant.qualityScore = score;
+          await metadataStore.updateVariantQualityScore(variant.id, score);
+          console.log(`\x1b[36m[workflow-core]\x1b[0m Quality score for ${variant.id}: ${score.overallScore}/10`);
+        } catch (scoreErr) {
+          console.error(`\x1b[33m[workflow-core]\x1b[0m Quality scoring failed for ${variant.id}, skipping:`, scoreErr);
+        }
+      }
     }
 
     await metadataStore.updateJobStatus(jobId, "completed");
@@ -221,6 +235,7 @@ export async function getJob(jobId: string): Promise<GetJobResult> {
     colorVariant: v.colorVariant ?? undefined,
     heroLockId: v.heroLockId,
     colorLineage: v.colorLineage,
+    qualityScore: v.qualityScore,
   }));
 
   return {

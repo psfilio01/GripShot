@@ -18,6 +18,7 @@ const LIFESTYLE_WORKFLOW_TYPES = new Set([
 interface ProductOption {
   id: string;
   name: string;
+  category?: string;
 }
 
 interface HumanModelOption {
@@ -130,12 +131,14 @@ export function ImageGenerationTab({
 
     void (async () => {
       try {
+        const selectedProduct = products.find((p) => p.id === productId);
         const res = await fetch("/api/generate/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productId,
             workflowType,
+            productCategory: selectedProduct?.category || undefined,
             creativeFreedom,
             aspectRatio,
             resolution,

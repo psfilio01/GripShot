@@ -14,6 +14,7 @@ import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
+import type { StartImageJobInput } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -40,6 +41,7 @@ const WORKFLOW_TYPES = [
 const RequestSchema = z.object({
   productId: z.string().min(1),
   workflowType: z.enum(WORKFLOW_TYPES),
+  productCategory: z.string().max(50).optional(),
   useGoldenBackground: z.boolean().default(false),
   creativeFreedom: z.boolean().default(false),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),
@@ -113,7 +115,8 @@ export async function POST(req: NextRequest) {
 
     const result = await startImageJob({
       productId: input.productId,
-      workflowType: input.workflowType,
+      workflowType: input.workflowType as StartImageJobInput["workflowType"],
+      productCategory: input.productCategory || undefined,
       useGoldenBackground: input.useGoldenBackground,
       creativeFreedom: input.creativeFreedom,
       aspectRatio: input.aspectRatio,
@@ -121,6 +124,7 @@ export async function POST(req: NextRequest) {
       modelId: trimmedModelId || undefined,
       allowedModelIds,
       backgroundId: trimmedBackgroundId || undefined,
+      scoreQuality: true,
     });
 
     const job = await getJob(result.jobId);
