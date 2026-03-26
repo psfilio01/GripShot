@@ -22,6 +22,14 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+async function postSessionCookie(idToken: string): Promise<void> {
+  await fetch("/api/auth/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,11 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         if (u) {
           const idToken = await u.getIdToken();
-          await fetch("/api/auth/session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          });
+          await postSessionCookie(idToken);
         } else {
           await fetch("/api/auth/session", { method: "DELETE" });
         }
@@ -68,7 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       const { signInWithEmailAndPassword } = await import("firebase/auth");
       const auth = await getAuth();
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await cred.user.getIdToken();
+      await postSessionCookie(idToken);
     },
     [getAuth],
   );
@@ -77,7 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       const { createUserWithEmailAndPassword } = await import("firebase/auth");
       const auth = await getAuth();
-      await createUserWithEmailAndPassword(auth, email, password);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await cred.user.getIdToken();
+      await postSessionCookie(idToken);
     },
     [getAuth],
   );
@@ -87,7 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "firebase/auth"
     );
     const auth = await getAuth();
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+    const idToken = await cred.user.getIdToken();
+    await postSessionCookie(idToken);
   }, [getAuth]);
 
   const signOut = useCallback(async () => {

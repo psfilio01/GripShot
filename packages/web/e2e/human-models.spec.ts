@@ -21,13 +21,13 @@ test.describe("Human models & generate (authenticated)", () => {
     await signInWithEmail(page);
 
     await page.goto("/en/dashboard/human-models");
-    await expect(
-      page.getByRole("heading", { name: "Human models" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Models" })).toBeVisible();
 
     const name = `E2E Model ${Date.now()}`;
-    await page.getByTestId("human-model-display-name").fill(name);
-    await page.getByTestId("human-model-create-submit").click();
+    await page.getByLabel("Display name").first().fill(name);
+    await page
+      .getByRole("button", { name: /Create & upload references/i })
+      .click();
 
     await expect(page).toHaveURL(
       /\/(en|de)\/dashboard\/human-models\/[a-zA-Z0-9_-]+$/,
