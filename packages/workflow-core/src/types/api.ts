@@ -1,4 +1,16 @@
-export type WorkflowType = "NEUTRAL_PRODUCT_SHOT" | "AMAZON_LIFESTYLE_SHOT";
+export type WorkflowType =
+  | "NEUTRAL_PRODUCT_SHOT"
+  | "AMAZON_LIFESTYLE_SHOT"
+  | "MAIN_IMAGE"
+  | "LIFESTYLE"
+  | "SCALE_REFERENCE"
+  | "DETAIL_CLOSEUP"
+  | "A_PLUS_VISUAL";
+
+/** `LIFESTYLE` is a semantic alias for the original `AMAZON_LIFESTYLE_SHOT`. */
+export function normalizeWorkflowType(wt: WorkflowType): WorkflowType {
+  return wt === "LIFESTYLE" ? "AMAZON_LIFESTYLE_SHOT" : wt;
+}
 
 /** Scene options for lifestyle shots (defaults: black Pilates outfit, barefoot, black mat). */
 export interface SceneOptions {
