@@ -4,6 +4,7 @@ data/generated/
 data/metadata.json
 data/models/
 data/products/
+data/backgrounds/
 node_modules/
 dist/
 .next/
