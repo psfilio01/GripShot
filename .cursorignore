@@ -1,0 +1,5 @@
+# Große / generierte Verzeichnisse — nicht indexieren (weniger Kosten, schneller)
+node_modules/
+dist/
+.next/
+data/

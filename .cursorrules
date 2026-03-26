@@ -1,0 +1,27 @@
+# Grip Shot / Amazon Seller SaaS
+
+## Stack
+pnpm monorepo, TypeScript, Next.js App Router, Firebase Auth, Firestore, Cloud Storage, Stripe Billing, Gemini API, Vitest, Playwright. `packages/workflow-core` is the image-generation domain: extend it, do not replace.
+
+## How to work
+- Feature-by-feature, small vertical slices; read existing code before adding new code.
+- Each feature: code + tests + docs + README updates per repo conventions.
+- App must run locally and deploy to Cloud Run. Stateless: user files only in managed storage.
+- Use feature branches; merge only when tests pass. Commit messages: `Cloude: <msg>`.
+- If requirements are ambiguous, choose the commercially sensible, technically robust path.
+
+## Quality gates
+Feature is done when: unit + integration tests pass; Playwright when UI changes; lint + typecheck pass; local run works; docs and README updated.
+
+## Dependencies
+Only well-known, actively maintained packages (>1k weekly downloads). Pin exact versions (no ^ or ~). Ask before adding new dependencies.
+
+## Architecture
+- Firebase Auth: email/password + Google; users belong to a workspace with subscription + quota.
+- Stripe webhooks are the source of truth for billing state.
+- Generation stops at quota; nothing already generated is lost. Prefer dry-run paths for expensive generation.
+- Prepare backend abstractions for future WhatsApp/Telegram; do not block core launch on messaging.
+
+## Autonomy
+Do: small high-value improvements, validations, naming, security/observability where sensible.
+Don't: replace the stack without strong justification, build large speculative systems first, silently remove behavior, ship fake implementations without labeling them.

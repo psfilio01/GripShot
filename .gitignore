@@ -15,3 +15,9 @@ test-results/
 
 # Accidental local archives (do not commit)
 Archive.zip
+
+# macOS
+.DS_Store
+
+# Firebase Admin SDK service account keys (secrets; use env or secret manager in deploy)
+**/*firebase-adminsdk*.json
