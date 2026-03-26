@@ -2,12 +2,14 @@ import { nanoid } from "nanoid";
 import type { WorkflowType } from "../types/api";
 import type { SceneOptions } from "../types/api";
 import type { Product } from "../domain/product";
+import { getCategoryProfile } from "../domain/product";
 import type { BrandRules } from "../domain/brandRules";
 import type { ReferenceImage } from "./referenceImageLoader";
 import type { BuiltPrompt } from "../domain/prompt";
 import type { BrandDna } from "./brandDnaLoader";
 import type { RuntimeInput } from "./runtimeInputLoader";
 import type { HardRules } from "./hardRulesLoader";
+import { findCompositionTemplate } from "../data/compositionTemplates";
 
 export interface BuildPromptArgs {
   workflowType: WorkflowType;
@@ -34,8 +36,21 @@ const AURELEA_DEFAULT_MAT = "black exercise mat (the mat should befully visible 
 export function buildPrompt(args: BuildPromptArgs): BuiltPrompt {
   const { workflowType, product, brandRules, references } = args;
 
-  if (workflowType === "AMAZON_LIFESTYLE_SHOT") {
-    return buildLifestylePrompt(args);
+  switch (workflowType) {
+    case "AMAZON_LIFESTYLE_SHOT":
+    case "LIFESTYLE":
+      return buildLifestylePrompt(args);
+    case "MAIN_IMAGE":
+      return buildMainImagePrompt(args);
+    case "SCALE_REFERENCE":
+      return buildScaleReferencePrompt(args);
+    case "DETAIL_CLOSEUP":
+      return buildDetailCloseupPrompt(args);
+    case "A_PLUS_VISUAL":
+      return buildAPlusVisualPrompt(args);
+    case "NEUTRAL_PRODUCT_SHOT":
+    default:
+      break;
   }
 
   // NEUTRAL_PRODUCT_SHOT (unchanged)
@@ -190,5 +205,221 @@ function buildRuntimeExtras(rt: RuntimeInput): string | null {
   }
 
   return lines.length > 0 ? lines.join("\n") : null;
+}
+
+// ---------------------------------------------------------------------------
+// MAIN_IMAGE — Amazon-compliant hero product image on white background
+// ---------------------------------------------------------------------------
+
+function buildMainImagePrompt(args: BuildPromptArgs): BuiltPrompt {
+  const { product, references, globalHardRules, productHardRules, brandDna } = args;
+  const productName = product.name ?? product.id;
+  const profile = getCategoryProfile(product.category);
+  const template = findCompositionTemplate("MAIN_IMAGE", product.category);
+  const blocks: string[] = [];
+
+  if (references.length > 0) {
+    blocks.push("You receive product reference image(s). Reproduce the product faithfully.");
+  }
+
+  blocks.push(
+    `Generate an ultra-realistic Amazon Main Image of a ${productName}. ` +
+    "The product must be isolated on a pure white background (#FFFFFF). " +
+    "No people, no props, no text. Output only the generated image.",
+  );
+
+  if (template) {
+    blocks.push(`Composition: ${template.promptBlocks.composition}`);
+    blocks.push(`Camera: ${template.promptBlocks.camera}`);
+    blocks.push(`Lighting: ${template.promptBlocks.lighting}`);
+  }
+
+  if (profile.materialFocus) {
+    blocks.push("Emphasise material quality and surface finish in the rendering.");
+  }
+
+  if (productHardRules?.text) {
+    blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (globalHardRules?.text) {
+    blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
+  }
+  if (brandDna?.text) {
+    blocks.push(`Brand DNA (follow this visual style):\n${brandDna.text}`);
+  }
+
+  return {
+    id: nanoid(),
+    templateId: template?.id ?? "main_image_v1",
+    templateVersion: 1,
+    workflowType: "MAIN_IMAGE",
+    text: blocks.join("\n\n"),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// SCALE_REFERENCE — Product with a size reference object
+// ---------------------------------------------------------------------------
+
+function buildScaleReferencePrompt(args: BuildPromptArgs): BuiltPrompt {
+  const { product, references, globalHardRules, productHardRules, brandDna } = args;
+  const productName = product.name ?? product.id;
+  const profile = getCategoryProfile(product.category);
+  const template = findCompositionTemplate("SCALE_REFERENCE", product.category);
+  const blocks: string[] = [];
+
+  if (references.length > 0) {
+    blocks.push("You receive product reference image(s). Reproduce the product faithfully.");
+  }
+
+  const scaleHint = profile.typicalScale === "large"
+    ? "Show the product next to a standing adult person for scale."
+    : "Show the product held in a human hand to communicate its real-world size.";
+
+  blocks.push(
+    `Generate a professional product image of a ${productName} that clearly communicates its physical size. ` +
+    `${scaleHint} ` +
+    `The ${productName} must appear physically realistic in proportion. Output only the generated image, no text.`,
+  );
+
+  if (template) {
+    blocks.push(`Composition: ${template.promptBlocks.composition}`);
+    blocks.push(`Camera: ${template.promptBlocks.camera}`);
+    blocks.push(`Lighting: ${template.promptBlocks.lighting}`);
+  }
+
+  if (productHardRules?.text) {
+    blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (globalHardRules?.text) {
+    blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
+  }
+  if (brandDna?.text) {
+    blocks.push(`Brand DNA (follow this visual style):\n${brandDna.text}`);
+  }
+
+  return {
+    id: nanoid(),
+    templateId: template?.id ?? "scale_reference_v1",
+    templateVersion: 1,
+    workflowType: "SCALE_REFERENCE",
+    text: blocks.join("\n\n"),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// DETAIL_CLOSEUP — Material, texture, and craftsmanship close-up
+// ---------------------------------------------------------------------------
+
+function buildDetailCloseupPrompt(args: BuildPromptArgs): BuiltPrompt {
+  const { product, references, globalHardRules, productHardRules, brandDna } = args;
+  const productName = product.name ?? product.id;
+  const profile = getCategoryProfile(product.category);
+  const template = findCompositionTemplate("DETAIL_CLOSEUP", product.category);
+  const blocks: string[] = [];
+
+  if (references.length > 0) {
+    blocks.push("You receive product reference image(s). Match the product's material and colour exactly.");
+  }
+
+  blocks.push(
+    `Generate an extreme close-up detail shot of a ${productName}. ` +
+    "Focus on material quality, texture, stitching, or surface finish. " +
+    "The image should communicate premium craftsmanship. Output only the generated image, no text.",
+  );
+
+  if (template) {
+    blocks.push(`Composition: ${template.promptBlocks.composition}`);
+    blocks.push(`Camera: ${template.promptBlocks.camera}`);
+    blocks.push(`Lighting: ${template.promptBlocks.lighting}`);
+  }
+
+  if (profile.materialFocus) {
+    blocks.push(
+      "This product category benefits from strong material emphasis. " +
+      "Highlight weave patterns, surface sheen, grain, or other tactile qualities.",
+    );
+  }
+
+  if (productHardRules?.text) {
+    blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (globalHardRules?.text) {
+    blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
+  }
+  if (brandDna?.text) {
+    blocks.push(`Brand DNA (follow this visual style):\n${brandDna.text}`);
+  }
+
+  return {
+    id: nanoid(),
+    templateId: template?.id ?? "detail_closeup_v1",
+    templateVersion: 1,
+    workflowType: "DETAIL_CLOSEUP",
+    text: blocks.join("\n\n"),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// A_PLUS_VISUAL — Premium visual for Amazon A+ Content
+// ---------------------------------------------------------------------------
+
+function buildAPlusVisualPrompt(args: BuildPromptArgs): BuiltPrompt {
+  const {
+    product, references, brandDna,
+    globalHardRules, productHardRules,
+    useGoldenBackground, imageLayout = { hasProductRefs: true, hasBackgroundRef: false, hasModelRefs: false },
+  } = args;
+  const productName = product.name ?? product.id;
+  const profile = getCategoryProfile(product.category);
+  const template = findCompositionTemplate("A_PLUS_VISUAL", product.category);
+  const blocks: string[] = [];
+
+  const imageOrder: string[] = [];
+  if (imageLayout.hasProductRefs) imageOrder.push("product reference(s)");
+  if (imageLayout.hasBackgroundRef) imageOrder.push("background reference");
+  if (imageLayout.hasModelRefs) imageOrder.push("model reference(s)");
+  if (imageOrder.length > 0) {
+    blocks.push(`You receive ${imageOrder.length} image group(s) in this order: ${imageOrder.join("; ")}.`);
+  }
+
+  blocks.push(
+    `Generate a premium Amazon A+ Content visual featuring a ${productName}. ` +
+    "The image should feel aspirational and editorial. " +
+    (profile.showWithPerson
+      ? "A person may partially appear (hands, silhouette) interacting with the product. "
+      : "Style the product in an attractive setting with complementary props. ") +
+    "Output only the generated image, no text.",
+  );
+
+  if (template) {
+    blocks.push(`Composition: ${template.promptBlocks.composition}`);
+    blocks.push(`Camera: ${template.promptBlocks.camera}`);
+    blocks.push(`Lighting: ${template.promptBlocks.lighting}`);
+  }
+
+  if (useGoldenBackground && imageLayout.hasBackgroundRef) {
+    blocks.push("Use the background reference image as the visual environment guide.");
+  } else if (profile.contextNeeded) {
+    blocks.push("Place the product in a realistic, aspirational environment matching its typical use.");
+  }
+
+  if (productHardRules?.text) {
+    blocks.push(`MANDATORY PRODUCT RULES for ${productName} (must be enforced):\n${productHardRules.text}`);
+  }
+  if (globalHardRules?.text) {
+    blocks.push(`MANDATORY GLOBAL RULES (must be enforced):\n${globalHardRules.text}`);
+  }
+  if (brandDna?.text) {
+    blocks.push(`Brand DNA (follow this visual style):\n${brandDna.text}`);
+  }
+
+  return {
+    id: nanoid(),
+    templateId: template?.id ?? "a_plus_visual_v1",
+    templateVersion: 1,
+    workflowType: "A_PLUS_VISUAL",
+    text: blocks.join("\n\n"),
+  };
 }
 
