@@ -24,4 +24,12 @@ export interface ImageVariant {
   heroLockId?: string;
   /** Set on derived color variants to trace lineage back to the master. */
   colorLineage?: ColorLineage;
+  /** Post-generation quality assessment. Present only when quality scoring is enabled. */
+  qualityScore?: {
+    overallScore: number;
+    productVisible: boolean;
+    proportionsPlausible: boolean;
+    goalMet: boolean;
+    issues: string[];
+  };
 }

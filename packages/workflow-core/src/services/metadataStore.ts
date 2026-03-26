@@ -102,7 +102,19 @@ export const metadataStore = {
   async getVariantById(id: string): Promise<ImageVariant | null> {
     const store = await loadStore();
     return store.variants.find((v) => v.id === id) ?? null;
-  }
+  },
+
+  async updateVariantQualityScore(
+    variantId: string,
+    qualityScore: NonNullable<ImageVariant["qualityScore"]>,
+  ): Promise<void> {
+    const store = await loadStore();
+    const v = store.variants.find((x) => x.id === variantId);
+    if (v) {
+      v.qualityScore = qualityScore;
+      await saveStore(store);
+    }
+  },
 };
 
 

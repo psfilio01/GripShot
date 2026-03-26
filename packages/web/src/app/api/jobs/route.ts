@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
           imageId: v.id,
           status: v.status,
           filePath: v.filePath,
+          qualityScore: v.qualityScore,
         })),
       });
     }
