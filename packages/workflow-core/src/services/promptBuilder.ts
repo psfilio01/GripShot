@@ -185,7 +185,7 @@ function buildLifestylePrompt(args: BuildPromptArgs): BuiltPrompt {
     id: nanoid(),
     templateId: "amazon_lifestyle_shot_v1",
     templateVersion: 2,
-    workflowType: "AMAZON_LIFESTYLE_SHOT",
+    workflowType: args.workflowType,
     text
   };
 }

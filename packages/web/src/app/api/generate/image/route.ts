@@ -26,9 +26,20 @@ const ASPECT_RATIOS = [
 
 const RESOLUTIONS = ["512", "1K", "2K", "4K"] as const;
 
+/** Must stay in sync with @fashionmentum/workflow-core StartImageJobInput.workflowType */
+const WORKFLOW_TYPES = [
+  "NEUTRAL_PRODUCT_SHOT",
+  "AMAZON_LIFESTYLE_SHOT",
+  "MAIN_IMAGE",
+  "LIFESTYLE",
+  "SCALE_REFERENCE",
+  "DETAIL_CLOSEUP",
+  "A_PLUS_VISUAL",
+] as const;
+
 const RequestSchema = z.object({
   productId: z.string().min(1),
-  workflowType: z.enum(["NEUTRAL_PRODUCT_SHOT", "AMAZON_LIFESTYLE_SHOT"]),
+  workflowType: z.enum(WORKFLOW_TYPES),
   useGoldenBackground: z.boolean().default(false),
   creativeFreedom: z.boolean().default(false),
   aspectRatio: z.enum(ASPECT_RATIOS).optional(),

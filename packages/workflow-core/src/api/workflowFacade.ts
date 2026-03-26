@@ -85,7 +85,11 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     let prompt;
     let referencePaths: string[];
 
-    if (input.workflowType === "AMAZON_LIFESTYLE_SHOT") {
+    const isLifestylePipeline =
+      input.workflowType === "AMAZON_LIFESTYLE_SHOT" ||
+      input.workflowType === "LIFESTYLE";
+
+    if (isLifestylePipeline) {
       const brandDna = await loadBrandDna(dataRoot);
 
       // Background: user-managed backgroundId takes precedence over legacy golden toggle
@@ -120,7 +124,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       const hasModelRefs = modelRefs.length > 0;
       const hasBackgroundRef = bgRef != null;
       prompt = buildPrompt({
-        workflowType: "AMAZON_LIFESTYLE_SHOT",
+        workflowType: input.workflowType,
         product,
         brandRules,
         references: selectedProductRefs,

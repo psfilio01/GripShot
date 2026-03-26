@@ -41,7 +41,7 @@ describe("buildPrompt — backward compatibility", () => {
 
   it("LIFESTYLE routes to the same builder as AMAZON_LIFESTYLE_SHOT", () => {
     const result = buildPrompt(makeArgs({ workflowType: "LIFESTYLE" }));
-    expect(result.workflowType).toBe("AMAZON_LIFESTYLE_SHOT");
+    expect(result.workflowType).toBe("LIFESTYLE");
     expect(result.templateId).toBe("amazon_lifestyle_shot_v1");
   });
 });
