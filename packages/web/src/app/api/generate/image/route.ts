@@ -6,6 +6,7 @@ import { listHumanModelIds } from "@/lib/db/human-models";
 import { insertGenerationLog } from "@/lib/db/generation-logs";
 import {
   createPendingImageGeneration,
+  deleteFailedPendingImageGenerationsForProduct,
   deletePendingImageGeneration,
   failPendingImageGeneration,
 } from "@/lib/db/pending-image-generations";
@@ -101,6 +102,11 @@ export async function POST(req: NextRequest) {
     }
 
     const requestId = input.requestId ?? randomUUID();
+    await deleteFailedPendingImageGenerationsForProduct(
+      session.user.workspaceId,
+      input.productId,
+    ).catch(() => {});
+
     await createPendingImageGeneration(session.user.workspaceId, requestId, {
       productId: input.productId,
       workflowType: input.workflowType,

@@ -3,6 +3,10 @@ import { readFile } from "fs/promises";
 import { existsSync, readdirSync } from "fs";
 import { join, extname, resolve, sep } from "path";
 import { config } from "dotenv";
+import {
+  GENERATED_BUCKETS,
+  parseGeneratedTrailing,
+} from "@/lib/images/generated-request-path";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -16,16 +20,16 @@ const MIME_TYPES: Record<string, string> = {
 
 const ALLOWED_ROOTS = ["generated", "products", "models", "backgrounds"];
 
-function getPrimaryDataRoot(): string {
+function fallbackPrimaryDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
 }
 
 /**
- * Try primary root (env / monorepo data), then `packages/web/data` where older
- * jobs may have written files when workflow-core defaulted to cwd + "/data".
+ * Same order workflow-core uses, plus `packages/web/data` for legacy writes.
+ * Dynamic-import workflow-core inside GET so `.env` is loaded before `getEnv()`.
  */
-function candidateDataRoots(): string[] {
-  const primary = resolve(getPrimaryDataRoot());
+function candidateDataRoots(workflowCoreRoot: string): string[] {
+  const primary = resolve(workflowCoreRoot);
   const cwd = process.cwd();
   const webLocal = resolve(cwd, "data");
   const ordered = [primary, webLocal];
@@ -48,34 +52,18 @@ function isPathInsideRoot(filePath: string, root: string): boolean {
   );
 }
 
-/** Safe segment for job id / bucket / file name (no traversal). */
-const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/;
-
-const ALL_BUCKETS = ["neutral", "favorites", "rejected", "variants"];
-
 /**
- * Legacy layouts used human-readable folder names (e.g. "Pilates Mini Ball")
- * while Firestore uses ids (e.g. "pilates-mini-ball"). If the exact path
- * misses, locate `generated/<any>/<jobId>/<bucket>/<file>` under the same data root.
- *
- * Also tries alternate buckets because feedback moves files between
- * neutral/favorites/rejected while metadata may still reference the old bucket.
+ * If exact path misses, locate `generated/<any>/<jobId>/<bucket>/<file>` under the data root.
+ * Tries alternate buckets because feedback moves files between neutral/favorites/rejected.
  */
 function findGeneratedByJobPath(
   segments: string[],
   dataRoot: string,
 ): string | null {
-  if (segments[0] !== "generated" || segments.length !== 5) {
-    return null;
-  }
-  const [, _productSegment, jobId, bucket, fileName] = segments;
-  if (
-    !SAFE_SEGMENT.test(jobId) ||
-    !SAFE_SEGMENT.test(bucket) ||
-    !SAFE_SEGMENT.test(fileName)
-  ) {
-    return null;
-  }
+  const parsed = parseGeneratedTrailing(segments);
+  if (!parsed) return null;
+
+  const { jobId, bucket, fileName } = parsed;
 
   const genRoot = join(dataRoot, "generated");
   if (!existsSync(genRoot)) {
@@ -92,12 +80,14 @@ function findGeneratedByJobPath(
     return null;
   }
 
-  const bucketsToTry = [bucket, ...ALL_BUCKETS.filter((b) => b !== bucket)];
+  const bucketsToTry = [bucket, ...GENERATED_BUCKETS.filter((b) => b !== bucket)];
 
   for (const productDir of subdirs) {
     if (/[/\\]/.test(productDir)) continue;
     for (const tryBucket of bucketsToTry) {
-      const candidate = resolve(join(genRoot, productDir, jobId, tryBucket, fileName));
+      const candidate = resolve(
+        join(genRoot, productDir, jobId, tryBucket, fileName),
+      );
       if (!isPathInsideRoot(candidate, genRoot)) continue;
       if (existsSync(candidate)) {
         return candidate;
@@ -113,6 +103,15 @@ export async function GET(
 ) {
   const { path: segments } = await params;
 
+  let workflowCoreRoot: string;
+  try {
+    const { getWorkflowDataRoot } = await import("@fashionmentum/workflow-core");
+    workflowCoreRoot = getWorkflowDataRoot();
+  } catch {
+    workflowCoreRoot = fallbackPrimaryDataRoot();
+  }
+  const roots = candidateDataRoots(workflowCoreRoot);
+
   const rootSegment = segments[0];
   if (!ALLOWED_ROOTS.includes(rootSegment)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -120,7 +119,7 @@ export async function GET(
 
   let resolvedFile: string | null = null;
 
-  for (const dataRoot of candidateDataRoots()) {
+  for (const dataRoot of roots) {
     const filePath = join(dataRoot, ...segments);
     const normalizedPath = resolve(filePath);
     if (!isPathInsideRoot(normalizedPath, dataRoot)) {
@@ -132,39 +131,30 @@ export async function GET(
     }
   }
 
-  // For generated images: try alternate buckets at exact product path
-  // (files move between neutral/favorites/rejected on feedback)
-  if (
-    !resolvedFile &&
-    segments[0] === "generated" &&
-    segments.length === 5
-  ) {
-    const [, productId, jobId, bucket, fileName] = segments;
-    if (
-      SAFE_SEGMENT.test(jobId) &&
-      SAFE_SEGMENT.test(bucket) &&
-      SAFE_SEGMENT.test(fileName)
-    ) {
-      const altBuckets = ALL_BUCKETS.filter((b) => b !== bucket);
-      for (const dataRoot of candidateDataRoots()) {
-        for (const altBucket of altBuckets) {
-          const altPath = resolve(
-            join(dataRoot, "generated", productId, jobId, altBucket, fileName),
-          );
-          if (!isPathInsideRoot(altPath, dataRoot)) continue;
-          if (existsSync(altPath)) {
-            resolvedFile = altPath;
-            break;
-          }
+  const trailing = parseGeneratedTrailing(segments);
+
+  // Alternate buckets at the path implied by segments (single- or multi-segment product dir)
+  if (!resolvedFile && trailing && segments[0] === "generated") {
+    const productSegments = segments.slice(1, -3);
+    const { jobId, bucket, fileName } = trailing;
+    const altBuckets = GENERATED_BUCKETS.filter((b) => b !== bucket);
+    for (const dataRoot of roots) {
+      for (const altBucket of altBuckets) {
+        const altPath = resolve(
+          join(dataRoot, "generated", ...productSegments, jobId, altBucket, fileName),
+        );
+        if (!isPathInsideRoot(altPath, dataRoot)) continue;
+        if (existsSync(altPath)) {
+          resolvedFile = altPath;
+          break;
         }
-        if (resolvedFile) break;
       }
+      if (resolvedFile) break;
     }
   }
 
-  // Fallback: scan all product directories for the jobId/bucket/file combo
   if (!resolvedFile && segments[0] === "generated") {
-    for (const dataRoot of candidateDataRoots()) {
+    for (const dataRoot of roots) {
       const found = findGeneratedByJobPath(segments, dataRoot);
       if (found) {
         resolvedFile = found;

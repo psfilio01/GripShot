@@ -65,6 +65,28 @@ export async function deletePendingImageGeneration(
   await collectionRef(workspaceId).doc(requestId).delete();
 }
 
+/** Clears stale "failed" placeholders so a new run is not shown next to fresh results. */
+export async function deleteFailedPendingImageGenerationsForProduct(
+  workspaceId: string,
+  productId: string,
+): Promise<void> {
+  const snap = await collectionRef(workspaceId)
+    .where("productId", "==", productId)
+    .get();
+  const batch = getDb().batch();
+  let n = 0;
+  for (const doc of snap.docs) {
+    const d = doc.data() as PendingImageGenerationDoc;
+    if (d.status === "failed") {
+      batch.delete(doc.ref);
+      n++;
+    }
+  }
+  if (n > 0) {
+    await batch.commit();
+  }
+}
+
 export async function failPendingImageGeneration(
   workspaceId: string,
   requestId: string,

@@ -56,3 +56,8 @@ export function getEnv(): Env {
   return cachedEnv;
 }
 
+/** Resolved data root (same value image generation and metadata use). */
+export function getWorkflowDataRoot(): string {
+  return getEnv().WORKFLOW_DATA_ROOT;
+}
+

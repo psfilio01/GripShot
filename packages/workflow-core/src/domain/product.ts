@@ -108,7 +108,8 @@ export const CATEGORY_PROFILES: Record<ProductCategory, CategoryProfile> = {
  * when missing or not a known slug (handles legacy Firestore free-text).
  */
 export function getCategoryProfile(category?: string | null): CategoryProfile {
-  return CATEGORY_PROFILES[normalizeProductCategory(category)];
+  const key = normalizeProductCategory(category);
+  return CATEGORY_PROFILES[key] ?? CATEGORY_PROFILES.generic;
 }
 
 export interface Product {
