@@ -8,6 +8,7 @@ import {
   type MouseEvent,
 } from "react";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import {
   ResultsImageLightbox,
   resultsLightboxThumbClass,
@@ -32,11 +33,20 @@ interface PendingImageGeneration {
   expectedVariantCount?: number;
 }
 
+interface QualityScoreData {
+  overallScore: number;
+  productVisible: boolean;
+  proportionsPlausible: boolean;
+  goalMet: boolean;
+  issues: string[];
+}
+
 interface JobImage {
   imageId: string;
   status: string;
   filePath: string;
   heroLockId?: string;
+  qualityScore?: QualityScoreData;
   colorLineage?: {
     parentVariantId: string;
     targetColorName: string;
@@ -85,6 +95,7 @@ export default function ResultsPage() {
   const [lightboxOrigin, setLightboxOrigin] =
     useState<ResultsLightboxOrigin | null>(null);
   const { toast } = useToast();
+  const tGen = useTranslations("Generate");
 
   const loadJobs = useCallback(() => {
     fetch("/api/jobs")
@@ -368,12 +379,17 @@ export default function ResultsPage() {
     { value: "rejected", label: "Rejected" },
   ];
 
-  const workflowLabel = (wt: string) =>
-    wt === "AMAZON_LIFESTYLE_SHOT"
-      ? "Lifestyle"
-      : wt === "HERO_LOCK_RECOLOR"
-        ? "Color variant"
-        : "Product shot";
+  const WORKFLOW_LABELS: Record<string, string> = {
+    AMAZON_LIFESTYLE_SHOT: "Lifestyle",
+    LIFESTYLE: "Lifestyle",
+    NEUTRAL_PRODUCT_SHOT: "Product shot",
+    MAIN_IMAGE: "Main image",
+    SCALE_REFERENCE: "Scale ref",
+    DETAIL_CLOSEUP: "Detail",
+    A_PLUS_VISUAL: "A+ Visual",
+    HERO_LOCK_RECOLOR: "Color variant",
+  };
+  const workflowLabel = (wt: string) => WORKFLOW_LABELS[wt] ?? wt;
 
   const hasFilters =
     productFilter !== "all" || typeFilter !== "all" || statusFilter !== "all";
@@ -675,13 +691,21 @@ export default function ResultsPage() {
                     >
                       {workflowLabel(img.workflowType)}
                     </span>
-                    <span
-                      className="text-[10px]"
-                      style={{ color: "var(--gs-text-faint)" }}
-                    >
-                      {formatRelativeTime(img.createdAt)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {img.qualityScore != null && (
+                        <QualityScoreBadge score={img.qualityScore.overallScore} />
+                      )}
+                      <span
+                        className="text-[10px]"
+                        style={{ color: "var(--gs-text-faint)" }}
+                      >
+                        {formatRelativeTime(img.createdAt)}
+                      </span>
+                    </div>
                   </div>
+                  {img.qualityScore != null && img.qualityScore.issues.length > 0 && (
+                    <QualityIssuesList issues={img.qualityScore.issues} />
+                  )}
                   {/* Details link for Hero master or color variant images */}
                   {(isHeroLocked || isColorVariant) && (
                     <button
@@ -1087,6 +1111,58 @@ function ImageStatusBadge({ status }: { status: string }) {
     >
       {label}
     </span>
+  );
+}
+
+function QualityScoreBadge({ score }: { score: number }) {
+  const style: React.CSSProperties =
+    score > 7
+      ? { background: "var(--gs-success-bg)", color: "var(--gs-success-text)" }
+      : score >= 4
+        ? { background: "#fef3c7", color: "#92400e" }
+        : { background: "var(--gs-error-bg)", color: "var(--gs-error-text)" };
+
+  return (
+    <span
+      className="rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+      style={style}
+      title={`Quality score: ${score}/10`}
+    >
+      {score}/10
+    </span>
+  );
+}
+
+function QualityIssuesList({ issues }: { issues: string[] }) {
+  const [open, setOpen] = useState(false);
+  if (issues.length === 0) return null;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-[10px] font-medium transition"
+        style={{ color: "var(--gs-text-muted)" }}
+      >
+        {open ? "Hide" : "Show"} {issues.length} issue{issues.length > 1 ? "s" : ""}
+      </button>
+      {open && (
+        <ul className="mt-1 space-y-0.5">
+          {issues.map((issue, i) => (
+            <li
+              key={i}
+              className="text-[10px] pl-2"
+              style={{
+                color: "var(--gs-error-text)",
+                borderLeft: "2px solid var(--gs-error-text)",
+              }}
+            >
+              {issue}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
