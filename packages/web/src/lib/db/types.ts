@@ -7,6 +7,8 @@ export interface UserDoc {
   displayName: string | null;
   photoURL: string | null;
   workspaceId: string;
+  /** When set, logged-in app navigation uses this locale (see middleware). */
+  preferredLocale?: "en" | "de";
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

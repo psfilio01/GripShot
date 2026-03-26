@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { useToast } from "@/components/toast";
+import type { AppLocale } from "@/i18n/routing";
 
 interface QuotaData {
   plan: string;
@@ -30,11 +32,17 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("Settings");
   const [quota, setQuota] = useState<QuotaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [managing, setManaging] = useState(false);
   const [buyingCredits, setBuyingCredits] = useState(false);
+  const [localePref, setLocalePref] = useState<"" | "en" | "de">("");
+  const [localePrefLoading, setLocalePrefLoading] = useState(true);
+  const [savingLocale, setSavingLocale] = useState(false);
   const { toast } = useToast();
 
   const fetchQuota = useCallback(async () => {
@@ -51,6 +59,60 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchQuota();
   }, [fetchQuota]);
+
+  useEffect(() => {
+    if (!user) {
+      setLocalePrefLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/user/locale");
+        if (res.ok && !cancelled) {
+          const data = (await res.json()) as {
+            preferredLocale: "en" | "de" | null;
+          };
+          setLocalePref(data.preferredLocale ?? "");
+        }
+      } finally {
+        if (!cancelled) setLocalePrefLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const handleLocaleChange = useCallback(
+    async (next: "" | "en" | "de") => {
+      setSavingLocale(true);
+      try {
+        const res = await fetch("/api/user/locale", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            preferredLocale: next === "" ? null : next,
+          }),
+        });
+        if (!res.ok) {
+          toast("Could not save language preference.", "error");
+          return;
+        }
+        setLocalePref(next);
+        toast(t("languageSaved"), "success");
+        const resolved = next === "" ? null : next;
+        if (resolved && resolved !== locale) {
+          router.replace(pathname, { locale: resolved });
+        }
+      } catch {
+        toast("Could not save language preference.", "error");
+      } finally {
+        setSavingLocale(false);
+      }
+    },
+    [locale, pathname, router, t, toast],
+  );
 
   useEffect(() => {
     const billing = searchParams.get("billing");
@@ -145,10 +207,10 @@ export default function SettingsPage() {
           className="text-2xl font-bold tracking-tight"
           style={{ color: "var(--gs-text)" }}
         >
-          Settings
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
-          Manage your account, plan, and usage.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -159,7 +221,7 @@ export default function SettingsPage() {
             className="text-base font-semibold"
             style={{ color: "var(--gs-text)" }}
           >
-            Account
+            {t("accountTitle")}
           </h2>
           <div className="mt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
@@ -183,6 +245,37 @@ export default function SettingsPage() {
               >
                 {user?.displayName ?? "—"}
               </span>
+            </div>
+            <div className="pt-2 border-t border-[var(--gs-border-subtle)] space-y-2">
+              <label
+                className="block text-sm shrink-0"
+                style={{ color: "var(--gs-text-muted)" }}
+                htmlFor="settings-locale"
+              >
+                {t("language")}
+              </label>
+              <select
+                id="settings-locale"
+                className="w-full rounded-lg border px-3 py-2 text-sm bg-[var(--gs-surface)] border-[var(--gs-border)] text-[var(--gs-text)]"
+                value={localePref}
+                disabled={localePrefLoading || savingLocale || !user}
+                onChange={(e) => {
+                  const v = e.target.value as "" | "en" | "de";
+                  void handleLocaleChange(v);
+                }}
+              >
+                <option value="">{t("languageFollowUrl")}</option>
+                <option value="en">{t("languageEn")}</option>
+                <option value="de">{t("languageDe")}</option>
+              </select>
+              <p className="text-xs leading-relaxed" style={{ color: "var(--gs-text-faint)" }}>
+                {t("languageHint")}
+              </p>
+              {savingLocale && (
+                <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                  {t("languageSaving")}
+                </p>
+              )}
             </div>
           </div>
         </section>

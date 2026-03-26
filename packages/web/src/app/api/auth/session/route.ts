@@ -4,7 +4,10 @@ import { ensureUserProvisioned } from "@/lib/db/users";
 import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_MS,
+  PREFERRED_LOCALE_COOKIE_NAME,
+  preferredLocaleCookieOptions,
 } from "@/lib/auth/session";
+import { isAppLocale } from "@/lib/auth/locale-path";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const decoded = await getAdminAuth().verifyIdToken(idToken);
 
-    const { isNew } = await ensureUserProvisioned({
+    const { isNew, user } = await ensureUserProvisioned({
       uid: decoded.uid,
       email: decoded.email,
       name: decoded.name,
@@ -31,13 +34,23 @@ export async function POST(req: NextRequest) {
     });
 
     const response = NextResponse.json({ status: "ok" });
+    const maxAgeSec = SESSION_MAX_AGE_MS / 1000;
     response.cookies.set(SESSION_COOKIE_NAME, sessionCookie, {
-      maxAge: SESSION_MAX_AGE_MS / 1000,
+      maxAge: maxAgeSec,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
       sameSite: "lax",
     });
+
+    const pref = user.preferredLocale;
+    if (pref && isAppLocale(pref)) {
+      response.cookies.set(PREFERRED_LOCALE_COOKIE_NAME, pref, {
+        ...preferredLocaleCookieOptions(maxAgeSec),
+      });
+    } else {
+      response.cookies.delete(PREFERRED_LOCALE_COOKIE_NAME);
+    }
 
     return response;
   } catch (err) {
@@ -52,5 +65,6 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   const response = NextResponse.json({ status: "ok" });
   response.cookies.delete(SESSION_COOKIE_NAME);
+  response.cookies.delete(PREFERRED_LOCALE_COOKIE_NAME);
   return response;
 }

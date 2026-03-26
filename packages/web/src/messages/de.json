@@ -145,5 +145,17 @@
     "yourBrands": "Deine Marken",
     "addBrand": "+ Marke hinzufügen",
     "manage": "Verwalten →"
+  },
+  "Settings": {
+    "title": "Einstellungen",
+    "subtitle": "Konto, Tarif und Nutzung verwalten.",
+    "accountTitle": "Konto",
+    "language": "Sprache",
+    "languageHint": "Wenn du angemeldet bist, nutzt die App diese Sprache für geschützte Seiten, falls sie von der URL abweicht.",
+    "languageFollowUrl": "URL folgen (keine Vorgabe)",
+    "languageEn": "Englisch",
+    "languageDe": "Deutsch",
+    "languageSaving": "Speichern…",
+    "languageSaved": "Spracheinstellung gespeichert."
   }
 }

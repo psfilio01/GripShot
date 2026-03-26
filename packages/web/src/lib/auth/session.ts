@@ -7,6 +7,19 @@ import { routing, type AppLocale } from "@/i18n/routing";
 export const SESSION_COOKIE_NAME = "__session";
 export const SESSION_MAX_AGE_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
+/** Mirrors Firestore `users.preferredLocale` for Edge middleware (httpOnly). */
+export const PREFERRED_LOCALE_COOKIE_NAME = "gs-pref-locale";
+
+export function preferredLocaleCookieOptions(maxAgeSec: number) {
+  return {
+    maxAge: maxAgeSec,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "lax" as const,
+  };
+}
+
 /**
  * Strip locale prefix from pathname (e.g. `/en/dashboard` → `/dashboard`).
  * Returns null if the path does not start with a supported locale.

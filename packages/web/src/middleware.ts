@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
 import {
   SESSION_COOKIE_NAME,
+  PREFERRED_LOCALE_COOKIE_NAME,
   isPublicPath,
   pathnameWithoutLocale,
 } from "@/lib/auth/session";
+import { isAppLocale, pathnameWithLocale } from "@/lib/auth/locale-path";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -30,6 +32,14 @@ export default function middleware(request: NextRequest) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  const pref = request.cookies.get(PREFERRED_LOCALE_COOKIE_NAME)?.value;
+  if (pref && isAppLocale(pref) && pref !== locale) {
+    const targetPath = pathnameWithLocale(pathWithoutLocale, pref);
+    const url = request.nextUrl.clone();
+    url.pathname = targetPath;
+    return NextResponse.redirect(url);
   }
 
   return intlResponse;

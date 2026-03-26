@@ -14,9 +14,11 @@ describe("Firestore document types", () => {
       email: "test@example.com",
       displayName: "Test User",
       workspaceId: "ws_1",
+      preferredLocale: "de",
     };
     expect(user.uid).toBe("abc123");
     expect(user.workspaceId).toBe("ws_1");
+    expect(user.preferredLocale).toBe("de");
   });
 
   it("WorkspaceDoc has quota fields", () => {

@@ -84,3 +84,19 @@ export async function getWorkspace(
   const snap = await getDb().collection("workspaces").doc(workspaceId).get();
   return snap.exists ? (snap.data() as WorkspaceDoc) : null;
 }
+
+export async function updateUserPreferredLocale(
+  uid: string,
+  locale: "en" | "de" | null,
+): Promise<void> {
+  const userRef = getDb().collection("users").doc(uid);
+  const update: Record<string, unknown> = {
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  if (locale === null) {
+    update.preferredLocale = FieldValue.delete();
+  } else {
+    update.preferredLocale = locale;
+  }
+  await userRef.update(update);
+}

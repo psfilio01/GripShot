@@ -4,6 +4,7 @@ import {
   pathnameWithoutLocale,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_MS,
+  PREFERRED_LOCALE_COOKIE_NAME,
 } from "./session";
 
 describe("session helpers", () => {
@@ -43,5 +44,9 @@ describe("session helpers", () => {
 
   it("session max age is 5 days", () => {
     expect(SESSION_MAX_AGE_MS).toBe(5 * 24 * 60 * 60 * 1000);
+  });
+
+  it("preferred locale cookie name is stable", () => {
+    expect(PREFERRED_LOCALE_COOKIE_NAME).toBe("gs-pref-locale");
   });
 });

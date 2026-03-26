@@ -145,5 +145,17 @@
     "yourBrands": "Your brands",
     "addBrand": "+ Add brand",
     "manage": "Manage →"
+  },
+  "Settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account, plan, and usage.",
+    "accountTitle": "Account",
+    "language": "Language",
+    "languageHint": "While signed in, the app uses this locale for protected pages when it differs from the URL.",
+    "languageFollowUrl": "Follow URL (no preference)",
+    "languageEn": "English",
+    "languageDe": "German",
+    "languageSaving": "Saving…",
+    "languageSaved": "Language preference saved."
   }
 }

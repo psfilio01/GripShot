@@ -60,6 +60,7 @@ The web UI is available in **English** and **German** via **`/en/...` and `/de/.
 | Admin / superuser with unlimited access | Done |
 | Structured generation logging + admin logs UI | Done |
 | Generate tabs: robust API error messages (JSON + non-JSON bodies) | Done |
+| Settings: preferred UI language (syncs protected routes when logged in) | Done |
 
 ---
 
