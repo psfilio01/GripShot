@@ -4,6 +4,8 @@
 
 Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image generation, listing copy, A+ content, and a results dashboard in one workflow — built on Next.js, Firebase, Stripe, and Google Gemini.
 
+The web UI is available in **English** and **German** via **`/en/...` and `/de/...`** (with SEO-friendly metadata and `hreflang` alternates). Copy lives in `packages/web/src/messages/`. Set **`NEXT_PUBLIC_APP_URL`** in production so canonical URLs match your Firebase Hosting or custom domain.
+
 ---
 
 ## Current status
@@ -28,6 +30,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Brand & product edit/delete | Done |
 | Image zoom/lightbox | Done |
 | Public landing page | Done |
+| English + German (next-intl, `/en` / `/de`, SEO metadata) | Done |
 | Dockerfile + Cloud Run readiness | Done |
 | Light/dark theme system | Done |
 | Results filtering + image download | Done |
@@ -50,7 +53,7 @@ Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image ge
 | Billing toast notifications | Done |
 | Product card quick actions | Done |
 | Results page image traceability | Done |
-| Hero Lock — color variant generation | Done |
+| Hero — color variant generation (background + Results placeholders) | Done |
 | Human models setup + lifestyle model picker | Done |
 | Playwright E2E: human models flow (optional auth) | Done |
 | Playwright E2E: Results dashboard shell (optional auth) | Done |
@@ -66,12 +69,12 @@ Create **Models** in the dashboard with a display name and optional notes. Uploa
 
 ---
 
-## Hero Lock — Color Locked Variant Generation
+## Hero — color-locked variant generation
 
-When an Amazon seller finds a generated image they love, they typically need the same creative in every product color. **Hero Lock** solves this:
+When an Amazon seller finds a generated image they love, they typically need the same creative in every product color. **Hero** solves this:
 
 1. **Configure product colors** — On the product detail page, define colors with name, hex code, optional notes, and SKU.
-2. **Hero Lock an image** — In the results dashboard, click the Hero Lock button on any neutral image. This locks it as the master asset.
+2. **Activate Hero** — In the Results dashboard, click **Hero** on any neutral image. The image becomes the Hero master; variant generation **runs in the background** (same pattern as standard image generation). A **placeholder card** appears until variants are ready; you can keep working elsewhere.
 3. **Automatic recolor generation** — The system extracts a structured "SceneLock" (image DNA) from the master, then generates same-scene variants for each configured color — keeping pose, composition, lighting, background, and styling identical. Only the product color changes.
 4. **Lineage tracking** — Every variant stores its parent master ID, target color, generation method, and status. The dashboard shows clear lineage: which image is the master and which are derived variants.
 
@@ -89,7 +92,7 @@ When an Amazon seller finds a generated image they love, they typically need the
 | `packages/workflow-core/src/domain/sceneLock.ts` | SceneLock type + JSON schema + validator |
 | `packages/workflow-core/src/services/sceneExtractor.ts` | Gemini structured output extraction |
 | `packages/workflow-core/src/services/recolorGenerator.ts` | Gemini image editing for recolor |
-| `packages/workflow-core/src/services/heroLockOrchestrator.ts` | Full Hero Lock workflow orchestration |
+| `packages/workflow-core/src/services/heroLockOrchestrator.ts` | Full Hero color-variant workflow orchestration |
 | `packages/web/src/lib/db/product-colors.ts` | Product color CRUD + Zod validation |
 | `packages/web/src/app/api/products/[productId]/colors/route.ts` | Colors REST API |
 

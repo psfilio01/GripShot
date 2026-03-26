@@ -20,7 +20,7 @@ test.describe("Human models & generate (authenticated)", () => {
 
     await signInWithEmail(page);
 
-    await page.goto("/dashboard/human-models");
+    await page.goto("/en/dashboard/human-models");
     await expect(
       page.getByRole("heading", { name: "Human models" }),
     ).toBeVisible();
@@ -29,13 +29,15 @@ test.describe("Human models & generate (authenticated)", () => {
     await page.getByTestId("human-model-display-name").fill(name);
     await page.getByTestId("human-model-create-submit").click();
 
-    await expect(page).toHaveURL(/\/dashboard\/human-models\/[a-zA-Z0-9_-]+$/);
+    await expect(page).toHaveURL(
+      /\/(en|de)\/dashboard\/human-models\/[a-zA-Z0-9_-]+$/,
+    );
     await expect(
       page.getByRole("heading", { name: "Reference photos" }),
     ).toBeVisible();
     await expect(page.getByLabel("Display name")).toHaveValue(name);
 
-    await page.goto("/dashboard/generate");
+    await page.goto("/en/dashboard/generate");
     await page.getByRole("button", { name: "Image generation" }).click();
 
     await page

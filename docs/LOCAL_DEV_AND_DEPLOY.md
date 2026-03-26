@@ -39,6 +39,7 @@ cp packages/web/.env.local.example packages/web/.env.local
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | Firebase client SDK |
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes | Firebase client SDK |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes | Firebase client SDK |
+| `NEXT_PUBLIC_APP_URL` | Recommended | Public origin (no trailing slash) for SEO metadata: canonical URLs and `hreflang` alternates (`/en`, `/de`). Use your Firebase Hosting or custom domain in production. |
 | `FIREBASE_ADMIN_PROJECT_ID` | Yes | Firebase Admin (server-side auth) |
 | `FIREBASE_ADMIN_CLIENT_EMAIL` | Yes | Firebase Admin |
 | `FIREBASE_ADMIN_PRIVATE_KEY` | Yes | Firebase Admin |
@@ -64,7 +65,14 @@ cp packages/web/.env.local.example packages/web/.env.local
 pnpm dev
 ```
 
-Opens at http://localhost:3000.
+Opens at http://localhost:3000. Marketing and app routes use a **locale prefix**: **`/en/...`** and **`/de/...`** (default redirect sends `/` → `/en`). API routes stay under `/api/*` without a locale.
+
+### Internationalization (EN / DE)
+
+- **Library:** [next-intl](https://next-intl-docs.vercel.app/) with **always-on** locale prefixes (best practice for SEO: separate crawlable URLs per language).
+- **Messages:** `packages/web/src/messages/en.json` and `de.json`. Add keys to **both** files when introducing new copy.
+- **Navigation:** Use `Link`, `useRouter`, and `usePathname` from `@/i18n/navigation` so internal links keep the active locale.
+- **Firebase Hosting / Cloud Run:** No extra rewrite rules are required for locales beyond forwarding all non-static paths to your Next server (same as a single-locale app). Ensure **`NEXT_PUBLIC_APP_URL`** matches your deployed origin so metadata alternates are correct.
 
 ### CLI workflow (image generation)
 

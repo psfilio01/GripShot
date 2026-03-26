@@ -1,13 +1,41 @@
 import { metadataStore } from "./metadataStore";
 import { moveImage } from "./resultStorage";
-import { executeHeroLock, type HeroLockResult } from "./heroLockOrchestrator";
 import type { FeedbackEvent } from "../types/api";
 import type { ImageVariant } from "../domain/imageVariant";
 
 interface HandleFeedbackInternalResult {
   updatedVariant: ImageVariant | null;
   newJobIds: string[];
-  heroLockResult?: HeroLockResult;
+}
+
+/**
+ * Marks the variant as Hero master (moves to favorites, status hero_lock).
+ * Color-variant generation is started separately (e.g. web API uses `after()` + `executeHeroLock`).
+ */
+export async function prepareHeroLockMaster(
+  event: FeedbackEvent,
+): Promise<ImageVariant | null> {
+  if (event.action !== "hero_lock") return null;
+  if (!event.targetColors || event.targetColors.length === 0) return null;
+
+  const variant = await metadataStore.getVariantById(event.imageId);
+  if (!variant) return null;
+
+  const newPath = await moveImage(
+    variant.filePath,
+    "favorites",
+    variant.productId,
+    variant.jobId,
+    variant.id,
+  );
+
+  await metadataStore.updateVariantStatus(variant.id, "hero_lock", newPath);
+  return {
+    ...variant,
+    status: "hero_lock",
+    filePath: newPath,
+    heroLockId: variant.id,
+  };
 }
 
 export async function handleFeedbackInternal(
@@ -44,38 +72,10 @@ export async function handleFeedbackInternal(
   }
 
   if (event.action === "hero_lock") {
-    if (!event.targetColors || event.targetColors.length === 0) {
-      return {
-        updatedVariant: variant,
-        newJobIds: [],
-      };
-    }
-
-    const newPath = await moveImage(
-      variant.filePath,
-      "favorites",
-      variant.productId,
-      variant.jobId,
-      variant.id,
-    );
-
-    await metadataStore.updateVariantStatus(variant.id, "hero_lock", newPath);
-    const updatedVariant: ImageVariant = {
-      ...variant,
-      status: "hero_lock",
-      filePath: newPath,
-      heroLockId: variant.id,
-    };
-
-    const heroLockResult = await executeHeroLock(
-      { ...updatedVariant },
-      event.targetColors,
-    );
-
+    const updatedVariant = await prepareHeroLockMaster(event);
     return {
       updatedVariant,
-      newJobIds: [heroLockResult.variantJobId],
-      heroLockResult,
+      newJobIds: [],
     };
   }
 

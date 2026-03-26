@@ -1,7 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { isPublicPath, SESSION_COOKIE_NAME, SESSION_MAX_AGE_MS } from "./session";
+import {
+  isPublicPath,
+  pathnameWithoutLocale,
+  SESSION_COOKIE_NAME,
+  SESSION_MAX_AGE_MS,
+} from "./session";
 
 describe("session helpers", () => {
+  it("strips locale prefix from pathname", () => {
+    expect(pathnameWithoutLocale("/en")).toEqual({
+      locale: "en",
+      pathWithoutLocale: "/",
+    });
+    expect(pathnameWithoutLocale("/de/dashboard")).toEqual({
+      locale: "de",
+      pathWithoutLocale: "/dashboard",
+    });
+    expect(pathnameWithoutLocale("/en/login")).toEqual({
+      locale: "en",
+      pathWithoutLocale: "/login",
+    });
+    expect(pathnameWithoutLocale("/unknown/x")).toBeNull();
+  });
+
   it("identifies public paths", () => {
     expect(isPublicPath("/")).toBe(true);
     expect(isPublicPath("/login")).toBe(true);

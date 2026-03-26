@@ -18,7 +18,7 @@ test.describe("Results dashboard (authenticated)", () => {
     );
 
     await signInWithEmail(page);
-    await page.goto("/dashboard/results");
+    await page.goto("/en/dashboard/results");
 
     await expect(page.getByRole("heading", { name: "Results" })).toBeVisible();
     await expect(

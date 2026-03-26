@@ -25,12 +25,11 @@ export interface HeroLockResult {
 }
 
 /**
- * Full Hero Lock workflow:
- * 1. Mark the source variant as hero_lock
- * 2. Extract SceneLock (image DNA) via Gemini structured output
- * 3. Filter out any target color matching the detected original
- * 4. Generate a recolor variant for each remaining color
- * 5. Store all variants with lineage metadata
+ * Full Hero color-variant workflow (master is already marked hero_lock on disk):
+ * 1. Extract SceneLock (image DNA) via Gemini structured output
+ * 2. Filter out any target color matching the detected original
+ * 3. Generate a recolor variant for each remaining color
+ * 4. Store all variants with lineage metadata
  */
 export async function executeHeroLock(
   variant: ImageVariant,
@@ -65,7 +64,7 @@ export async function executeHeroLock(
 
   if (colorsToGenerate.length === 0) {
     console.log(
-      `Hero Lock: all ${targetColors.length} target colors match the detected original (${detectedLower}). No variants to generate.`,
+      `Hero: all ${targetColors.length} target colors match the detected original (${detectedLower}). No variants to generate.`,
     );
   }
 
@@ -127,12 +126,12 @@ export async function executeHeroLock(
       });
 
       console.log(
-        `Hero Lock: generated variant for ${color.name} (${color.hex})`,
+        `Hero: generated variant for ${color.name} (${color.hex})`,
       );
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       console.error(
-        `Hero Lock: failed to generate variant for ${color.name}: ${errorMsg}`,
+        `Hero: failed to generate variant for ${color.name}: ${errorMsg}`,
       );
       results.push({
         colorName: color.name,

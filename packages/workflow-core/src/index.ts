@@ -1,4 +1,6 @@
 export * from "./api/workflowFacade";
+export { prepareHeroLockMaster } from "./services/feedbackHandler";
+export { executeHeroLock } from "./services/heroLockOrchestrator";
 export { metadataStore } from "./services/metadataStore";
 export { extractSceneLock } from "./services/sceneExtractor";
 export type { SceneLock } from "./domain/sceneLock";

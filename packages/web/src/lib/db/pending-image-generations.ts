@@ -14,6 +14,10 @@ export interface PendingImageGenerationDoc {
   workflowType: string;
   aspectRatio?: string;
   resolution?: string;
+  /** Set when pending row is for Hero color-variant pipeline (not standard Generate). */
+  kind?: "hero";
+  /** Configured product colors count (upper bound; some may be skipped after scene analysis). */
+  expectedVariantCount?: number;
   status: "running" | "failed";
   startedAt: FirebaseFirestore.Timestamp;
   errorMessage?: string;
@@ -31,16 +35,27 @@ export async function createPendingImageGeneration(
   requestId: string,
   data: Pick<
     PendingImageGenerationDoc,
-    "productId" | "workflowType" | "aspectRatio" | "resolution"
+    | "productId"
+    | "workflowType"
+    | "aspectRatio"
+    | "resolution"
+    | "kind"
+    | "expectedVariantCount"
   >,
 ): Promise<void> {
-  await collectionRef(workspaceId)
-    .doc(requestId)
-    .set({
-      ...data,
-      status: "running" as const,
-      startedAt: FieldValue.serverTimestamp(),
-    });
+  const payload: Record<string, unknown> = {
+    productId: data.productId,
+    workflowType: data.workflowType,
+    status: "running" as const,
+    startedAt: FieldValue.serverTimestamp(),
+  };
+  if (data.aspectRatio != null) payload.aspectRatio = data.aspectRatio;
+  if (data.resolution != null) payload.resolution = data.resolution;
+  if (data.kind != null) payload.kind = data.kind;
+  if (data.expectedVariantCount != null) {
+    payload.expectedVariantCount = data.expectedVariantCount;
+  }
+  await collectionRef(workspaceId).doc(requestId).set(payload);
 }
 
 export async function deletePendingImageGeneration(
@@ -68,6 +83,8 @@ export interface PendingImageGenerationListItem {
   workflowType: string;
   aspectRatio?: string;
   resolution?: string;
+  kind?: "hero";
+  expectedVariantCount?: number;
   status: "running" | "failed";
   startedAt: string;
   errorMessage?: string;
@@ -125,6 +142,8 @@ export async function listAndPrunePendingImageGenerations(
       workflowType: d.workflowType,
       aspectRatio: d.aspectRatio,
       resolution: d.resolution,
+      kind: d.kind,
+      expectedVariantCount: d.expectedVariantCount,
       status: d.status,
       startedAt: new Date(startedMs || now).toISOString(),
       errorMessage: d.errorMessage,

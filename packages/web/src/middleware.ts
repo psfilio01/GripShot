@@ -1,25 +1,40 @@
+import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, isPublicPath } from "@/lib/auth/session";
+import { routing } from "@/i18n/routing";
+import {
+  SESSION_COOKIE_NAME,
+  isPublicPath,
+  pathnameWithoutLocale,
+} from "@/lib/auth/session";
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+const intlMiddleware = createMiddleware(routing);
 
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
+export default function middleware(request: NextRequest) {
+  const intlResponse = intlMiddleware(request);
+
+  const pathname = request.nextUrl.pathname;
+  const stripped = pathnameWithoutLocale(pathname);
+
+  if (!stripped) {
+    return intlResponse;
   }
 
-  const session = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const { locale, pathWithoutLocale } = stripped;
+
+  if (isPublicPath(pathWithoutLocale)) {
+    return intlResponse;
+  }
+
+  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!session) {
-    const loginUrl = new URL("/login", req.url);
+    const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return intlResponse;
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/auth).*)",
-  ],
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };

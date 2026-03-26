@@ -11,12 +11,12 @@ export async function signInWithEmail(page: Page): Promise<void> {
     throw new Error("E2E_EMAIL and E2E_PASSWORD must be set");
   }
 
-  await page.goto("/login");
+  await page.goto("/en/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: /^Sign in$/i }).click();
 
-  await page.waitForURL(/\/dashboard(\/|$)/, { timeout: 60_000 });
+  await page.waitForURL(/\/(en|de)\/dashboard(\/|$)/, { timeout: 60_000 });
 }
 
 export function hasE2eAuthCredentials(): boolean {
