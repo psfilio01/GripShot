@@ -5,7 +5,12 @@ export { metadataStore } from "./services/metadataStore";
 export { extractSceneLock } from "./services/sceneExtractor";
 export { scoreImageQuality } from "./services/qualityScorer";
 export { findCompositionTemplate, getAllCompositionTemplates } from "./data/compositionTemplates";
-export { getCategoryProfile, CATEGORY_PROFILES, PRODUCT_CATEGORIES } from "./domain/product";
+export {
+  getCategoryProfile,
+  CATEGORY_PROFILES,
+  PRODUCT_CATEGORIES,
+  normalizeProductCategory,
+} from "./domain/product";
 export { normalizeWorkflowType } from "./types/api";
 export type { SceneLock } from "./domain/sceneLock";
 export type { QualityScore, QualityScorerInput } from "./domain/qualityScore";

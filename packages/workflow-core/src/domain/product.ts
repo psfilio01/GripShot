@@ -12,6 +12,18 @@ export const PRODUCT_CATEGORIES = [
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
+const KNOWN_CATEGORY = new Set<string>(PRODUCT_CATEGORIES);
+
+/**
+ * Maps Firestore / API category strings to a known {@link ProductCategory}.
+ * Unknown or legacy free-text values (e.g. "Pilates Accessories") fall back to `generic`.
+ */
+export function normalizeProductCategory(raw?: string | null): ProductCategory {
+  if (raw == null || String(raw).trim() === "") return "generic";
+  const key = String(raw).trim().toLowerCase();
+  return KNOWN_CATEGORY.has(key) ? (key as ProductCategory) : "generic";
+}
+
 export interface CategoryProfile {
   /** Relative size class: small items held in hand vs room-scale furniture. */
   typicalScale: "small" | "medium" | "large";
@@ -92,10 +104,11 @@ export const CATEGORY_PROFILES: Record<ProductCategory, CategoryProfile> = {
 };
 
 /**
- * Returns the category profile for the given category, falling back to `generic`.
+ * Returns the category profile for the given category, falling back to `generic`
+ * when missing or not a known slug (handles legacy Firestore free-text).
  */
-export function getCategoryProfile(category?: ProductCategory): CategoryProfile {
-  return CATEGORY_PROFILES[category ?? "generic"];
+export function getCategoryProfile(category?: string | null): CategoryProfile {
+  return CATEGORY_PROFILES[normalizeProductCategory(category)];
 }
 
 export interface Product {
@@ -112,8 +125,12 @@ export interface Product {
 export function buildProductFromId(
   productId: string,
   dataRoot: string,
-  category?: ProductCategory,
+  categoryRaw?: string | null,
 ): Product {
+  const category =
+    categoryRaw != null && String(categoryRaw).trim() !== ""
+      ? normalizeProductCategory(categoryRaw)
+      : undefined;
   return {
     id: productId,
     name: productId,

@@ -9,7 +9,6 @@ import type {
 } from "../types/api";
 import { getEnv } from "../config/env";
 import { buildProductFromId } from "../domain/product";
-import type { ProductCategory } from "../domain/product";
 import { loadReferenceImages } from "../services/referenceImageLoader";
 import { loadBrandRules } from "../services/brandRuleLoader";
 import { loadBrandDna } from "../services/brandDnaLoader";
@@ -30,7 +29,6 @@ import type { ImageJob } from "../domain/imageJob";
 import type { ImageVariant } from "../domain/imageVariant";
 import { handleFeedbackInternal } from "../services/feedbackHandler";
 
-const LIFESTYLE_TYPES = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE"]);
 const USES_MODEL_REFS = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE"]);
 const USES_BACKGROUND = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE", "A_PLUS_VISUAL"]);
 
@@ -45,8 +43,11 @@ function pickRandomSubset<T>(arr: T[], maxCount: number): T[] {
 export async function startImageJob(input: StartImageJobInput): Promise<StartImageJobResult> {
   const env = getEnv();
   const dataRoot = env.WORKFLOW_DATA_ROOT;
-  const category = (input.productCategory ?? undefined) as ProductCategory | undefined;
-  const product = buildProductFromId(input.productId, dataRoot, category);
+  const product = buildProductFromId(
+    input.productId,
+    dataRoot,
+    input.productCategory,
+  );
 
   const jobId = nanoid();
   const now = new Date().toISOString();
@@ -88,8 +89,10 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     if (runtimeInput) {
       console.log(`\x1b[36m[workflow-core]\x1b[0m Runtime input keys: ${Object.keys(runtimeInput).join(", ")}`);
     }
-    if (category) {
-      console.log(`\x1b[36m[workflow-core]\x1b[0m Product category: ${category}`);
+    if (input.productCategory?.trim()) {
+      console.log(
+        `\x1b[36m[workflow-core]\x1b[0m Product category input="${input.productCategory}" prompts=${product.category ?? "generic"}`,
+      );
     }
 
     // ── Multiple product refs for ALL types ──────────────────────────
@@ -191,7 +194,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
           const score = await scoreImageQuality({
             imagePath: variant.filePath,
             workflowType: input.workflowType,
-            productCategory: category,
+            productCategory: product.category,
             productName: product.name,
           });
           variant.qualityScore = score;

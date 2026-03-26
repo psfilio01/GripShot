@@ -4,6 +4,7 @@ import {
   CATEGORY_PROFILES,
   getCategoryProfile,
   buildProductFromId,
+  normalizeProductCategory,
   type ProductCategory,
 } from "./product";
 
@@ -28,6 +29,23 @@ describe("ProductCategory", () => {
   });
 });
 
+describe("normalizeProductCategory", () => {
+  it("maps known slugs case-insensitively", () => {
+    expect(normalizeProductCategory("Fitness")).toBe("fitness");
+    expect(normalizeProductCategory("  FITNESS  ")).toBe("fitness");
+  });
+
+  it("falls back to generic for legacy free-text", () => {
+    expect(normalizeProductCategory("Pilates Accessories")).toBe("generic");
+  });
+
+  it("treats empty as generic", () => {
+    expect(normalizeProductCategory("")).toBe("generic");
+    expect(normalizeProductCategory(null)).toBe("generic");
+    expect(normalizeProductCategory(undefined)).toBe("generic");
+  });
+});
+
 describe("getCategoryProfile", () => {
   it("returns the correct profile for a known category", () => {
     const profile = getCategoryProfile("handheld");
@@ -38,6 +56,12 @@ describe("getCategoryProfile", () => {
   it("falls back to generic when category is undefined", () => {
     const profile = getCategoryProfile(undefined);
     expect(profile).toEqual(CATEGORY_PROFILES.generic);
+  });
+
+  it("falls back to generic for unknown Firestore strings", () => {
+    const profile = getCategoryProfile("Pilates Accessories");
+    expect(profile).toEqual(CATEGORY_PROFILES.generic);
+    expect(profile.showWithPerson).toBe(false);
   });
 
   it("returns generic profile for 'generic' category", () => {
@@ -63,5 +87,10 @@ describe("buildProductFromId", () => {
   it("builds a product with category", () => {
     const product = buildProductFromId("yoga-mat", "/data", "fitness");
     expect(product.category).toBe("fitness");
+  });
+
+  it("normalizes unknown category strings to generic", () => {
+    const product = buildProductFromId("ball", "/data", "Pilates Accessories");
+    expect(product.category).toBe("generic");
   });
 });
