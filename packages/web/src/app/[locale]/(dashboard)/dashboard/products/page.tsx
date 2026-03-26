@@ -2,7 +2,13 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/empty-state";
+
+const PRODUCT_CATEGORIES = [
+  "handheld", "wearable", "furniture", "outdoor",
+  "kitchen", "beauty", "decor", "fitness", "generic",
+] as const;
 
 interface ProductData {
   id: string;
@@ -167,9 +173,10 @@ function CreateProductForm({
   brands: BrandOption[];
   onCreated: () => void;
 }) {
+  const tGen = useTranslations("Generate");
   const [name, setName] = useState("");
   const [brandId, setBrandId] = useState(brands[0]?.id ?? "");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("generic");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -252,15 +259,19 @@ function CreateProductForm({
           className="block text-sm font-medium mb-1.5"
           style={{ color: "var(--gs-text-secondary)" }}
         >
-          Category
+          {tGen("productCategory")}
         </label>
-        <input
-          type="text"
+        <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="gs-input block w-full px-3 py-2 text-sm"
-          placeholder="e.g. Pilates Accessories"
-        />
+        >
+          {PRODUCT_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {tGen(`cat${cat.charAt(0).toUpperCase()}${cat.slice(1)}` as any)}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>

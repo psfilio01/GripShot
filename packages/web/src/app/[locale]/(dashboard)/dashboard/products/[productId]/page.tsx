@@ -4,11 +4,17 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
+
+const PRODUCT_CATEGORIES = [
+  "handheld", "wearable", "furniture", "outdoor",
+  "kitchen", "beauty", "decor", "fitness", "generic",
+] as const;
 
 const IMAGE_CATEGORIES = [
   { id: "primary", label: "Primary" },
@@ -81,6 +87,7 @@ export default function ProductDetailPage() {
     action: () => void;
   } | null>(null);
   const { toast } = useToast();
+  const tGen = useTranslations("Generate");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProduct = useCallback(async () => {
@@ -347,16 +354,27 @@ export default function ProductDetailPage() {
                 className="block text-sm font-medium mb-1.5"
                 style={{ color: "var(--gs-text-secondary)" }}
               >
-                Category
+                {tGen("productCategory")}
               </label>
-              <input
-                type="text"
+              <select
                 value={editForm.category}
                 onChange={(e) =>
                   setEditForm((f) => ({ ...f, category: e.target.value }))
                 }
                 className="gs-input block w-full px-3 py-2 text-sm"
-              />
+              >
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {tGen(`cat${cat.charAt(0).toUpperCase()}${cat.slice(1)}` as any)}
+                  </option>
+                ))}
+                {editForm.category &&
+                  !PRODUCT_CATEGORIES.includes(editForm.category as any) && (
+                    <option value={editForm.category}>
+                      {editForm.category}
+                    </option>
+                  )}
+              </select>
             </div>
             <div>
               <label
