@@ -189,6 +189,18 @@
     "qualityIssues": "Probleme",
     "noIssues": "Keine Probleme gefunden",
     "showIssues": "Probleme anzeigen",
-    "hideIssues": "Probleme ausblenden"
+    "hideIssues": "Probleme ausblenden",
+    "poseDescription": "Pose des Models",
+    "poseDescriptionPlaceholder": "z. B. im Schneidersitz sitzend, hält den Ball mit beiden Händen",
+    "poseDescriptionHint": "Beschreibe die Pose des Models für Lifestyle-Aufnahmen. Leer lassen für eine KI-gewählte Pose.",
+    "userPromptBlock": "Eigene Bildanweisungen",
+    "userPromptBlockPlaceholder": "z. B. Das Logo muss immer klar sichtbar und gut beleuchtet sein. Verwende ein warmes, weiches Licht.",
+    "userPromptBlockHint": "Gib Anweisungen ein, die für jedes generierte Bild gelten sollen – z. B. Logo-Sichtbarkeit, Lichteinstellungen oder Hintergrunddetails. Du kannst in jeder Sprache schreiben. Vermeide Posen- oder Kompositionsanweisungen.",
+    "userPromptBlockSave": "Speichern & prüfen",
+    "userPromptBlockSaving": "Wird geprüft…",
+    "userPromptBlockSaved": "Gespeichert und geprüft",
+    "userPromptBlockCompiled": "Kompilierte Version (Englisch)",
+    "userPromptBlockIssues": "Folgende Teile wurden angepasst",
+    "userPromptBlockClear": "Löschen"
   }
 }

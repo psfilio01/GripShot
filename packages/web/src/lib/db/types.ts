@@ -74,6 +74,10 @@ export interface ProductDoc {
   description: string;
   status: "draft" | "active" | "archived";
   colors?: ProductColorEntry[];
+  /** User's raw freestyle prompt block (any language). */
+  userPromptBlockRaw?: string;
+  /** Compiled English prompt block, validated by Gemini. Used in generation. */
+  userPromptBlockCompiled?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

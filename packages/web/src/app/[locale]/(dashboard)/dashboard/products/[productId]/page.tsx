@@ -37,6 +37,8 @@ interface ProductData {
   description: string;
   status: string;
   brandId: string;
+  userPromptBlockRaw?: string;
+  userPromptBlockCompiled?: string;
 }
 
 interface ImageData {
@@ -651,6 +653,18 @@ export default function ProductDetailPage() {
       {/* Product Colors */}
       <ProductColorsSection productId={productId} />
 
+      {/* Custom Image Instructions */}
+      <UserPromptBlockSection
+        productId={productId}
+        initialRaw={product.userPromptBlockRaw ?? ""}
+        initialCompiled={product.userPromptBlockCompiled ?? ""}
+        onSaved={(raw, compiled) =>
+          setProduct((p) =>
+            p ? { ...p, userPromptBlockRaw: raw, userPromptBlockCompiled: compiled } : p,
+          )
+        }
+      />
+
       {/* Generated Images */}
       <GeneratedImagesSection
         jobs={generatedJobs}
@@ -985,6 +999,184 @@ function ProductColorsSection({ productId }: { productId: string }) {
           </p>
         </div>
       )}
+    </section>
+  );
+}
+
+/* ---------- User Prompt Block Section ---------- */
+
+function UserPromptBlockSection({
+  productId,
+  initialRaw,
+  initialCompiled,
+  onSaved,
+}: {
+  productId: string;
+  initialRaw: string;
+  initialCompiled: string;
+  onSaved: (raw: string, compiled: string) => void;
+}) {
+  const [rawText, setRawText] = useState(initialRaw);
+  const [compiled, setCompiled] = useState(initialCompiled);
+  const [issues, setIssues] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [showCompiled, setShowCompiled] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const { toast } = useToast();
+  const t = useTranslations("Generate");
+
+  useEffect(() => {
+    setRawText(initialRaw);
+    setCompiled(initialCompiled);
+  }, [initialRaw, initialCompiled]);
+
+  async function handleSave() {
+    setSaving(true);
+    setIssues([]);
+    setJustSaved(false);
+    try {
+      const res = await fetch(
+        `/api/products/${productId}/compile-prompt-block`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rawText }),
+        },
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? "Compilation failed");
+      }
+      const data = await res.json();
+      setCompiled(data.compiledText ?? "");
+      setIssues(data.issues ?? []);
+      onSaved(rawText, data.compiledText ?? "");
+      setJustSaved(true);
+      toast(t("userPromptBlockSaved"), "success");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleClear() {
+    setRawText("");
+    setCompiled("");
+    setIssues([]);
+    setJustSaved(false);
+  }
+
+  const hasChanged = rawText !== initialRaw;
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h2
+          className="text-base font-semibold"
+          style={{ color: "var(--gs-text)" }}
+        >
+          {t("userPromptBlock")}
+        </h2>
+        <span
+          className="inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold cursor-help"
+          style={{
+            background: "var(--gs-surface-inset)",
+            color: "var(--gs-text-muted)",
+            border: "1px solid var(--gs-border)",
+          }}
+          title={t("userPromptBlockHint")}
+        >
+          ?
+        </span>
+      </div>
+
+      <p
+        className="text-xs leading-relaxed"
+        style={{ color: "var(--gs-text-faint)" }}
+      >
+        {t("userPromptBlockHint")}
+      </p>
+
+      <div
+        className="rounded-xl p-4 space-y-3"
+        style={{
+          background: "var(--gs-surface)",
+          border: "1px solid var(--gs-border)",
+        }}
+      >
+        <textarea
+          rows={4}
+          value={rawText}
+          onChange={(e) => {
+            setRawText(e.target.value);
+            setJustSaved(false);
+          }}
+          placeholder={t("userPromptBlockPlaceholder")}
+          className="gs-input block w-full px-3 py-2 text-sm resize-none"
+        />
+
+        <div className="flex items-center gap-2 justify-end">
+          {rawText.trim() && (
+            <button
+              onClick={handleClear}
+              className="gs-btn-secondary px-3 py-1.5 text-xs"
+            >
+              {t("userPromptBlockClear")}
+            </button>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || !rawText.trim() || (!hasChanged && !justSaved === false)}
+            className="gs-btn-primary px-4 py-1.5 text-sm"
+          >
+            {saving ? t("userPromptBlockSaving") : t("userPromptBlockSave")}
+          </button>
+        </div>
+
+        {issues.length > 0 && (
+          <div
+            className="rounded-lg p-3 space-y-1"
+            style={{
+              background: "#fef3c7",
+              border: "1px solid #fcd34d",
+            }}
+          >
+            <p className="text-xs font-medium" style={{ color: "#92400e" }}>
+              {t("userPromptBlockIssues")}:
+            </p>
+            <ul className="text-xs space-y-0.5" style={{ color: "#92400e" }}>
+              {issues.map((issue, i) => (
+                <li key={i}>• {issue}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {compiled && (
+          <div>
+            <button
+              onClick={() => setShowCompiled(!showCompiled)}
+              className="text-xs font-medium"
+              style={{ color: "var(--gs-accent-text)" }}
+            >
+              {showCompiled ? "▾" : "▸"} {t("userPromptBlockCompiled")}
+            </button>
+            {showCompiled && (
+              <div
+                className="mt-2 rounded-lg p-3 text-xs whitespace-pre-wrap"
+                style={{
+                  background: "var(--gs-surface-inset)",
+                  color: "var(--gs-text-muted)",
+                  fontFamily: "monospace",
+                }}
+              >
+                {compiled}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

@@ -189,6 +189,18 @@
     "qualityIssues": "Issues",
     "noIssues": "No issues found",
     "showIssues": "Show issues",
-    "hideIssues": "Hide issues"
+    "hideIssues": "Hide issues",
+    "poseDescription": "Model pose",
+    "poseDescriptionPlaceholder": "e.g. sitting cross-legged, holding the ball with both hands",
+    "poseDescriptionHint": "Describe the model's pose for lifestyle shots. Leave empty for an AI-selected pose.",
+    "userPromptBlock": "Custom image instructions",
+    "userPromptBlockPlaceholder": "e.g. The logo must always be clearly visible and well-lit. Use a warm, soft lighting setup.",
+    "userPromptBlockHint": "Enter instructions that should apply to every generated image — for example, logo visibility, lighting preferences, or background details. You can write in any language. Avoid pose or composition instructions.",
+    "userPromptBlockSave": "Save & validate",
+    "userPromptBlockSaving": "Validating…",
+    "userPromptBlockSaved": "Saved and validated",
+    "userPromptBlockCompiled": "Compiled version (English)",
+    "userPromptBlockIssues": "The following parts were adjusted",
+    "userPromptBlockClear": "Clear"
   }
 }

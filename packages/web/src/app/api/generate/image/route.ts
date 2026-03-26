@@ -15,6 +15,7 @@ import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
+import { getProduct } from "@/lib/db/products";
 import type { StartImageJobInput } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
@@ -49,6 +50,7 @@ const RequestSchema = z.object({
   resolution: z.enum(RESOLUTIONS).optional(),
   modelId: z.string().optional(),
   backgroundId: z.string().optional(),
+  poseDescription: z.string().max(500).optional(),
   /** Client-generated id for Results placeholders & parallel runs */
   requestId: z.string().uuid().optional(),
 });
@@ -115,6 +117,11 @@ export async function POST(req: NextRequest) {
     });
     pendingRequestId = requestId;
 
+    const productDoc = await getProduct(
+      session.user.workspaceId,
+      input.productId,
+    ).catch(() => null);
+
     const { startImageJob, getJob } = await import(
       "@fashionmentum/workflow-core"
     );
@@ -122,7 +129,7 @@ export async function POST(req: NextRequest) {
     const result = await startImageJob({
       productId: input.productId,
       workflowType: input.workflowType as StartImageJobInput["workflowType"],
-      productCategory: input.productCategory || undefined,
+      productCategory: input.productCategory || productDoc?.category || undefined,
       useGoldenBackground: input.useGoldenBackground,
       creativeFreedom: input.creativeFreedom,
       aspectRatio: input.aspectRatio,
@@ -131,6 +138,8 @@ export async function POST(req: NextRequest) {
       allowedModelIds,
       backgroundId: trimmedBackgroundId || undefined,
       scoreQuality: true,
+      userPromptBlock: productDoc?.userPromptBlockCompiled || undefined,
+      poseDescription: input.poseDescription?.trim() || undefined,
     });
 
     const job = await getJob(result.jobId);

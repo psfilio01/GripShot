@@ -62,6 +62,7 @@ export function ImageGenerationTab({
   const [resolution, setResolution] = useState("2K");
   const [humanModels, setHumanModels] = useState<HumanModelOption[]>([]);
   const [humanModelId, setHumanModelId] = useState("");
+  const [poseDescription, setPoseDescription] = useState("");
   /** Parallel runs: each submit increments until its fetch finishes */
   const [inFlightCount, setInFlightCount] = useState(0);
   const [job, setJob] = useState<JobResult | null>(null);
@@ -148,6 +149,9 @@ export function ImageGenerationTab({
               : {}),
             ...(isLifestyleType && backgroundId.trim()
               ? { backgroundId: backgroundId.trim() }
+              : {}),
+            ...(isLifestyleType && poseDescription.trim()
+              ? { poseDescription: poseDescription.trim() }
               : {}),
           }),
         });
@@ -394,6 +398,25 @@ export function ImageGenerationTab({
                     .
                   </>
                 )}
+              </p>
+            </div>
+
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--gs-text-secondary)" }}
+              >
+                {t("poseDescription")}
+              </label>
+              <input
+                type="text"
+                value={poseDescription}
+                onChange={(e) => setPoseDescription(e.target.value)}
+                placeholder={t("poseDescriptionPlaceholder")}
+                className="gs-input block w-full max-w-md px-3 py-2 text-sm"
+              />
+              <p className="mt-1.5 text-xs" style={{ color: "var(--gs-text-faint)" }}>
+                {t("poseDescriptionHint")}
               </p>
             </div>
 
