@@ -170,7 +170,10 @@ Optional admin and logging variables:
 
 For the workflow engine, also set variables in the root `.env` (see `.env.example`).
 
+| Variable | Purpose |
+|----------|---------|
 | `WORKFLOW_DATA_ROOT` | Optional. Absolute path to the repo `data/` folder. If unset, the engine uses repo `data/` when Next runs from `packages/web`, and the image API also falls back to `packages/web/data` so older generated files still load. **Recommended:** set once to your monorepo `data` directory to avoid split storage. |
+| `WORKFLOW_GCS_BUCKET` | Optional. Google Cloud Storage bucket name. When set, reference images, models, backgrounds, and generated images are stored in GCS (same bucket locally and on Cloud Run) using keys that mirror `data/` paths. Uses Application Default Credentials. See `docs/LOCAL_DEV_AND_DEPLOY.md`. |
 
 ### Run the web app
 

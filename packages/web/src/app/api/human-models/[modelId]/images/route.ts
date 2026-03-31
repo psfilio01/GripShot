@@ -5,6 +5,14 @@ import { config } from "dotenv";
 import { resolve, join, extname } from "path";
 import { mkdir, readdir, stat, writeFile, unlink } from "fs/promises";
 import { existsSync } from "fs";
+import {
+  usesGcsBlobStorage,
+  putDataObject,
+  deleteDataObject,
+  getDataObjectBuffer,
+  getDataObjectMeta,
+  listDataObjectKeys,
+} from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -18,6 +26,12 @@ function getDataRoot(): string {
 function refDirFor(modelId: string): string {
   return join(getDataRoot(), "models", modelId, "reference");
 }
+
+function gcsRefPrefix(modelId: string): string {
+  return `models/${modelId}/reference/`;
+}
+
+const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp"];
 
 type Params = { params: Promise<{ modelId: string }> };
 
@@ -33,17 +47,42 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Model not found" }, { status: 404 });
   }
 
-  const dir = refDirFor(modelId);
   try {
+    const images: {
+      name: string;
+      url: string;
+      size: number;
+      updatedAt: string;
+    }[] = [];
+
+    if (usesGcsBlobStorage()) {
+      const keys = await listDataObjectKeys(gcsRefPrefix(modelId));
+      for (const key of keys) {
+        const base = key.split("/").pop() ?? "";
+        if (base.startsWith(".")) continue;
+        const ext = extname(base).toLowerCase();
+        if (!IMAGE_EXT.includes(ext)) continue;
+        const meta = await getDataObjectMeta(key);
+        if (!meta) continue;
+        images.push({
+          name: base,
+          url: `/api/images/models/${modelId}/reference/${encodeURIComponent(base)}`,
+          size: meta.size,
+          updatedAt: meta.updated.toISOString(),
+        });
+      }
+      return NextResponse.json({ images });
+    }
+
+    const dir = refDirFor(modelId);
     const files = await readdir(dir);
-    const images = [];
     for (const file of files) {
       const ext = extname(file).toLowerCase();
-      if ([".jpg", ".jpeg", ".png", ".webp"].includes(ext)) {
+      if (IMAGE_EXT.includes(ext)) {
         const st = await stat(join(dir, file));
         images.push({
           name: file,
-          url: `/api/images/models/${modelId}/reference/${file}`,
+          url: `/api/images/models/${modelId}/reference/${encodeURIComponent(file)}`,
           size: st.size,
           updatedAt: st.mtime.toISOString(),
         });
@@ -77,8 +116,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const dir = refDirFor(modelId);
-    await mkdir(dir, { recursive: true });
     const uploaded: string[] = [];
 
     for (const entry of files) {
@@ -99,7 +136,18 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
       const buffer = Buffer.from(await entry.arrayBuffer());
       const safeName = entry.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      await writeFile(join(dir, safeName), buffer);
+
+      if (usesGcsBlobStorage()) {
+        await putDataObject(
+          `${gcsRefPrefix(modelId)}${safeName}`,
+          buffer,
+          entry.type,
+        );
+      } else {
+        const dir = refDirFor(modelId);
+        await mkdir(dir, { recursive: true });
+        await writeFile(join(dir, safeName), buffer);
+      }
       uploaded.push(safeName);
     }
 
@@ -129,6 +177,16 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const fileName = searchParams.get("name");
   if (!fileName || /[/\\]/.test(fileName)) {
     return NextResponse.json({ error: "Invalid file name" }, { status: 400 });
+  }
+
+  if (usesGcsBlobStorage()) {
+    const key = `${gcsRefPrefix(modelId)}${fileName}`;
+    const buf = await getDataObjectBuffer(key);
+    if (!buf) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+    await deleteDataObject(key);
+    return NextResponse.json({ deleted: fileName });
   }
 
   const dir = refDirFor(modelId);

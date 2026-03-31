@@ -69,7 +69,8 @@ Optional keys: `REGION`, `CLOUD_RUN_SERVICE`, `ARTIFACT_REPO`, `PROJECT_ID`, `IM
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `WORKFLOW_DATA_ROOT` | Yes | Path to the `data/` directory |
+| `WORKFLOW_DATA_ROOT` | Yes | Path to the `data/` directory (still used for `metadata.json`, brand files on disk, and as fallback when GCS is off) |
+| `WORKFLOW_GCS_BUCKET` | No | GCS bucket name (e.g. Firebase default bucket `PROJECT_ID.appspot.com`). When set, reference uploads, models, backgrounds, and generated images use this bucket with keys mirroring `data/` paths. **Recommended for Cloud Run.** |
 | `NANOBANANA_API_KEY` | Yes | Google Gemini API key |
 | `NANOBANANA_MODEL` | No | Gemini model ID (default: `gemini-3.1-flash-image-preview`) |
 | `NANOBANANA_DRY_RUN` | No | Set `true` to skip API calls |
@@ -179,9 +180,11 @@ pnpm deploy:cloud-run
 
 The app uses **`signInWithPopup`**. **`next.config.ts`** sets **`Cross-Origin-Opener-Policy: same-origin-allow-popups`** so the OAuth popup can close cleanly on Cloud Run.
 
-### Limitations (filesystem)
+### Blob storage (GCS)
 
-Much of the app still writes uploads and generated assets under **`WORKFLOW_DATA_ROOT`** on local disk. The container image does **not** include durable `data/`; on Cloud Run the filesystem is **ephemeral**. Full production parity requires **Cloud Storage** (or similar) instead of local paths — see architecture docs.
+Set **`WORKFLOW_GCS_BUCKET`** (root `.env` and Cloud Run env) so reference images, human-model assets, backgrounds, and generated outputs live in **Google Cloud Storage** instead of the container disk. Object keys mirror paths under `data/` (e.g. `products/{id}/reference/...`, `generated/...`). **Costs** are typical GCS storage + operations; serving still goes through `/api/images/...` (app egress applies). Job metadata remains in **`metadata.json`** under `WORKFLOW_DATA_ROOT` unless you move it to Firestore later.
+
+Without **`WORKFLOW_GCS_BUCKET`**, the app keeps using **local disk** under `WORKFLOW_DATA_ROOT` (fine for dev; **not** durable on Cloud Run).
 
 ### Build pipeline (CI)
 

@@ -7,6 +7,7 @@ import {
   GENERATED_BUCKETS,
   parseGeneratedTrailing,
 } from "@/lib/images/generated-request-path";
+import { tryServeImageFromGcs } from "@/lib/images/gcs-image-get";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -115,6 +116,19 @@ export async function GET(
   const rootSegment = segments[0];
   if (!ALLOWED_ROOTS.includes(rootSegment)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const gcsHit = await tryServeImageFromGcs(segments);
+  if (gcsHit) {
+    const headers: Record<string, string> = {
+      "Content-Type": gcsHit.contentType,
+      "Cache-Control": "public, max-age=86400",
+    };
+    if (_req.nextUrl.searchParams.get("download") === "1") {
+      const fileName = segments[segments.length - 1] ?? "image";
+      headers["Content-Disposition"] = `attachment; filename="${fileName}"`;
+    }
+    return new NextResponse(new Uint8Array(gcsHit.buffer), { headers });
   }
 
   let resolvedFile: string | null = null;

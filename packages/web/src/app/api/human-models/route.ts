@@ -8,6 +8,10 @@ import { z } from "zod";
 import { resolve, join, extname } from "path";
 import { readdirSync } from "fs";
 import { config } from "dotenv";
+import {
+  usesGcsBlobStorage,
+  listDataObjectKeys,
+} from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -30,7 +34,23 @@ function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
 }
 
-function getFirstImage(modelId: string): string | null {
+async function getFirstImage(modelId: string): Promise<string | null> {
+  if (usesGcsBlobStorage()) {
+    try {
+      const keys = await listDataObjectKeys(`models/${modelId}/reference/`);
+      const img = keys.find((k) => {
+        const leaf = k.split("/").pop() ?? "";
+        const ext = extname(leaf).toLowerCase();
+        return [".jpg", ".jpeg", ".png", ".webp"].includes(ext);
+      });
+      if (!img) return null;
+      const leaf = img.split("/").pop()!;
+      return `/api/images/models/${modelId}/reference/${encodeURIComponent(leaf)}`;
+    } catch {
+      return null;
+    }
+  }
+
   const dir = join(getDataRoot(), "models", modelId, "reference");
   try {
     const files = readdirSync(dir);
@@ -39,7 +59,7 @@ function getFirstImage(modelId: string): string | null {
       return [".jpg", ".jpeg", ".png", ".webp"].includes(ext);
     });
     return img
-      ? `/api/images/models/${modelId}/reference/${img}`
+      ? `/api/images/models/${modelId}/reference/${encodeURIComponent(img)}`
       : null;
   } catch {
     return null;
@@ -53,10 +73,12 @@ export async function GET() {
   }
 
   const models = await listHumanModels(session.user.workspaceId);
-  const modelsWithThumb = models.map((m) => ({
-    ...m,
-    thumbnailUrl: getFirstImage(m.id),
-  }));
+  const modelsWithThumb = await Promise.all(
+    models.map(async (m) => ({
+      ...m,
+      thumbnailUrl: await getFirstImage(m.id),
+    })),
+  );
   return NextResponse.json({ models: modelsWithThumb });
 }
 

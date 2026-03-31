@@ -9,6 +9,7 @@ import { z } from "zod";
 import { resolve, join } from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { config } from "dotenv";
+import { usesGcsBlobStorage, putDataObject } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -98,13 +99,28 @@ export async function POST(req: NextRequest) {
     await updateGenerationLog(logId, { status: "completed", durationMs });
     log.info("Background generation completed", { durationMs, logId });
 
-    const dir = join(getDataRoot(), "backgrounds", data.backgroundId);
-    await mkdir(dir, { recursive: true });
     const filename = `preview.${result.extension}`;
-    await writeFile(join(dir, filename), result.buffer);
+    const mime =
+      result.extension === "png"
+        ? "image/png"
+        : result.extension === "webp"
+          ? "image/webp"
+          : "image/jpeg";
+
+    if (usesGcsBlobStorage()) {
+      await putDataObject(
+        `backgrounds/${data.backgroundId}/${filename}`,
+        result.buffer,
+        mime,
+      );
+    } else {
+      const dir = join(getDataRoot(), "backgrounds", data.backgroundId);
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, filename), result.buffer);
+    }
 
     return NextResponse.json({
-      url: `/api/images/backgrounds/${data.backgroundId}/${filename}`,
+      url: `/api/images/backgrounds/${data.backgroundId}/${encodeURIComponent(filename)}`,
       filename,
     });
   } catch (err) {

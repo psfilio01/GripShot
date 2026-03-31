@@ -5,6 +5,10 @@ import { z } from "zod";
 import { resolve, join, extname } from "path";
 import { readdirSync } from "fs";
 import { config } from "dotenv";
+import {
+  usesGcsBlobStorage,
+  listDataObjectKeys,
+} from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -18,7 +22,23 @@ function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
 }
 
-function getPreviewUrl(backgroundId: string): string | null {
+async function getPreviewUrl(backgroundId: string): Promise<string | null> {
+  if (usesGcsBlobStorage()) {
+    try {
+      const keys = await listDataObjectKeys(`backgrounds/${backgroundId}/`);
+      const img = keys.find((k) => {
+        const leaf = k.split("/").pop() ?? "";
+        const ext = extname(leaf).toLowerCase();
+        return [".jpg", ".jpeg", ".png", ".webp"].includes(ext);
+      });
+      if (!img) return null;
+      const leaf = img.split("/").pop()!;
+      return `/api/images/backgrounds/${backgroundId}/${encodeURIComponent(leaf)}`;
+    } catch {
+      return null;
+    }
+  }
+
   const dir = join(getDataRoot(), "backgrounds", backgroundId);
   try {
     const files = readdirSync(dir);
@@ -26,7 +46,9 @@ function getPreviewUrl(backgroundId: string): string | null {
       const ext = extname(f).toLowerCase();
       return [".jpg", ".jpeg", ".png", ".webp"].includes(ext);
     });
-    return img ? `/api/images/backgrounds/${backgroundId}/${img}` : null;
+    return img
+      ? `/api/images/backgrounds/${backgroundId}/${encodeURIComponent(img)}`
+      : null;
   } catch {
     return null;
   }
@@ -39,10 +61,12 @@ export async function GET() {
   }
 
   const backgrounds = await listBackgrounds(session.user.workspaceId);
-  const withPreviews = backgrounds.map((bg) => ({
-    ...bg,
-    previewUrl: getPreviewUrl(bg.id),
-  }));
+  const withPreviews = await Promise.all(
+    backgrounds.map(async (bg) => ({
+      ...bg,
+      previewUrl: await getPreviewUrl(bg.id),
+    })),
+  );
   return NextResponse.json({ backgrounds: withPreviews });
 }
 

@@ -28,6 +28,11 @@ export function inferDefaultWorkflowDataRoot(): string {
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   WORKFLOW_DATA_ROOT: z.string().nonempty().optional(),
+  /**
+   * When set, product/model/background reference blobs and generated images are stored in this
+   * GCS bucket (object keys mirror paths under WORKFLOW_DATA_ROOT). Uses Application Default Credentials.
+   */
+  WORKFLOW_GCS_BUCKET: z.string().optional(),
   NANOBANANA_API_KEY: z.string().nonempty().optional(),
   NANOBANANA_BASE_URL: z.string().url().default("https://generativelanguage.googleapis.com/v1beta"),
   NANOBANANA_MODEL: z.string().default("gemini-3.1-flash-image-preview"),

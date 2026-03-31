@@ -1,15 +1,30 @@
 import fg from "fast-glob";
 import fs from "fs-extra";
 import { join } from "node:path";
+import { listDataObjectKeys, usesGcsBlobStorage } from "./objectStorage";
 
 export interface ModelReference {
   path: string;
 }
 
+const REF_IMAGE = /\.(png|jpg|jpeg|webp)$/i;
+
 /**
  * Lists all model IDs (subfolders of data/models/ that contain a reference/ folder with images).
  */
 export async function listModels(dataRoot: string): Promise<string[]> {
+  if (usesGcsBlobStorage()) {
+    const keys = await listDataObjectKeys("models/");
+    const ids = new Set<string>();
+    const re = /^models\/([^/]+)\/reference\/[^/]+$/;
+    for (const k of keys) {
+      if (!REF_IMAGE.test(k)) continue;
+      const m = re.exec(k);
+      if (m) ids.add(m[1]);
+    }
+    return [...ids].sort();
+  }
+
   const modelsDir = join(dataRoot, "models");
   const exists = await fs.pathExists(modelsDir);
   if (!exists) return [];
@@ -22,7 +37,7 @@ export async function listModels(dataRoot: string): Promise<string[]> {
     if (!(await fs.pathExists(refDir))) continue;
     const files = await fg(["**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.webp"], {
       cwd: refDir,
-      absolute: true
+      absolute: true,
     });
     if (files.length > 0) ids.push(e.name);
   }
@@ -32,14 +47,26 @@ export async function listModels(dataRoot: string): Promise<string[]> {
 /**
  * Loads reference image paths for a given model.
  */
-export async function loadModelReferences(dataRoot: string, modelId: string): Promise<ModelReference[]> {
+export async function loadModelReferences(
+  dataRoot: string,
+  modelId: string,
+): Promise<ModelReference[]> {
+  if (usesGcsBlobStorage()) {
+    const prefix = `models/${modelId}/reference/`;
+    const keys = await listDataObjectKeys(prefix);
+    return keys
+      .filter((k) => REF_IMAGE.test(k))
+      .sort()
+      .map((pathKey) => ({ path: pathKey }));
+  }
+
   const refDir = join(dataRoot, "models", modelId, "reference");
   const exists = await fs.pathExists(refDir);
   if (!exists) return [];
 
   const patterns = ["**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.webp"];
   const files = await fg(patterns, { cwd: refDir, absolute: true });
-  return files.map((path) => ({ path }));
+  return files.map((pathKey) => ({ path: pathKey }));
 }
 
 /**

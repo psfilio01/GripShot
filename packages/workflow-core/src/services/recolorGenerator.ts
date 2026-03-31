@@ -1,7 +1,6 @@
 import axios from "axios";
-import fs from "fs-extra";
-import path from "node:path";
 import { getEnv } from "../config/env";
+import { readImageFileForProcessing } from "./imageFileRead";
 import type { SceneLock } from "../domain/sceneLock";
 import type { GeneratedImage } from "./imageGenerator";
 
@@ -35,21 +34,16 @@ export async function generateRecolorVariant(
   } = getEnv();
 
   if (NANOBANANA_DRY_RUN) {
-    const buffer = await fs.readFile(request.masterImagePath);
-    const ext =
-      path.extname(request.masterImagePath).replace(/^\./, "") || "png";
-    return { buffer, extension: ext };
+    const { buffer, ext } = await readImageFileForProcessing(request.masterImagePath);
+    return { buffer, extension: ext || "png" };
   }
 
   if (!NANOBANANA_API_KEY) {
     throw new Error("API key not configured for recolor generation.");
   }
 
-  const buffer = await fs.readFile(request.masterImagePath);
-  const ext = path
-    .extname(request.masterImagePath)
-    .replace(/^\./, "")
-    .toLowerCase();
+  const { buffer, ext: extRaw } = await readImageFileForProcessing(request.masterImagePath);
+  const ext = extRaw.toLowerCase();
   const mimeType = MIME_BY_EXT[ext] ?? "image/jpeg";
   const base64 = buffer.toString("base64");
 

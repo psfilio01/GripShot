@@ -4,6 +4,7 @@ import { getBackground } from "@/lib/db/backgrounds";
 import { resolve, join } from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { config } from "dotenv";
+import { usesGcsBlobStorage, putDataObject } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -49,16 +50,23 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const dir = join(getDataRoot(), "backgrounds", backgroundId);
-    await mkdir(dir, { recursive: true });
-
     const buffer = Buffer.from(await file.arrayBuffer());
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filePath = join(dir, safeName);
-    await writeFile(filePath, buffer);
+
+    if (usesGcsBlobStorage()) {
+      await putDataObject(
+        `backgrounds/${backgroundId}/${safeName}`,
+        buffer,
+        file.type,
+      );
+    } else {
+      const dir = join(getDataRoot(), "backgrounds", backgroundId);
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, safeName), buffer);
+    }
 
     return NextResponse.json({
-      url: `/api/images/backgrounds/${backgroundId}/${safeName}`,
+      url: `/api/images/backgrounds/${backgroundId}/${encodeURIComponent(safeName)}`,
       filename: safeName,
     });
   } catch (err) {

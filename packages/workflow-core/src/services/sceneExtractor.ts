@@ -1,7 +1,6 @@
 import axios from "axios";
-import fs from "fs-extra";
-import path from "node:path";
 import { getEnv } from "../config/env";
+import { readImageFileForProcessing } from "./imageFileRead";
 import {
   type SceneLock,
   SCENE_LOCK_JSON_SCHEMA,
@@ -36,8 +35,8 @@ export async function extractSceneLock(
     throw new Error("API key not configured for scene extraction.");
   }
 
-  const buffer = await fs.readFile(imagePath);
-  const ext = path.extname(imagePath).replace(/^\./, "").toLowerCase();
+  const { buffer, ext: extRaw } = await readImageFileForProcessing(imagePath);
+  const ext = extRaw.toLowerCase();
   const mimeType = MIME_BY_EXT[ext] ?? "image/jpeg";
   const base64 = buffer.toString("base64");
 

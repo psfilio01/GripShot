@@ -29,4 +29,10 @@ describe("filePathToGeneratedImageUrl", () => {
   it("returns original string when no /generated/ marker", () => {
     expect(filePathToGeneratedImageUrl("/tmp/other.png")).toBe("/tmp/other.png");
   });
+
+  it("maps GCS-style object keys starting with generated/", () => {
+    expect(
+      filePathToGeneratedImageUrl("generated/p1/j1/neutral/abc.png"),
+    ).toBe("/api/images/generated/p1/j1/neutral/abc.png");
+  });
 });

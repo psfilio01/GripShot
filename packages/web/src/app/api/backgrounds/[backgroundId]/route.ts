@@ -8,7 +8,12 @@ import {
 import { z } from "zod";
 import { resolve, join } from "path";
 import { rm } from "fs/promises";
+import { existsSync } from "fs";
 import { config } from "dotenv";
+import {
+  usesGcsBlobStorage,
+  deleteDataObjectsWithPrefix,
+} from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -77,9 +82,15 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const dir = join(getDataRoot(), "backgrounds", backgroundId);
   try {
-    await rm(dir, { recursive: true, force: true });
+    if (usesGcsBlobStorage()) {
+      await deleteDataObjectsWithPrefix(`backgrounds/${backgroundId}/`);
+    } else {
+      const dir = join(getDataRoot(), "backgrounds", backgroundId);
+      if (existsSync(dir)) {
+        await rm(dir, { recursive: true, force: true });
+      }
+    }
   } catch {
     /* directory may not exist */
   }

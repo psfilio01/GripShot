@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { existsSync } from "fs";
-import { resolve } from "path";
+import { readFile } from "fs/promises";
+import { resolve, isAbsolute } from "path";
 import { config } from "dotenv";
 import archiver from "archiver";
+import {
+  usesGcsBlobStorage,
+  getDataObjectBuffer,
+} from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -30,20 +35,29 @@ export async function POST(req: NextRequest) {
     }
 
     const dataRoot = getDataRoot();
-    const files: { path: string; name: string }[] = [];
+    const files: { buffer: Buffer; name: string }[] = [];
 
     for (const job of jobs) {
       const variants = await metadataStore.listVariantsForJob(job.id);
       for (const v of variants) {
         if (status && v.status !== status) continue;
 
-        const absPath = resolve(v.filePath);
-        if (!absPath.startsWith(resolve(dataRoot)) || !existsSync(absPath))
-          continue;
+        let buffer: Buffer | null = null;
+        if (usesGcsBlobStorage() && !isAbsolute(v.filePath)) {
+          buffer = await getDataObjectBuffer(v.filePath);
+        } else {
+          const absPath = resolve(v.filePath);
+          if (!absPath.startsWith(resolve(dataRoot)) || !existsSync(absPath)) {
+            continue;
+          }
+          buffer = await readFile(absPath);
+        }
+
+        if (!buffer) continue;
 
         const ext = v.filePath.split(".").pop() ?? "png";
         files.push({
-          path: absPath,
+          buffer,
           name: `${job.productId}-${v.id.slice(0, 8)}.${ext}`,
         });
       }
@@ -59,7 +73,7 @@ export async function POST(req: NextRequest) {
     const archive = archiver("zip", { zlib: { level: 1 } });
 
     for (const f of files) {
-      archive.file(f.path, { name: f.name });
+      archive.append(f.buffer, { name: f.name });
     }
 
     const chunks: Uint8Array[] = [];

@@ -5,6 +5,10 @@ import {
   updateHumanModel,
   deleteHumanModelDoc,
 } from "@/lib/db/human-models";
+import {
+  usesGcsBlobStorage,
+  deleteDataObjectsWithPrefix,
+} from "@fashionmentum/workflow-core";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve, join } from "path";
@@ -81,9 +85,13 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   }
 
   try {
-    const modelDir = join(getDataRoot(), "models", modelId);
-    if (existsSync(modelDir)) {
-      await rm(modelDir, { recursive: true, force: true });
+    if (usesGcsBlobStorage()) {
+      await deleteDataObjectsWithPrefix(`models/${modelId}/`);
+    } else {
+      const modelDir = join(getDataRoot(), "models", modelId);
+      if (existsSync(modelDir)) {
+        await rm(modelDir, { recursive: true, force: true });
+      }
     }
     await deleteHumanModelDoc(session.user.workspaceId, modelId);
     return NextResponse.json({ success: true });

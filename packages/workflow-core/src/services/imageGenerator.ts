@@ -1,10 +1,9 @@
 import axios from "axios";
-import fs from "fs-extra";
-import path from "node:path";
 import { getEnv } from "../config/env";
 import type { BuiltPrompt } from "../domain/prompt";
 import type { GenerationSettings } from "./runtimeInputLoader";
 import { formatGoogleGenerativeLanguageApiError } from "../utils/googleGenerativeLanguageError";
+import { readImageFileForProcessing } from "./imageFileRead";
 
 export interface GeneratedImage {
   buffer: Buffer;
@@ -22,9 +21,8 @@ const MIME_BY_EXT: Record<string, string> = {
   gif: "image/gif"
 };
 
-function mimeFromPath(filePath: string): string {
-  const ext = path.extname(filePath).replace(/^\./, "").toLowerCase();
-  return MIME_BY_EXT[ext] ?? "image/jpeg";
+function mimeFromExt(ext: string): string {
+  return MIME_BY_EXT[ext.toLowerCase()] ?? "image/jpeg";
 }
 
 /**
@@ -42,9 +40,8 @@ export async function generateImagesWithNanoBanana(
   if (NANOBANANA_DRY_RUN) {
     const first = paths[0];
     if (!first) throw new Error("At least one reference image path is required.");
-    const imageBuffer = await fs.readFile(first);
-    const ext = path.extname(first).replace(/^\./, "") || "jpg";
-    return [{ buffer: imageBuffer, extension: ext }];
+    const { buffer, ext } = await readImageFileForProcessing(first);
+    return [{ buffer, extension: ext }];
   }
 
   if (!NANOBANANA_API_KEY) {
@@ -56,12 +53,12 @@ export async function generateImagesWithNanoBanana(
   ];
 
   for (const p of paths) {
-    const buffer = await fs.readFile(p);
+    const { buffer, ext } = await readImageFileForProcessing(p);
     parts.push({
       inline_data: {
-        mime_type: mimeFromPath(p),
-        data: buffer.toString("base64")
-      }
+        mime_type: mimeFromExt(ext),
+        data: buffer.toString("base64"),
+      },
     });
   }
 

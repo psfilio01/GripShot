@@ -23,3 +23,16 @@ export type { ProductColorDef, StartImageJobInput, WorkflowType } from "./types/
 export { resolveChosenModelId } from "./services/modelLoader";
 export { formatGoogleGenerativeLanguageApiError } from "./utils/googleGenerativeLanguageError";
 export { getWorkflowDataRoot } from "./config/env";
+export {
+  usesGcsBlobStorage,
+  getWorkflowGcsBucketName,
+  putDataObject,
+  getDataObjectBuffer,
+  deleteDataObject,
+  copyDataObject,
+  listDataObjectKeys,
+  getDataObjectMeta,
+  readWorkflowDataFile,
+  dataObjectExists,
+  deleteDataObjectsWithPrefix,
+} from "./services/objectStorage";

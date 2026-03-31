@@ -1,6 +1,7 @@
 import fg from "fast-glob";
 import fs from "fs-extra";
 import { join } from "node:path";
+import { listDataObjectKeys, usesGcsBlobStorage } from "./objectStorage";
 
 export interface BackgroundReference {
   path: string;
@@ -8,11 +9,26 @@ export interface BackgroundReference {
 
 const GOLDEN_BACKGROUND_NAME = "golden";
 
+const USER_BG = /\.(jpg|jpeg|png|webp)$/i;
+
 /**
  * Loads the golden background reference image for AuréLéa.
  * Looks for data/brand/aurelea/backgrounds/golden.* (jpg, png, etc.).
  */
-export async function loadGoldenBackground(dataRoot: string): Promise<BackgroundReference | null> {
+export async function loadGoldenBackground(
+  dataRoot: string,
+): Promise<BackgroundReference | null> {
+  if (usesGcsBlobStorage()) {
+    const prefix = "brand/aurelea/backgrounds/";
+    const keys = await listDataObjectKeys(prefix);
+    const golden = keys.find(
+      (k) =>
+        USER_BG.test(k) &&
+        k.split("/").pop()?.toLowerCase().startsWith(`${GOLDEN_BACKGROUND_NAME}.`),
+    );
+    return golden ? { path: golden } : null;
+  }
+
   const dir = join(dataRoot, "brand", "aurelea", "backgrounds");
   const exists = await fs.pathExists(dir);
   if (!exists) return null;
@@ -30,6 +46,15 @@ export async function loadUserBackground(
   dataRoot: string,
   backgroundId: string,
 ): Promise<BackgroundReference | null> {
+  if (usesGcsBlobStorage()) {
+    const prefix = `backgrounds/${backgroundId}/`;
+    const keys = (await listDataObjectKeys(prefix))
+      .filter((k) => USER_BG.test(k))
+      .sort();
+    const first = keys[0];
+    return first ? { path: first } : null;
+  }
+
   const dir = join(dataRoot, "backgrounds", backgroundId);
   const exists = await fs.pathExists(dir);
   if (!exists) return null;

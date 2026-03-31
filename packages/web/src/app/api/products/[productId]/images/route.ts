@@ -6,6 +6,14 @@ import { resolve, join, extname } from "path";
 import { mkdir, readdir, stat, writeFile, readFile, unlink } from "fs/promises";
 import { existsSync } from "fs";
 import {
+  usesGcsBlobStorage,
+  putDataObject,
+  getDataObjectBuffer,
+  getDataObjectMeta,
+  deleteDataObject,
+  listDataObjectKeys,
+} from "@fashionmentum/workflow-core";
+import {
   DEFAULT_CATEGORY,
   isValidCategory,
   type ImageCategory,
@@ -21,10 +29,31 @@ function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
 }
 
+function refDirFor(productId: string): string {
+  return join(getDataRoot(), "products", productId, "reference");
+}
+
+function gcsMetaKey(productId: string): string {
+  return `products/${productId}/reference/${METADATA_FILE}`;
+}
+
+function gcsRefPrefix(productId: string): string {
+  return `products/${productId}/reference/`;
+}
+
 type MetadataMap = Record<string, { category: ImageCategory }>;
 
-async function readMetadata(refDir: string): Promise<MetadataMap> {
-  const metaPath = join(refDir, METADATA_FILE);
+async function readMetadata(productId: string): Promise<MetadataMap> {
+  if (usesGcsBlobStorage()) {
+    const buf = await getDataObjectBuffer(gcsMetaKey(productId));
+    if (!buf) return {};
+    try {
+      return JSON.parse(buf.toString("utf8")) as MetadataMap;
+    } catch {
+      return {};
+    }
+  }
+  const metaPath = join(refDirFor(productId), METADATA_FILE);
   try {
     const raw = await readFile(metaPath, "utf8");
     return JSON.parse(raw) as MetadataMap;
@@ -34,14 +63,26 @@ async function readMetadata(refDir: string): Promise<MetadataMap> {
 }
 
 async function writeMetadata(
-  refDir: string,
+  productId: string,
   metadata: MetadataMap,
 ): Promise<void> {
+  if (usesGcsBlobStorage()) {
+    await putDataObject(
+      gcsMetaKey(productId),
+      Buffer.from(JSON.stringify(metadata, null, 2), "utf8"),
+      "application/json",
+    );
+    return;
+  }
+  const refDir = refDirFor(productId);
+  await mkdir(refDir, { recursive: true });
   await writeFile(
     join(refDir, METADATA_FILE),
     JSON.stringify(metadata, null, 2),
   );
 }
+
+const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp"];
 
 export async function GET(
   _req: NextRequest,
@@ -58,19 +99,46 @@ export async function GET(
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  const refDir = join(getDataRoot(), "products", productId, "reference");
   try {
+    const metadata = await readMetadata(productId);
+    const images: {
+      name: string;
+      url: string;
+      size: number;
+      updatedAt: string;
+      category: ImageCategory;
+    }[] = [];
+
+    if (usesGcsBlobStorage()) {
+      const keys = await listDataObjectKeys(gcsRefPrefix(productId));
+      for (const key of keys) {
+        const base = key.split("/").pop() ?? "";
+        if (base === METADATA_FILE || base.startsWith(".")) continue;
+        const ext = extname(base).toLowerCase();
+        if (!IMAGE_EXT.includes(ext)) continue;
+        const meta = await getDataObjectMeta(key);
+        if (!meta) continue;
+        images.push({
+          name: base,
+          url: `/api/images/products/${productId}/reference/${encodeURIComponent(base)}`,
+          size: meta.size,
+          updatedAt: meta.updated.toISOString(),
+          category: metadata[base]?.category ?? DEFAULT_CATEGORY,
+        });
+      }
+      return NextResponse.json({ images });
+    }
+
+    const refDir = refDirFor(productId);
     const files = await readdir(refDir);
-    const metadata = await readMetadata(refDir);
-    const images = [];
     for (const file of files) {
       if (file === METADATA_FILE) continue;
       const ext = extname(file).toLowerCase();
-      if ([".jpg", ".jpeg", ".png", ".webp"].includes(ext)) {
+      if (IMAGE_EXT.includes(ext)) {
         const fileStat = await stat(join(refDir, file));
         images.push({
           name: file,
-          url: `/api/images/products/${productId}/reference/${file}`,
+          url: `/api/images/products/${productId}/reference/${encodeURIComponent(file)}`,
           size: fileStat.size,
           updatedAt: fileStat.mtime.toISOString(),
           category: metadata[file]?.category ?? DEFAULT_CATEGORY,
@@ -114,10 +182,7 @@ export async function POST(
       );
     }
 
-    const refDir = join(getDataRoot(), "products", productId, "reference");
-    await mkdir(refDir, { recursive: true });
-
-    const metadata = await readMetadata(refDir);
+    const metadata = await readMetadata(productId);
     const uploaded: string[] = [];
 
     for (const entry of files) {
@@ -141,14 +206,21 @@ export async function POST(
 
       const buffer = Buffer.from(await entry.arrayBuffer());
       const safeName = entry.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const destPath = join(refDir, safeName);
 
-      await writeFile(destPath, buffer);
+      if (usesGcsBlobStorage()) {
+        const key = `${gcsRefPrefix(productId)}${safeName}`;
+        await putDataObject(key, buffer, entry.type);
+      } else {
+        const refDir = refDirFor(productId);
+        await mkdir(refDir, { recursive: true });
+        await writeFile(join(refDir, safeName), buffer);
+      }
+
       metadata[safeName] = { category };
       uploaded.push(safeName);
     }
 
-    await writeMetadata(refDir, metadata);
+    await writeMetadata(productId, metadata);
     return NextResponse.json({ uploaded, count: uploaded.length, category });
   } catch (err) {
     console.error("Image upload failed:", err);
@@ -188,10 +260,9 @@ export async function PATCH(
       );
     }
 
-    const refDir = join(getDataRoot(), "products", productId, "reference");
-    const metadata = await readMetadata(refDir);
+    const metadata = await readMetadata(productId);
     metadata[name] = { category };
-    await writeMetadata(refDir, metadata);
+    await writeMetadata(productId, metadata);
 
     return NextResponse.json({ name, category });
   } catch (err) {
@@ -229,7 +300,20 @@ export async function DELETE(
       );
     }
 
-    const refDir = join(getDataRoot(), "products", productId, "reference");
+    if (usesGcsBlobStorage()) {
+      const key = `${gcsRefPrefix(productId)}${fileName}`;
+      const buf = await getDataObjectBuffer(key);
+      if (!buf) {
+        return NextResponse.json({ error: "File not found" }, { status: 404 });
+      }
+      await deleteDataObject(key);
+      const metadata = await readMetadata(productId);
+      delete metadata[fileName];
+      await writeMetadata(productId, metadata);
+      return NextResponse.json({ deleted: fileName });
+    }
+
+    const refDir = refDirFor(productId);
     const filePath = join(refDir, fileName);
     const normalizedPath = resolve(filePath);
     const safeBoundary = resolve(refDir);
@@ -243,9 +327,9 @@ export async function DELETE(
 
     await unlink(normalizedPath);
 
-    const metadata = await readMetadata(refDir);
+    const metadata = await readMetadata(productId);
     delete metadata[fileName];
-    await writeMetadata(refDir, metadata);
+    await writeMetadata(productId, metadata);
 
     return NextResponse.json({ deleted: fileName });
   } catch (err) {

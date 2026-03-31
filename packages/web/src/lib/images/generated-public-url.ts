@@ -7,6 +7,12 @@
  */
 export function filePathToGeneratedImageUrl(filePath: string): string {
   const normalized = filePath.replace(/\\/g, "/");
+  if (normalized.startsWith("generated/")) {
+    const relative = normalized.slice("generated/".length);
+    const segments = relative.split("/").filter(Boolean);
+    const encoded = segments.map((s) => encodeURIComponent(s)).join("/");
+    return `/api/images/generated/${encoded}`;
+  }
   const lower = normalized.toLowerCase();
   const marker = "/generated/";
   const idx = lower.indexOf(marker);

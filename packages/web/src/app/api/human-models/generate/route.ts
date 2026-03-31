@@ -9,6 +9,7 @@ import { z } from "zod";
 import { resolve, join } from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { config } from "dotenv";
+import { usesGcsBlobStorage, putDataObject } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
@@ -155,14 +156,29 @@ export async function POST(req: NextRequest) {
     await updateGenerationLog(logId, { status: "completed", durationMs });
     logger.info("Human model generation completed", { durationMs, logId, modelId });
 
-    const dir = join(getDataRoot(), "models", modelId, "reference");
-    await mkdir(dir, { recursive: true });
     const filename = `portrait.${result.extension}`;
-    await writeFile(join(dir, filename), result.buffer);
+    const mime =
+      result.extension === "png"
+        ? "image/png"
+        : result.extension === "webp"
+          ? "image/webp"
+          : "image/jpeg";
+
+    if (usesGcsBlobStorage()) {
+      await putDataObject(
+        `models/${modelId}/reference/${filename}`,
+        result.buffer,
+        mime,
+      );
+    } else {
+      const dir = join(getDataRoot(), "models", modelId, "reference");
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, filename), result.buffer);
+    }
 
     return NextResponse.json({
       modelId,
-      imageUrl: `/api/images/models/${modelId}/reference/${filename}`,
+      imageUrl: `/api/images/models/${modelId}/reference/${encodeURIComponent(filename)}`,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
