@@ -55,8 +55,18 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (err) {
     console.error("Session creation failed:", err);
+    const isDev = process.env.NODE_ENV !== "production";
+    const detail =
+      err instanceof Error
+        ? err.message
+        : typeof err === "string"
+          ? err
+          : "Unknown error";
     return NextResponse.json(
-      { error: "Invalid ID token" },
+      {
+        error: "Invalid ID token",
+        ...(isDev ? { detail } : {}),
+      },
       { status: 401 },
     );
   }

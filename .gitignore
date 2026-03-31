@@ -1,5 +1,6 @@
 .env
 .env.local
+packages/web/.env.deploy
 data/generated/
 data/metadata.json
 data/models/

@@ -20,6 +20,8 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    // Cursor/CI often sets CI=true; reuse dev server on :3000 when PW_REUSE_SERVER=1
+    reuseExistingServer:
+      !process.env.CI || process.env.PW_REUSE_SERVER === "1",
   },
 });

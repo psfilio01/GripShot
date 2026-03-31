@@ -9,6 +9,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+if (
+  typeof window !== "undefined" &&
+  process.env.NODE_ENV === "production" &&
+  !firebaseConfig.apiKey
+) {
+  console.error(
+    "[Grip Shot] NEXT_PUBLIC_FIREBASE_* were missing at `next build` time. " +
+      "Pass them as Docker --build-arg (see Dockerfile builder stage), then rebuild the image.",
+  );
+}
+
 let _app: FirebaseApp | null = null;
 let _auth: Auth | null = null;
 

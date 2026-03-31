@@ -397,4 +397,4 @@ Press these keys anywhere in the dashboard (when no input is focused):
 | Image generation | Google Gemini API |
 | Unit tests | Vitest |
 | E2E tests | Playwright |
-| Deployment | Cloud Run (planned) |
+| Deployment | Cloud Run (Docker + Artifact Registry; see `docs/LOCAL_DEV_AND_DEPLOY.md`, `pnpm deploy:cloud-run`) |

@@ -23,11 +23,22 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function postSessionCookie(idToken: string): Promise<void> {
-  await fetch("/api/auth/session", {
+  const res = await fetch("/api/auth/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
+    credentials: "same-origin",
   });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = (await res.json()) as { error?: string; detail?: string };
+      detail = [body.error, body.detail].filter(Boolean).join(": ") || detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
