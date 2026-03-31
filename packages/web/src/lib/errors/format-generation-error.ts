@@ -1,4 +1,7 @@
-import { formatGoogleGenerativeLanguageApiError } from "@fashionmentum/workflow-core";
+import {
+  formatGoogleGenerativeLanguageApiError,
+  formatWorkflowStorageError,
+} from "@fashionmentum/workflow-core";
 
 /**
  * Normalizes errors from Gemini (axios in workflow-core, fetch in web) for
@@ -17,6 +20,9 @@ export function formatGenerationError(err: unknown): string {
     );
     if (msg) return msg;
   }
+
+  const storageHint = formatWorkflowStorageError(err);
+  if (storageHint) return storageHint;
 
   if (err instanceof Error && err.message) return err.message;
   return String(err);

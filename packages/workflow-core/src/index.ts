@@ -35,4 +35,5 @@ export {
   readWorkflowDataFile,
   dataObjectExists,
   deleteDataObjectsWithPrefix,
+  formatWorkflowStorageError,
 } from "./services/objectStorage";

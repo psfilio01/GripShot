@@ -18,6 +18,28 @@ export function getWorkflowGcsBucketName(): string | undefined {
   return bucketName();
 }
 
+/**
+ * If `err` is a typical GCS bucket misconfiguration, returns an operator-facing hint; otherwise null.
+ */
+export function formatWorkflowStorageError(err: unknown): string | null {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  const looksLikeBucket =
+    lower.includes("specified bucket does not exist") ||
+    lower.includes("bucket does not exist") ||
+    lower.includes("bucket not found") ||
+    lower.includes("no such bucket");
+  if (!looksLikeBucket) return null;
+
+  const b = bucketName() ?? "(WORKFLOW_GCS_BUCKET)";
+  return (
+    `Google Cloud Storage bucket "${b}" does not exist or is not visible to Application Default Credentials. ` +
+    `Create it in the correct GCP project (Cloud Console → Storage, or gsutil mb gs://${b}), ` +
+    `set WORKFLOW_GCS_BUCKET to the exact bucket name (often PROJECT_ID.appspot.com for Firebase default), ` +
+    `or unset WORKFLOW_GCS_BUCKET to use the local data folder only.`
+  );
+}
+
 function getBucket() {
   const name = bucketName();
   if (!name) {
