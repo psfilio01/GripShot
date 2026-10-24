@@ -1,0 +1,11 @@
+{
+  "id": "scale_person_standing",
+  "name": "Groessenreferenz: neben Person",
+  "applicableTo": ["SCALE_REFERENCE"],
+  "categoryHints": ["furniture", "outdoor", "fitness", "decor"],
+  "promptBlocks": {
+    "composition": "Product shown next to a standing person to communicate scale. Person positioned beside or slightly behind the product. Clean neutral background.",
+    "camera": "Full-body or 3/4 shot from a slight distance. Deep depth of field, both person and product fully sharp.",
+    "lighting": "Even studio lighting, soft and diffused. Minimal shadows, neutral color temperature."
+  }
+}

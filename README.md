@@ -4,63 +4,165 @@
 
 Grip Shot is an AI-powered SaaS for Amazon sellers. It combines product image generation, listing copy, A+ content, and a results dashboard in one workflow — built on Next.js, Firebase, Stripe, and Google Gemini.
 
-The web UI is available in **English** and **German** via **`/en/...` and `/de/...`** (with SEO-friendly metadata and `hreflang` alternates). Copy lives in `packages/web/src/messages/`. Set **`NEXT_PUBLIC_APP_URL`** in production so canonical URLs match your Firebase Hosting or custom domain.
+The web UI is available in **English** and **German** via `**/en/...` and `/de/...*`* (with SEO-friendly metadata and `hreflang` alternates). Copy lives in `packages/web/src/messages/`. Set `**NEXT_PUBLIC_APP_URL**` in production so canonical URLs match your Firebase Hosting or custom domain.
 
 ---
 
 ## Current status
 
-| Milestone | Status |
-|-----------|--------|
-| Monorepo + workflow-core engine | Done |
-| Next.js app shell | Done |
-| Firebase Auth (email + Google) | Done |
-| Protected dashboard with sidebar | Done |
-| Vitest unit tests | Done |
-| Playwright smoke test config | Done |
-| Firestore data model + user provisioning | Done |
-| Brand onboarding flow | Done |
-| Listing copy generation | Done |
-| Product management | Done |
-| Image generation UI (workflow-core bridge) | Done |
-| Results dashboard (browse, filter, favorite, reject) | Done |
-| Stripe billing + quota enforcement | Done |
-| Product reference image upload | Done |
-| A+ content generation | Done |
-| Brand & product edit/delete | Done |
-| Image zoom/lightbox | Done |
-| Public landing page | Done |
-| English + German (next-intl, `/en` / `/de`, SEO metadata) | Done |
-| Dockerfile + Cloud Run readiness | Done |
-| Light/dark theme system | Done |
-| Results filtering + image download | Done |
-| Image generation controls (aspect ratio, resolution) | Done |
-| Product detail: generated image gallery | Done |
-| Bulk ZIP download for results | Done |
-| Listing copy per-section copy buttons | Done |
-| Dashboard recent activity feed | Done |
-| Keyboard navigation shortcuts | Done |
-| Toast notification system | Done |
-| Skeleton loading states | Done |
-| Credit top-up purchases | Done |
-| Product image categorization | Done |
-| Confirm dialog for destructive actions | Done |
-| Empty state components | Done |
-| Product selector in image generation | Done |
-| Generation pre-fill via URL params | Done |
-| Job grouping + timestamps on product page | Done |
-| Workspace generation preferences | Done |
-| Billing toast notifications | Done |
-| Product card quick actions | Done |
-| Results page image traceability | Done |
-| Hero — color variant generation (background + Results placeholders) | Done |
-| Human models setup + lifestyle model picker | Done |
-| Playwright E2E: human models flow (optional auth) | Done |
-| Playwright E2E: Results dashboard shell (optional auth) | Done |
-| Admin / superuser with unlimited access | Done |
-| Structured generation logging + admin logs UI | Done |
-| Generate tabs: robust API error messages (JSON + non-JSON bodies) | Done |
-| Settings: preferred UI language (syncs protected routes when logged in) | Done |
+
+| Milestone                                                               | Status |
+| ----------------------------------------------------------------------- | ------ |
+| Monorepo + workflow-core engine                                         | Done   |
+| Next.js app shell                                                       | Done   |
+| Firebase Auth (email + Google)                                          | Done   |
+| Protected dashboard with sidebar                                        | Done   |
+| Vitest unit tests                                                       | Done   |
+| Playwright smoke test config                                            | Done   |
+| Firestore data model + user provisioning                                | Done   |
+| Brand onboarding flow                                                   | Done   |
+| Listing copy generation                                                 | Done   |
+| Product management                                                      | Done   |
+| Image generation UI (workflow-core bridge)                              | Done   |
+| Results dashboard (browse, filter, favorite, reject)                    | Done   |
+| Stripe billing + quota enforcement                                      | Done   |
+| Product reference image upload                                          | Done   |
+| A+ content generation                                                   | Done   |
+| Brand & product edit/delete                                             | Done   |
+| Image zoom/lightbox                                                     | Done   |
+| Public landing page                                                     | Done   |
+| English + German (next-intl, `/en` / `/de`, SEO metadata)               | Done   |
+| Dockerfile + Cloud Run readiness                                        | Done   |
+| Light/dark theme system                                                 | Done   |
+| Results filtering + image download                                      | Done   |
+| Image generation controls (aspect ratio, resolution)                    | Done   |
+| Product detail: generated image gallery                                 | Done   |
+| Bulk ZIP download for results                                           | Done   |
+| Listing copy per-section copy buttons                                   | Done   |
+| Dashboard recent activity feed                                          | Done   |
+| Keyboard navigation shortcuts                                           | Done   |
+| Toast notification system                                               | Done   |
+| Skeleton loading states                                                 | Done   |
+| Credit top-up purchases                                                 | Done   |
+| Product image categorization                                            | Done   |
+| Confirm dialog for destructive actions                                  | Done   |
+| Empty state components                                                  | Done   |
+| Product selector in image generation                                    | Done   |
+| Generation pre-fill via URL params                                      | Done   |
+| Job grouping + timestamps on product page                               | Done   |
+| Workspace generation preferences                                        | Done   |
+| Billing toast notifications                                             | Done   |
+| Product card quick actions                                              | Done   |
+| Results page image traceability                                         | Done   |
+| Hero — color variant generation (background + Results placeholders)     | Done   |
+| Human models setup + lifestyle model picker                             | Done   |
+| Playwright E2E: human models flow (optional auth)                       | Done   |
+| Playwright E2E: Results dashboard shell (optional auth)                 | Done   |
+| Admin / superuser with unlimited access                                 | Done   |
+| Structured generation logging + admin logs UI                           | Done   |
+| Generate tabs: robust API error messages (JSON + non-JSON bodies)       | Done   |
+| Settings: preferred UI language (syncs protected routes when logged in) | Done   |
+| Telegram Bot integration (webhook, commands, voice transcription)       | Done   |
+| Custom Workflows (AI-planned multi-step generation jobs)                | Done   |
+| Workflow templates (save & reuse step plans)                            | Done   |
+| Workflow bundle download (ZIP of all generated assets)                  | Done   |
+| Workflow color variants (Hero Lock recolor per step)                    | Done   |
+
+
+---
+
+## Custom Workflows
+
+Custom Workflows let you describe an Amazon content goal in plain language and have Gemini AI break it into a sequence of generation steps — each with its own prompt configuration, image type, copy instructions, and layout hint.
+
+### Features
+
+- **Create** a workflow with a name, free-text description, and optional global settings (human model, background, language)
+- **AI-planned steps** — click "Generate Plan" and Gemini returns a structured sequence of `image`, `text`, or `image_with_text` steps
+- **Per-step review** — inspect each step's title, description, and prompt config before generating
+- **Replan individual steps** — click "New Pose" to regenerate a single step's plan without affecting the others
+- **Batch execution** — select a product and click "Generate All" to run all planned steps sequentially (quota-aware: GripShot warns before consuming credits)
+- **Single-step execution** — click "Generate" on any individual step card
+- **Bundle download** — when all steps are completed, download a ZIP containing every generated image, color variants (in `colors/` subfolders), and text file for the workflow
+- **Color variants** — on any completed image step, click "Generate colors" to create Hero Lock color variants using the product's defined colors. Each color counts as 1 credit. Variants appear as a badge on the card; click to open a modal with thumbnails and individual/bulk download. ZIP bundles include all color variants in `step-NN-title/colors/color-name.png`
+- **Save as template** — save a completed workflow's step plan as a reusable template; other workflows can clone it via "From Template"
+- **Telegram integration** — send a voice message or text to the bot; GripShot classifies intent and, for `create_workflow` messages, guides you through model/language selection before planning and running the workflow entirely in-chat. After step image generation, the bot offers a **🎨 Generate colors** button (when the product has colors defined); variants are generated server-side and a deep-link to the web dashboard is sent
+
+### Workflow statuses
+
+
+| Status      | Meaning                                 |
+| ----------- | --------------------------------------- |
+| draft       | Created, no steps yet                   |
+| planned     | Steps generated by AI, ready to execute |
+| in_progress | At least one step executing             |
+| completed   | All steps done                          |
+
+
+### Key files
+
+
+| File                                                             | Purpose                                                                       |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `packages/web/src/app/[locale]/(dashboard)/dashboard/workflows/` | Web UI (list + detail pages)                                                  |
+| `packages/web/src/app/api/workflows/`                            | REST API (CRUD, plan, execute, replan, download, save-as-template, hero-lock) |
+| `packages/web/src/app/api/workflow-templates/`                   | Templates REST API                                                            |
+| `packages/workflow-core/src/services/workflowPlanner.ts`         | Gemini-powered step planner + replanner                                       |
+| `packages/web/src/lib/telegram/workflow-handler.ts`              | Telegram in-chat workflow creation flow                                       |
+
+
+---
+
+## Telegram Bot
+
+GripShot includes a Telegram Bot for managing workflows and sending voice commands. The bot shares the same backend as the web UI — no separate deployment needed.
+
+### Commands
+
+
+| Command             | Description                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/start`            | Generates a one-time link to connect the Telegram chat to a GripShot account                                              |
+| `/status`           | Shows active plan and credit usage                                                                                        |
+| `/help`             | Lists available commands                                                                                                  |
+| **(free text)**     | Classified by Gemini: `create_workflow` triggers the in-chat workflow flow; `question` or `unknown` sends a helpful reply |
+| **(voice message)** | Transcribed via Gemini 2.5 Flash, confirmed with a Yes/No button, then treated as free text                               |
+
+
+### In-chat workflow creation
+
+1. Send a plain-text description: *"Create a full Amazon listing for my Pilates ball"*
+2. Bot classifies intent as `create_workflow` and prompts you to select a human model, background, and language (inline keyboard buttons)
+3. Confirm → Gemini plans the workflow steps → bot sends each step for review
+4. Click **▶ Alle generieren** to execute all steps; the bot sends result images via `sendPhoto`
+
+### Account linking flow
+
+1. User sends `/start` to the bot
+2. Bot replies with a one-time link to `/settings/telegram?token=xxx`
+3. User clicks the link (must be logged in) — Firestore stores `telegramChatId` on the user document
+4. Subsequent messages are matched by `chatId`
+
+To unlink, visit **Settings → Telegram** in the dashboard and click **Unlink**.
+
+### Setup
+
+See [LOCAL_DEV_AND_DEPLOY.md](docs/LOCAL_DEV_AND_DEPLOY.md) for local dev setup with ngrok/cloudflared.
+
+**Environment variables:**
+
+
+| Variable               | Purpose                                    |
+| ---------------------- | ------------------------------------------ |
+| `TELEGRAM_BOT_TOKEN`   | Bot token from @BotFather                  |
+| `TELEGRAM_WEBHOOK_URL` | Webhook URL (Cloud Run or ngrok for local) |
+
+
+**Register webhook after deploy:**
+
+```bash
+npx tsx scripts/telegram-register-webhook.ts
+```
 
 ---
 
@@ -79,6 +181,17 @@ When an Amazon seller finds a generated image they love, they typically need the
 3. **Automatic recolor generation** — The system extracts a structured "SceneLock" (image DNA) from the master, then generates same-scene variants for each configured color — keeping pose, composition, lighting, background, and styling identical. Only the product color changes.
 4. **Lineage tracking** — Every variant stores its parent master ID, target color, generation method, and status. The dashboard shows clear lineage: which image is the master and which are derived variants.
 
+### Workflow integration
+
+The same Hero Lock engine is available in Custom Workflows:
+
+- On any completed image step card, click **🎨 Generate colors** (visible only when the product has colors defined)
+- A quota confirmation dialog shows how many credits are needed before proceeding
+- Color variants are stored on the workflow step as `colorVariants[]` — no extra cards in the grid
+- A **"🎨 N colors"** badge appears on the card; click it to open a modal with all variant thumbnails, color dots, and download buttons
+- **Bundle download** includes color variants in `step-NN-title/colors/color-name.png`
+- **Telegram Bot** shows a [🎨 Generate colors] button after step image generation; after completion, sends a deep-link to the web dashboard (no images in chat to avoid traffic)
+
 ### Technical approach
 
 - **Scene extraction** uses `gemini-2.5-flash` with structured JSON output (`responseMimeType: "application/json"` + JSON schema) to analyze the hero image and produce a typed `SceneLock` object containing scene description, subject, product placement, composition, camera, lighting, background, protected invariants, and detected product color.
@@ -88,14 +201,17 @@ When an Amazon seller finds a generated image they love, they typically need the
 
 ### Key files
 
-| File | Purpose |
-|------|---------|
-| `packages/workflow-core/src/domain/sceneLock.ts` | SceneLock type + JSON schema + validator |
-| `packages/workflow-core/src/services/sceneExtractor.ts` | Gemini structured output extraction |
-| `packages/workflow-core/src/services/recolorGenerator.ts` | Gemini image editing for recolor |
-| `packages/workflow-core/src/services/heroLockOrchestrator.ts` | Full Hero color-variant workflow orchestration |
-| `packages/web/src/lib/db/product-colors.ts` | Product color CRUD + Zod validation |
-| `packages/web/src/app/api/products/[productId]/colors/route.ts` | Colors REST API |
+
+| File                                                                       | Purpose                                        |
+| -------------------------------------------------------------------------- | ---------------------------------------------- |
+| `packages/workflow-core/src/domain/sceneLock.ts`                           | SceneLock type + JSON schema + validator       |
+| `packages/workflow-core/src/services/sceneExtractor.ts`                    | Gemini structured output extraction            |
+| `packages/workflow-core/src/services/recolorGenerator.ts`                  | Gemini image editing for recolor               |
+| `packages/workflow-core/src/services/heroLockOrchestrator.ts`              | Full Hero color-variant workflow orchestration |
+| `packages/web/src/lib/db/product-colors.ts`                                | Product color CRUD + Zod validation            |
+| `packages/web/src/app/api/products/[productId]/colors/route.ts`            | Colors REST API                                |
+| `packages/web/src/app/api/workflows/[id]/steps/[index]/hero-lock/route.ts` | Workflow step color variant API                |
+
 
 ---
 
@@ -146,34 +262,40 @@ cp packages/web/.env.local.example packages/web/.env.local
 
 Required variables for the web app:
 
-| Variable | Purpose |
-|----------|---------|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase client SDK |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase client SDK |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase client SDK |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase client SDK |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase client SDK |
-| `FIREBASE_ADMIN_PROJECT_ID` | Firebase Admin (server) |
-| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase Admin (server) |
-| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase Admin (server) |
-| `STRIPE_SECRET_KEY` | Stripe billing (server) |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook verification |
+
+| Variable                              | Purpose                      |
+| ------------------------------------- | ---------------------------- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY`        | Firebase client SDK          |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`    | Firebase client SDK          |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`     | Firebase client SDK          |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase client SDK          |
+| `NEXT_PUBLIC_FIREBASE_APP_ID`         | Firebase client SDK          |
+| `FIREBASE_ADMIN_PROJECT_ID`           | Firebase Admin (server)      |
+| `FIREBASE_ADMIN_CLIENT_EMAIL`         | Firebase Admin (server)      |
+| `FIREBASE_ADMIN_PRIVATE_KEY`          | Firebase Admin (server)      |
+| `STRIPE_SECRET_KEY`                   | Stripe billing (server)      |
+| `STRIPE_WEBHOOK_SECRET`               | Stripe webhook verification  |
 | `NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID` | Stripe Starter plan price ID |
-| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | Stripe Pro plan price ID |
+| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`     | Stripe Pro plan price ID     |
+
 
 Optional admin and logging variables:
 
-| Variable | Purpose |
-|----------|---------|
+
+| Variable     | Purpose                                                              |
+| ------------ | -------------------------------------------------------------------- |
 | `ADMIN_UIDS` | Comma-separated Firebase UIDs for admin access (unlimited, no quota) |
-| `LOG_LEVEL` | Logging level: `debug`, `info` (default), `warn`, `error` |
+| `LOG_LEVEL`  | Logging level: `debug`, `info` (default), `warn`, `error`            |
+
 
 For the workflow engine, also set variables in the root `.env` (see `.env.example`).
 
-| Variable | Purpose |
-|----------|---------|
-| `WORKFLOW_DATA_ROOT` | Optional. Absolute path to the repo `data/` folder. If unset, the engine uses repo `data/` when Next runs from `packages/web`, and the image API also falls back to `packages/web/data` so older generated files still load. **Recommended:** set once to your monorepo `data` directory to avoid split storage. |
-| `WORKFLOW_GCS_BUCKET` | Optional. Google Cloud Storage bucket name. When set, reference images, models, backgrounds, and generated images are stored in GCS (same bucket locally and on Cloud Run) using keys that mirror `data/` paths. Uses Application Default Credentials. See `docs/LOCAL_DEV_AND_DEPLOY.md`. |
+
+| Variable              | Purpose                                                                                                                                                                                                                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WORKFLOW_DATA_ROOT`  | Optional. Absolute path to the repo `data/` folder. If unset, the engine uses repo `data/` when Next runs from `packages/web`, and the image API also falls back to `packages/web/data` so older generated files still load. **Recommended:** set once to your monorepo `data` directory to avoid split storage. |
+| `WORKFLOW_GCS_BUCKET` | Optional. Google Cloud Storage bucket name. When set, reference images, models, backgrounds, and generated images are stored in GCS (same bucket locally and on Cloud Run) using keys that mirror `data/` paths. Uses Application Default Credentials. See `docs/LOCAL_DEV_AND_DEPLOY.md`.                       |
+
 
 ### Run the web app
 
@@ -216,12 +338,14 @@ pnpm build:core        # Build workflow-core only
 
 The workflow-core package builds every image prompt from four layers:
 
-| Layer | Source | Purpose |
-|-------|--------|---------|
-| Defaults | Hardcoded + `data/brand/aurelea/dna.md` | Base visual style |
-| Runtime JSON | `runtime/run_input.json` | Per-run creative direction |
-| Global hard rules | `data/brand/aurelea/hard-rules.md` | Brand guardrails |
-| Product hard rules | `data/products/<id>/hard-rules.md` | Product constraints |
+
+| Layer              | Source                                  | Purpose                    |
+| ------------------ | --------------------------------------- | -------------------------- |
+| Defaults           | Hardcoded + `data/brand/aurelea/dna.md` | Base visual style          |
+| Runtime JSON       | `runtime/run_input.json`                | Per-run creative direction |
+| Global hard rules  | `data/brand/aurelea/hard-rules.md`      | Brand guardrails           |
+| Product hard rules | `data/products/<id>/hard-rules.md`      | Product constraints        |
+
 
 See `USAGE.md` for full details on the image generation CLI workflow.
 
@@ -305,9 +429,7 @@ In development, logs are colorized with timestamps and scoped labels. In product
 - Product cards link to a detail page showing product info and an image gallery
 - The image serving route supports both generated images (`data/generated/`) and product reference images (`data/products/`)
 - **Duplicate product folder names:** URLs use the Firestore product id (e.g. `pilates-mini-ball`). If older runs wrote files under a human-readable folder (e.g. `Pilates Mini Ball`), the API still resolves images by scanning `data/generated/*/<jobId>/...`. To clean disk and metadata, merge into the canonical id folder:
-
   `pnpm merge-product-folders "Pilates Mini Ball" pilates-mini-ball`
-
   (Optional third arg: absolute path to `data/` if not repo `data/`.)
 
 ---
@@ -328,7 +450,7 @@ In development, logs are colorized with timestamps and scoped labels. In product
 
 - Filter by status (all, neutral, favorites, rejected), product, and workflow type
 - **In-flight image generations**: while Gemini is working, each run appears as a placeholder card with an indeterminate progress bar (shown when the status filter is “All”). The list refreshes every few seconds until the job completes; failed runs can be dismissed.
-- **Fullscreen gallery**: click a thumbnail (or focus it and press Enter/Space) to open the **gallery overlay** (scale-from-tile open, carousel transitions, optional side previews). **← / →**, glass nav, or **side previews** (from ~480px width) move through the **current filtered** set. **Click the main image** again to open **`react-medium-image-zoom`** on that photo only (classic medium.com-style zoom); close it to return to the gallery. Escape closes RMIZ first, then the gallery. Respects **`prefers-reduced-motion`** where applicable.
+- **Fullscreen gallery**: click a thumbnail (or focus it and press Enter/Space) to open the **gallery overlay** (scale-from-tile open, carousel transitions, optional side previews). **← / →**, glass nav, or **side previews** (from ~480px width) move through the **current filtered** set. **Click the main image** again to open `**react-medium-image-zoom`** on that photo only (classic medium.com-style zoom); close it to return to the gallery. Escape closes RMIZ first, then the gallery. Respects `**prefers-reduced-motion**` where applicable.
 - Download individual images via hover overlay button
 - Bulk download filtered results as ZIP via the "Download ZIP" button
 - Skeleton loading animation while results load
@@ -352,24 +474,27 @@ In development, logs are colorized with timestamps and scoped labels. In product
 
 Press these keys anywhere in the dashboard (when no input is focused):
 
-| Key | Destination |
-|-----|-------------|
-| H | Overview |
-| B | Brands |
-| P | Products |
-| M | Models |
-| K | Backgrounds |
-| G | Generate |
-| R | Results |
-| S | Settings |
-| L | Gen Logs (admin only) |
+
+| Key | Destination           |
+| --- | --------------------- |
+| H   | Overview              |
+| B   | Brands                |
+| P   | Products              |
+| M   | Models                |
+| K   | Backgrounds           |
+| G   | Generate              |
+| R   | Results               |
+| W   | Workflows             |
+| S   | Settings              |
+| L   | Gen Logs (admin only) |
+
 
 ---
 
 ## Theme system
 
 - Light and dark mode with a visible toggle on all pages
-- Token-based CSS custom properties (`--gs-*`) for consistent theming
+- Token-based CSS custom properties (`--gs-`*) for consistent theming
 - Preference persists to `localStorage` and applies before hydration (no flash)
 - Both themes are independently designed — not just inverted colors
 
@@ -377,27 +502,30 @@ Press these keys anywhere in the dashboard (when no input is focused):
 
 ## Shared UI components
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| ConfirmDialog | `components/confirm-dialog.tsx` | Accessible modal for destructive actions |
-| EmptyState | `components/empty-state.tsx` | Friendly placeholder with CTA for empty pages |
-| ToastProvider | `components/toast.tsx` | Global non-blocking notification system |
-| Skeleton | `components/skeleton.tsx` | Loading state placeholders |
-| ZoomableImage | `components/zoomable-image.tsx` | Click-to-zoom image viewer (product/model pages) |
+
+| Component            | File                                    | Purpose                                                |
+| -------------------- | --------------------------------------- | ------------------------------------------------------ |
+| ConfirmDialog        | `components/confirm-dialog.tsx`         | Accessible modal for destructive actions               |
+| EmptyState           | `components/empty-state.tsx`            | Friendly placeholder with CTA for empty pages          |
+| ToastProvider        | `components/toast.tsx`                  | Global non-blocking notification system                |
+| Skeleton             | `components/skeleton.tsx`               | Loading state placeholders                             |
+| ZoomableImage        | `components/zoomable-image.tsx`         | Click-to-zoom image viewer (product/model pages)       |
 | ResultsImageLightbox | `components/results-image-lightbox.tsx` | Results fullscreen gallery with prev/next and keyboard |
+
 
 ---
 
 ## Tech stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 15 App Router, Tailwind CSS 4 |
-| Auth | Firebase Authentication |
-| Database | Firestore |
-| Storage | Cloud Storage for Firebase (planned) |
-| Billing | Stripe |
-| Image generation | Google Gemini API |
-| Unit tests | Vitest |
-| E2E tests | Playwright |
-| Deployment | Cloud Run (Docker + Artifact Registry; see `docs/LOCAL_DEV_AND_DEPLOY.md`, `pnpm deploy:cloud-run`) |
+
+| Layer            | Technology                                                                                          |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| Frontend         | Next.js 15 App Router, Tailwind CSS 4                                                               |
+| Auth             | Firebase Authentication                                                                             |
+| Database         | Firestore                                                                                           |
+| Storage          | Cloud Storage for Firebase (planned)                                                                |
+| Billing          | Stripe                                                                                              |
+| Image generation | Google Gemini API                                                                                   |
+| Unit tests       | Vitest                                                                                              |
+| E2E tests        | Playwright                                                                                          |
+| Deployment       | Cloud Run (Docker + Artifact Registry; see `docs/LOCAL_DEV_AND_DEPLOY.md`, `pnpm deploy:cloud-run`) |

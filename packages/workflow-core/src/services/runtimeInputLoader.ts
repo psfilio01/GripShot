@@ -37,7 +37,7 @@ export interface GenerationSettings {
 }
 
 const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
-  resolution: "2K",
+  resolution: "1K",
   aspectRatio: "4:5"
 };
 

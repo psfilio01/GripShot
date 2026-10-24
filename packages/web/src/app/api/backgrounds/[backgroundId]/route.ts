@@ -3,23 +3,9 @@ import { getServerSession } from "@/lib/auth/server-session";
 import {
   getBackground,
   updateBackground,
-  deleteBackground,
+  softDeleteBackground,
 } from "@/lib/db/backgrounds";
 import { z } from "zod";
-import { resolve, join } from "path";
-import { rm } from "fs/promises";
-import { existsSync } from "fs";
-import { config } from "dotenv";
-import {
-  usesGcsBlobStorage,
-  deleteDataObjectsWithPrefix,
-} from "@fashionmentum/workflow-core";
-
-config({ path: resolve(process.cwd(), "../../.env") });
-
-function getDataRoot(): string {
-  return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
-}
 
 type Params = { params: Promise<{ backgroundId: string }> };
 
@@ -83,18 +69,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   }
 
   try {
-    if (usesGcsBlobStorage()) {
-      await deleteDataObjectsWithPrefix(`backgrounds/${backgroundId}/`);
-    } else {
-      const dir = join(getDataRoot(), "backgrounds", backgroundId);
-      if (existsSync(dir)) {
-        await rm(dir, { recursive: true, force: true });
-      }
-    }
-  } catch {
-    /* directory may not exist */
+    await softDeleteBackground(session.user.workspaceId, backgroundId, session.user.uid);
+    return NextResponse.json({ ok: true, trashed: true });
+  } catch (err) {
+    console.error("Background delete failed:", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  await deleteBackground(session.user.workspaceId, backgroundId);
-  return NextResponse.json({ ok: true });
 }

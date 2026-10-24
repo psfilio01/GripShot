@@ -16,6 +16,8 @@ import {
   type ResultsLightboxOrigin,
 } from "@/components/results-image-lightbox";
 import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
+import { workflowLabel as wlShared } from "@/lib/results/workflow-labels";
+import { qualityScoreVariant } from "@/lib/results/quality-score";
 import { useToast } from "@/components/toast";
 import { EmptyState } from "@/components/empty-state";
 import { ResultsSkeleton } from "@/components/skeleton";
@@ -379,17 +381,7 @@ export default function ResultsPage() {
     { value: "rejected", label: "Rejected" },
   ];
 
-  const WORKFLOW_LABELS: Record<string, string> = {
-    AMAZON_LIFESTYLE_SHOT: "Lifestyle",
-    LIFESTYLE: "Lifestyle",
-    NEUTRAL_PRODUCT_SHOT: "Product shot",
-    MAIN_IMAGE: "Main image",
-    SCALE_REFERENCE: "Scale ref",
-    DETAIL_CLOSEUP: "Detail",
-    A_PLUS_VISUAL: "A+ Visual",
-    HERO_LOCK_RECOLOR: "Color variant",
-  };
-  const workflowLabel = (wt: string) => WORKFLOW_LABELS[wt] ?? wt;
+  const workflowLabel = wlShared;
 
   const hasFilters =
     productFilter !== "all" || typeFilter !== "all" || statusFilter !== "all";
@@ -1115,10 +1107,11 @@ function ImageStatusBadge({ status }: { status: string }) {
 }
 
 function QualityScoreBadge({ score }: { score: number }) {
+  const variant = qualityScoreVariant(score);
   const style: React.CSSProperties =
-    score > 7
+    variant === "green"
       ? { background: "var(--gs-success-bg)", color: "var(--gs-success-text)" }
-      : score >= 4
+      : variant === "amber"
         ? { background: "#fef3c7", color: "#92400e" }
         : { background: "var(--gs-error-bg)", color: "var(--gs-error-text)" };
 
@@ -1135,6 +1128,7 @@ function QualityScoreBadge({ score }: { score: number }) {
 
 function QualityIssuesList({ issues }: { issues: string[] }) {
   const [open, setOpen] = useState(false);
+  const tGen = useTranslations("Generate");
   if (issues.length === 0) return null;
 
   return (
@@ -1144,7 +1138,7 @@ function QualityIssuesList({ issues }: { issues: string[] }) {
         className="text-[10px] font-medium transition"
         style={{ color: "var(--gs-text-muted)" }}
       >
-        {open ? "Hide" : "Show"} {issues.length} issue{issues.length > 1 ? "s" : ""}
+        {open ? tGen("hideIssues") : tGen("showIssues")} ({issues.length})
       </button>
       {open && (
         <ul className="mt-1 space-y-0.5">

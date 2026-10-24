@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
-import { getProduct, updateProduct, deleteProduct } from "@/lib/db/products";
+import { getProduct, updateProduct, softDeleteProduct } from "@/lib/db/products";
 import { z } from "zod";
 
 const UpdateProductSchema = z.object({
@@ -78,8 +78,8 @@ export async function DELETE(
   }
 
   try {
-    await deleteProduct(session.user.workspaceId, productId);
-    return NextResponse.json({ success: true });
+    await softDeleteProduct(session.user.workspaceId, productId, session.user.uid);
+    return NextResponse.json({ success: true, trashed: true });
   } catch (err) {
     console.error("Product deletion failed:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

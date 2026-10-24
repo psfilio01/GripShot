@@ -46,6 +46,10 @@ cp packages/web/.env.local.example packages/web/.env.local
 | `FIREBASE_ADMIN_PRIVATE_KEY` | Yes | Firebase Admin |
 | `STRIPE_SECRET_KEY` | Later | Stripe billing |
 | `STRIPE_WEBHOOK_SECRET` | Later | Stripe webhooks |
+| `TELEGRAM_BOT_TOKEN` | Optional | Telegram Bot token from @BotFather |
+| `TELEGRAM_WEBHOOK_URL` | Optional | Webhook URL (Cloud Run URL or ngrok URL for local) |
+| `GEMINI_API_KEY` | Optional | Gemini API key for intent classification (Telegram bot). Falls back to `NANOBANANA_API_KEY` if unset. |
+| `GEMINI_DRY_RUN` | Optional | Set `true` to skip Gemini calls for voice transcription and intent classification. Returns fixed test strings instead. |
 
 #### Production Docker build override (`packages/web/.env.deploy`)
 
@@ -72,8 +76,11 @@ Optional keys: `REGION`, `CLOUD_RUN_SERVICE`, `ARTIFACT_REPO`, `PROJECT_ID`, `IM
 | `WORKFLOW_DATA_ROOT` | Yes | Path to the `data/` directory (still used for `metadata.json`, brand files on disk, and as fallback when GCS is off) |
 | `WORKFLOW_GCS_BUCKET` | No | GCS bucket name (e.g. Firebase default bucket `PROJECT_ID.appspot.com`). When set, reference uploads, models, backgrounds, and generated images use this bucket with keys mirroring `data/` paths. **Recommended for Cloud Run.** |
 | `NANOBANANA_API_KEY` | Yes | Google Gemini API key |
-| `NANOBANANA_MODEL` | No | Gemini model ID (default: `gemini-3.1-flash-image-preview`) |
+| `NANOBANANA_MODEL` | No | **Image** model for workflow image steps and listing generation (default: `gemini-3.1-flash-image-preview`). Must support image output; a text-only model ID will fail at runtime. |
+| `NANOBANANA_PLANNER_MODEL` | No | **Text-only** model for custom workflow **plan / replan** JSON (default: `gemini-2.5-flash`). Cheaper than image models; changing `NANOBANANA_MODEL` does not change planning. |
 | `NANOBANANA_DRY_RUN` | No | Set `true` to skip API calls |
+
+**Monorepo `.env`:** With `pnpm dev`, Next.js loads `packages/web/.env.local` (and `.env` there), not the repo root `.env`. Root `Apps/.env` is merged into `process.env` for keys that are still unset when `next.config.ts` loads and when `workflow-core` initializes, so you can keep Gemini keys in the root file.
 
 ---
 
@@ -95,6 +102,86 @@ Use **`http://localhost:3000`** consistently (not `127.0.0.1`) so session cookie
 - **Messages:** `packages/web/src/messages/en.json` and `de.json`. Add keys to **both** files when introducing new copy.
 - **Navigation:** Use `Link`, `useRouter`, and `usePathname` from `@/i18n/navigation` so internal links keep the active locale.
 - **Cloud Run:** No extra rewrite rules are required for locales beyond forwarding all non-static paths to your Next server. Ensure **`NEXT_PUBLIC_APP_URL`** in the **built** image matches your deployed origin.
+
+### Telegram Bot (local development)
+
+The bot receives updates via webhook. For local development, you need a public URL that tunnels to your local machine.
+
+#### Setup
+
+1. **Create a bot via @BotFather** on Telegram. Copy the token.
+2. Add to `packages/web/.env.local`:
+
+```env
+TELEGRAM_BOT_TOKEN=<your token from BotFather>
+TELEGRAM_WEBHOOK_URL=<your tunnel URL>/api/telegram/webhook
+```
+
+3. **Start a tunnel** (pick one):
+
+```bash
+# Option A: ngrok
+ngrok http 3000
+# → Copy the https://xxxx.ngrok-free.app URL
+
+# Option B: cloudflared
+cloudflared tunnel --url http://localhost:3000
+# → Copy the https://xxxx.trycloudflare.com URL
+```
+
+4. Set `TELEGRAM_WEBHOOK_URL` to the tunnel URL + `/api/telegram/webhook`.
+
+5. **Register the webhook**:
+
+```bash
+npx tsx scripts/telegram-register-webhook.ts
+```
+
+6. **Verify**:
+
+```bash
+npx tsx scripts/telegram-register-webhook.ts --info
+```
+
+#### Dry-run mode (Telegram)
+
+When `GEMINI_DRY_RUN=true` (set in `.env.local`), voice message transcription and intent classification return fixed test strings instead of calling Gemini. The bot still processes commands, sends messages, and links accounts normally.
+
+#### Useful commands
+
+```bash
+npx tsx scripts/telegram-register-webhook.ts          # Register webhook
+npx tsx scripts/telegram-register-webhook.ts --info    # Show webhook info
+npx tsx scripts/telegram-register-webhook.ts --delete  # Remove webhook
+```
+
+### Workflow System dry-run
+
+All expensive API calls in the workflow engine and Telegram bot have a dry-run path so you can develop and test without spending Gemini quota.
+
+| Variable | Location | Effect when `true` |
+|----------|----------|--------------------|
+| `NANOBANANA_DRY_RUN` | root `.env` | Skips Gemini image generation; returns a placeholder PNG instead |
+| `GEMINI_DRY_RUN` | `packages/web/.env.local` | Skips voice transcription and intent classification; returns fixed test strings |
+
+**Typical local dev setup** — set both in their respective files to develop entirely offline:
+
+```env
+# root .env
+NANOBANANA_DRY_RUN=true
+
+# packages/web/.env.local
+GEMINI_DRY_RUN=true
+```
+
+With dry-run enabled:
+- `planWorkflow` returns 3 template steps tagged `[DRY RUN]`
+- `replanStep` returns a replacement step tagged `[DRY RUN] Replanned`
+- `scoreImageQuality` returns a score of 8/10 with no issues
+- Voice transcription returns `"[DRY RUN] Transcribed text"`
+- Intent classification always returns `create_workflow` with a description `"[DRY RUN] Create workflow"`
+
+---
 
 ### CLI workflow (image generation)
 
@@ -172,9 +259,37 @@ pnpm deploy:cloud-run
 
 ### Cloud Run service configuration
 
-- Set **server-only** env vars in the Cloud Run console or `gcloud` (e.g. `FIREBASE_ADMIN_*`, `STRIPE_*`, `NANOBANANA_API_KEY`, …). They are **not** baked into the client bundle.
-- **Stripe webhooks:** point to `https://YOUR_HOST/api/billing/webhook`.
-- **Firebase Authentication → Authorized domains:** include your `*.run.app` host and any custom domain.
+Set the following **server-only** env vars in the Cloud Run console (`Edit & Deploy New Revision → Variables & Secrets`) or via `gcloud run services update`. They are **not** baked into the client bundle.
+
+#### Required server-side environment variables
+
+| Variable | Source | Notes |
+|----------|--------|-------|
+| `FIREBASE_ADMIN_PROJECT_ID` | Firebase console → Project settings | |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase service account | |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase service account | Include the full PEM string with newlines as `\n` |
+| `STRIPE_SECRET_KEY` | Stripe dashboard → API keys | |
+| `STRIPE_WEBHOOK_SECRET` | Stripe dashboard → Webhooks | |
+| `NANOBANANA_API_KEY` | Google AI Studio | Gemini API key for image generation |
+| `NANOBANANA_MODEL` | — | Optional; default `gemini-3.1-flash-image-preview` |
+| `WORKFLOW_DATA_ROOT` | — | e.g. `/tmp/data` (ephemeral); prefer GCS for durability |
+| `WORKFLOW_GCS_BUCKET` | GCS | Recommended for Cloud Run — see Blob Storage section |
+| `TELEGRAM_BOT_TOKEN` | BotFather | Required for Telegram bot |
+| `ADMIN_UIDS` | Firebase Auth | Comma-separated UIDs for unlimited admin access |
+| `LOG_LEVEL` | — | Optional; `debug` / `info` (default) / `warn` / `error` |
+
+#### Post-deploy checklist
+
+1. **Stripe webhooks:** point to `https://YOUR_HOST/api/billing/webhook`.
+2. **Telegram webhook:** register after every deploy or URL change:
+   ```bash
+   TELEGRAM_WEBHOOK_URL=https://YOUR_HOST/api/telegram/webhook npx tsx scripts/telegram-register-webhook.ts
+   ```
+   Verify with:
+   ```bash
+   TELEGRAM_WEBHOOK_URL=https://YOUR_HOST/api/telegram/webhook npx tsx scripts/telegram-register-webhook.ts --info
+   ```
+3. **Firebase Authentication → Authorized domains:** include your `*.run.app` host and any custom domain.
 
 ### Google sign-in (production)
 
@@ -185,6 +300,8 @@ The app uses **`signInWithPopup`**. **`next.config.ts`** sets **`Cross-Origin-Op
 Set **`WORKFLOW_GCS_BUCKET`** (root `.env` and Cloud Run env) so reference images, human-model assets, backgrounds, and generated outputs live in **Google Cloud Storage** instead of the container disk. Object keys mirror paths under `data/` (e.g. `products/{id}/reference/...`, `generated/...`). **Costs** are typical GCS storage + operations; serving still goes through `/api/images/...` (app egress applies). Job metadata remains in **`metadata.json`** under `WORKFLOW_DATA_ROOT` unless you move it to Firestore later.
 
 Without **`WORKFLOW_GCS_BUCKET`**, the app keeps using **local disk** under `WORKFLOW_DATA_ROOT` (fine for dev; **not** durable on Cloud Run).
+
+**Local dev with GCS:** Run `gcloud auth application-default login` in the same GCP project as the bucket (or set **`GOOGLE_APPLICATION_CREDENTIALS`** to a service account JSON). If ADC is missing, uploads fail after generation and you may see `MetadataLookupWarning` for `169.254.169.254` (the GCE metadata server is not reachable on a laptop).
 
 ### Build pipeline (CI)
 

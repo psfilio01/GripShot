@@ -1,12 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   PRODUCT_CATEGORIES,
   CATEGORY_PROFILES,
   getCategoryProfile,
   buildProductFromId,
   normalizeProductCategory,
+  loadProductCategoryProfile,
   type ProductCategory,
 } from "./product";
+
+vi.mock("fs-extra", () => ({
+  default: {
+    pathExists: vi.fn(),
+    readFile: vi.fn(),
+  },
+}));
 
 describe("ProductCategory", () => {
   it("defines all expected categories", () => {
@@ -92,5 +100,81 @@ describe("buildProductFromId", () => {
   it("normalizes unknown category strings to generic", () => {
     const product = buildProductFromId("ball", "/data", "Pilates Accessories");
     expect(product.category).toBe("generic");
+  });
+});
+
+describe("loadProductCategoryProfile", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns generic default when category-profile.json does not exist", async () => {
+    const fs = await import("fs-extra");
+    vi.mocked(fs.default.pathExists).mockResolvedValue(false as never);
+
+    const result = await loadProductCategoryProfile("/data/products/test");
+
+    expect(result.category).toBe("generic");
+    expect(result.profile).toEqual(CATEGORY_PROFILES.generic);
+    expect(result.source).toBe("default");
+  });
+
+  it("loads category from JSON and merges with defaults", async () => {
+    const fs = await import("fs-extra");
+    vi.mocked(fs.default.pathExists).mockResolvedValue(true as never);
+    vi.mocked(fs.default.readFile).mockResolvedValue(
+      JSON.stringify({ category: "fitness" }) as never,
+    );
+
+    const result = await loadProductCategoryProfile("/data/products/yoga-mat");
+
+    expect(result.category).toBe("fitness");
+    expect(result.profile).toEqual(CATEGORY_PROFILES.fitness);
+    expect(result.source).toBe("json");
+  });
+
+  it("allows per-property overrides on top of category defaults", async () => {
+    const fs = await import("fs-extra");
+    vi.mocked(fs.default.pathExists).mockResolvedValue(true as never);
+    vi.mocked(fs.default.readFile).mockResolvedValue(
+      JSON.stringify({
+        category: "fitness",
+        detailShotsRelevant: true,
+        materialFocus: true,
+      }) as never,
+    );
+
+    const result = await loadProductCategoryProfile("/data/products/custom");
+
+    expect(result.category).toBe("fitness");
+    expect(result.profile.detailShotsRelevant).toBe(true);
+    expect(result.profile.materialFocus).toBe(true);
+    expect(result.profile.typicalScale).toBe("medium");
+    expect(result.profile.showWithPerson).toBe(true);
+  });
+
+  it("falls back to generic on malformed JSON", async () => {
+    const fs = await import("fs-extra");
+    vi.mocked(fs.default.pathExists).mockResolvedValue(true as never);
+    vi.mocked(fs.default.readFile).mockResolvedValue("not json {{{" as never);
+
+    const result = await loadProductCategoryProfile("/data/products/broken");
+
+    expect(result.category).toBe("generic");
+    expect(result.source).toBe("default");
+  });
+
+  it("normalizes unknown category in JSON to generic", async () => {
+    const fs = await import("fs-extra");
+    vi.mocked(fs.default.pathExists).mockResolvedValue(true as never);
+    vi.mocked(fs.default.readFile).mockResolvedValue(
+      JSON.stringify({ category: "Pilates Accessories" }) as never,
+    );
+
+    const result = await loadProductCategoryProfile("/data/products/legacy");
+
+    expect(result.category).toBe("generic");
+    expect(result.profile).toEqual(CATEGORY_PROFILES.generic);
+    expect(result.source).toBe("json");
   });
 });

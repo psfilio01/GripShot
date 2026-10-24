@@ -19,11 +19,27 @@ export function getWorkflowGcsBucketName(): string | undefined {
 }
 
 /**
- * If `err` is a typical GCS bucket misconfiguration, returns an operator-facing hint; otherwise null.
+ * If `err` is a typical GCS / ADC misconfiguration, returns an operator-facing hint; otherwise null.
  */
 export function formatWorkflowStorageError(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : String(err);
   const lower = msg.toLowerCase();
+
+  const looksLikeAdc =
+    lower.includes("could not load the default credentials") ||
+    (lower.includes("application default credentials") &&
+      (lower.includes("could not") || lower.includes("unable to")));
+
+  if (looksLikeAdc && usesGcsBlobStorage()) {
+    return (
+      `Google Cloud Storage is enabled (WORKFLOW_GCS_BUCKET) but no Application Default Credentials were found. ` +
+      `On your machine run: gcloud auth application-default login (same GCP project as the bucket). ` +
+      `Or set GOOGLE_APPLICATION_CREDENTIALS to a service account JSON key. ` +
+      `Or unset WORKFLOW_GCS_BUCKET to store files under WORKFLOW_DATA_ROOT only. ` +
+      `The MetadataLookupWarning to 169.254.169.254 is normal on laptops when ADC is missing.`
+    );
+  }
+
   const looksLikeBucket =
     lower.includes("specified bucket does not exist") ||
     lower.includes("bucket does not exist") ||
@@ -90,6 +106,27 @@ export async function deleteDataObjectsWithPrefix(prefix: string): Promise<void>
 export async function copyDataObject(srcKey: string, destKey: string): Promise<void> {
   const bucket = getBucket();
   await bucket.file(srcKey).copy(bucket.file(destKey));
+}
+
+/** Copy srcKey → destKey, then delete srcKey. No-op if srcKey does not exist. */
+export async function moveDataObject(srcKey: string, destKey: string): Promise<void> {
+  const bucket = getBucket();
+  const src = bucket.file(srcKey);
+  const [exists] = await src.exists();
+  if (!exists) return;
+  await src.copy(bucket.file(destKey));
+  await src.delete({ ignoreNotFound: true });
+}
+
+/** Move all objects with the given prefix to a new prefix. */
+export async function moveDataObjectsWithPrefix(
+  srcPrefix: string,
+  destPrefix: string,
+): Promise<void> {
+  const keys = await listDataObjectKeys(srcPrefix);
+  await Promise.all(
+    keys.map((k) => moveDataObject(k, destPrefix + k.slice(srcPrefix.length))),
+  );
 }
 
 export async function listDataObjectKeys(prefix: string): Promise<string[]> {

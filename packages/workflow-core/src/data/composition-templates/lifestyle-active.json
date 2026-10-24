@@ -1,0 +1,11 @@
+{
+  "id": "lifestyle_active",
+  "name": "Lifestyle mit Person (aktiv)",
+  "applicableTo": ["LIFESTYLE", "AMAZON_LIFESTYLE_SHOT"],
+  "categoryHints": ["fitness", "handheld", "wearable", "beauty", "generic"],
+  "promptBlocks": {
+    "composition": "Product in active use by a person. Person and product are the focal point. Rule of thirds placement. Natural, candid feel.",
+    "camera": "Medium shot, slight elevation or eye-level. Shallow-to-medium depth of field to softly separate subject from background while keeping product sharp.",
+    "lighting": "Natural-looking directional light with warm tone. Soft key light, subtle fill. Avoid flat lighting; create gentle dimensionality."
+  }
+}

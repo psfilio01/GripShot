@@ -1,0 +1,11 @@
+{
+  "id": "hero_isolated",
+  "name": "Freigestelltes Hero-Produkt",
+  "applicableTo": ["MAIN_IMAGE"],
+  "categoryHints": ["handheld", "beauty", "kitchen", "wearable", "fitness", "generic"],
+  "promptBlocks": {
+    "composition": "Centered product, isolated on pure white background (#FFFFFF). Product fills approximately 85% of the frame. No props, no people, no text overlays. Amazon Main Image compliant: pure white background, product only.",
+    "camera": "Straight-on or slight 3/4 angle, eye-level perspective. Sharp focus across the entire product with deep depth of field.",
+    "lighting": "Even, diffused studio lighting with soft shadows. No harsh reflections. Slight contact shadow beneath the product for grounding."
+  }
+}

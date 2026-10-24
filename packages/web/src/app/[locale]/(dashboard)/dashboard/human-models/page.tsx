@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
@@ -40,6 +40,80 @@ export default function HumanModelsPage() {
   const [aiSkinTone, setAiSkinTone] = useState("");
   const [aiHeight, setAiHeight] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
+  const allSelected =
+    models.length > 0 && models.every((m) => selectedIds.has(m.id));
+  const someSelected = models.some((m) => selectedIds.has(m.id));
+
+  useEffect(() => {
+    const el = selectAllRef.current;
+    if (el) el.indeterminate = someSelected && !allSelected;
+  }, [someSelected, allSelected]);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => {
+      if (models.length === 0) return new Set();
+      const allOn = models.every((m) => prev.has(m.id));
+      if (allOn) return new Set();
+      return new Set(models.map((m) => m.id));
+    });
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    if (
+      !window.confirm(
+        `Move ${ids.length} model(s) to trash? You can restore them from Trash for 7 days.`,
+      )
+    ) {
+      return;
+    }
+    setBulkDeleting(true);
+    try {
+      const res = await fetch("/api/human-models/batch-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast(
+          typeof data?.error === "string" ? data.error : "Delete failed",
+          "error",
+        );
+        return;
+      }
+      const n = data.trashed ?? 0;
+      if (n === 0) {
+        toast("No models were moved (already deleted or not found)", "info");
+      } else {
+        toast(
+          n === 1 ? "1 model moved to trash" : `${n} models moved to trash`,
+          "success",
+        );
+      }
+      setSelectedIds(new Set());
+      await load();
+    } catch {
+      toast("Delete failed", "error");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
 
   async function load() {
     const res = await fetch("/api/human-models");
@@ -468,79 +542,128 @@ export default function HumanModelsPage() {
           description="Create a model and add 1–3 clear reference photos (face + body) for best lifestyle results."
         />
       ) : (
-        <ul className="space-y-2">
-          {models.map((m) => (
-            <li key={m.id}>
-              <Link
-                href={`/dashboard/human-models/${encodeURIComponent(m.id)}`}
-                className="gs-card-static flex items-center gap-4 p-4 transition hover:opacity-95"
+        <div className="space-y-3">
+          <div
+            className="flex flex-wrap items-center gap-3 rounded-lg px-1 py-2"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                disabled={bulkDeleting}
+                className="h-4 w-4 rounded"
+                style={{ accentColor: "var(--gs-accent)" }}
+                aria-label="Select all models"
+              />
+              <span>Select all</span>
+            </label>
+            {someSelected ? (
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                style={{
+                  background: "var(--gs-error-bg)",
+                  color: "var(--gs-error-text)",
+                  opacity: bulkDeleting ? 0.6 : 1,
+                }}
+              >
+                {bulkDeleting
+                  ? "Moving…"
+                  : `Move ${selectedIds.size} to trash`}
+              </button>
+            ) : null}
+          </div>
+
+          <ul className="space-y-2">
+            {models.map((m) => (
+              <li
+                key={m.id}
+                className="gs-card-static flex items-center gap-3 p-4 transition hover:opacity-95"
                 style={{ borderColor: "var(--gs-border)" }}
               >
-                {/* Thumbnail */}
-                <div
-                  className="h-12 w-12 shrink-0 rounded-lg overflow-hidden flex items-center justify-center"
-                  style={{
-                    background: "var(--gs-surface-inset)",
-                    border: "1px solid var(--gs-border-subtle)",
-                  }}
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(m.id)}
+                  onChange={() => toggleSelect(m.id)}
+                  disabled={bulkDeleting}
+                  className="h-4 w-4 shrink-0 rounded"
+                  style={{ accentColor: "var(--gs-accent)" }}
+                  aria-label={`Select ${m.displayName}`}
+                />
+                <Link
+                  href={`/dashboard/human-models/${encodeURIComponent(m.id)}`}
+                  className="flex min-w-0 flex-1 items-center gap-4"
                 >
-                  {m.thumbnailUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={m.thumbnailUrl}
-                      alt={m.displayName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span
-                      className="text-lg"
-                      style={{ color: "var(--gs-text-faint)" }}
-                    >
-                      👤
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p
-                      className="font-semibold text-sm truncate"
-                      style={{ color: "var(--gs-text)" }}
-                    >
-                      {m.displayName}
-                    </p>
-                    {(m.source === "ai") && (
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+                    style={{
+                      background: "var(--gs-surface-inset)",
+                      border: "1px solid var(--gs-border-subtle)",
+                    }}
+                  >
+                    {m.thumbnailUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={m.thumbnailUrl}
+                        alt={m.displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
                       <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={{
-                          background: "var(--gs-accent-bg)",
-                          color: "var(--gs-accent-text)",
-                        }}
+                        className="text-lg"
+                        style={{ color: "var(--gs-text-faint)" }}
                       >
-                        AI
+                        👤
                       </span>
                     )}
                   </div>
-                  {m.notes ? (
-                    <p
-                      className="text-xs mt-0.5 line-clamp-1"
-                      style={{ color: "var(--gs-text-muted)" }}
-                    >
-                      {m.notes}
-                    </p>
-                  ) : null}
-                </div>
 
-                <span
-                  className="shrink-0 text-xs font-medium"
-                  style={{ color: "var(--gs-accent-text)" }}
-                >
-                  Manage →
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p
+                        className="truncate text-sm font-semibold"
+                        style={{ color: "var(--gs-text)" }}
+                      >
+                        {m.displayName}
+                      </p>
+                      {m.source === "ai" ? (
+                        <span
+                          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                          style={{
+                            background: "var(--gs-accent-bg)",
+                            color: "var(--gs-accent-text)",
+                          }}
+                        >
+                          AI
+                        </span>
+                      ) : null}
+                    </div>
+                    {m.notes ? (
+                      <p
+                        className="mt-0.5 line-clamp-1 text-xs"
+                        style={{ color: "var(--gs-text-muted)" }}
+                      >
+                        {m.notes}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <span
+                    className="shrink-0 text-xs font-medium"
+                    style={{ color: "var(--gs-accent-text)" }}
+                  >
+                    Manage →
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

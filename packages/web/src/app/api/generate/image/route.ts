@@ -17,17 +17,18 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import { getProduct } from "@/lib/db/products";
 import type { StartImageJobInput } from "@fashionmentum/workflow-core";
+import { isAllowedGeminiImageModel } from "@fashionmentum/workflow-core";
+import {
+  GENERATION_ASPECT_RATIOS,
+  GENERATION_RESOLUTIONS,
+} from "@/lib/generation/image-generation-params";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
 const log = createLogger("generate:image");
 
-const ASPECT_RATIOS = [
-  "1:1", "1:4", "1:8", "2:3", "3:2", "3:4",
-  "4:1", "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9",
-] as const;
-
-const RESOLUTIONS = ["512", "1K", "2K", "4K"] as const;
+const ASPECT_RATIOS = GENERATION_ASPECT_RATIOS;
+const RESOLUTIONS = GENERATION_RESOLUTIONS;
 
 /** Must stay in sync with @fashionmentum/workflow-core StartImageJobInput.workflowType */
 const WORKFLOW_TYPES = [
@@ -51,6 +52,13 @@ const RequestSchema = z.object({
   modelId: z.string().optional(),
   backgroundId: z.string().optional(),
   poseDescription: z.string().max(500).optional(),
+  imageModel: z
+    .string()
+    .optional()
+    .refine(
+      (v) => v == null || v === "" || isAllowedGeminiImageModel(v),
+      { message: "Invalid imageModel" },
+    ),
   /** Client-generated id for Results placeholders & parallel runs */
   requestId: z.string().uuid().optional(),
 });
@@ -126,6 +134,11 @@ export async function POST(req: NextRequest) {
       "@fashionmentum/workflow-core"
     );
 
+    const imageModel =
+      input.imageModel?.trim() && isAllowedGeminiImageModel(input.imageModel.trim())
+        ? input.imageModel.trim()
+        : undefined;
+
     const result = await startImageJob({
       productId: input.productId,
       workflowType: input.workflowType as StartImageJobInput["workflowType"],
@@ -140,6 +153,7 @@ export async function POST(req: NextRequest) {
       scoreQuality: true,
       userPromptBlock: productDoc?.userPromptBlockCompiled || undefined,
       poseDescription: input.poseDescription?.trim() || undefined,
+      ...(imageModel ? { imageModel } : {}),
     });
 
     const job = await getJob(result.jobId);
@@ -160,8 +174,9 @@ export async function POST(req: NextRequest) {
         creativeFreedom: input.creativeFreedom,
         ...(input.aspectRatio ? { aspectRatio: input.aspectRatio } : {}),
         ...(input.resolution ? { resolution: input.resolution } : {}),
+        ...(imageModel ? { imageModel } : {}),
       },
-      model: process.env.NANOBANANA_MODEL ?? "unknown",
+      model: imageModel ?? process.env.NANOBANANA_MODEL ?? "unknown",
       aspectRatio: input.aspectRatio,
       resolution: input.resolution,
       referenceImageCount: result.referenceImageCount,

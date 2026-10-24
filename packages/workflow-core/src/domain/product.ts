@@ -1,3 +1,6 @@
+import fs from "fs-extra";
+import { join } from "node:path";
+
 export const PRODUCT_CATEGORIES = [
   "handheld",
   "wearable",
@@ -138,5 +141,69 @@ export function buildProductFromId(
     basePath: `${dataRoot}/products/${productId}`,
     category,
   };
+}
+
+/**
+ * Shape of `category-profile.json` stored inside a product folder.
+ * Every field is optional — only specified fields override the built-in defaults.
+ */
+export interface CategoryProfileJson {
+  category?: string;
+  typicalScale?: "small" | "medium" | "large";
+  showWithPerson?: boolean;
+  detailShotsRelevant?: boolean;
+  materialFocus?: boolean;
+  contextNeeded?: boolean;
+}
+
+export interface LoadedCategoryProfile {
+  category: ProductCategory;
+  profile: CategoryProfile;
+  source: "json" | "default";
+}
+
+/**
+ * Reads `category-profile.json` from the product folder and merges with
+ * the built-in category defaults. Falls back to `generic` when the file
+ * is missing or unparsable.
+ */
+export async function loadProductCategoryProfile(
+  productBasePath: string,
+): Promise<LoadedCategoryProfile> {
+  const filePath = join(productBasePath, "category-profile.json");
+  const exists = await fs.pathExists(filePath);
+
+  if (!exists) {
+    return {
+      category: "generic",
+      profile: CATEGORY_PROFILES.generic,
+      source: "default",
+    };
+  }
+
+  let json: CategoryProfileJson;
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    json = JSON.parse(raw) as CategoryProfileJson;
+  } catch {
+    return {
+      category: "generic",
+      profile: CATEGORY_PROFILES.generic,
+      source: "default",
+    };
+  }
+
+  const category = normalizeProductCategory(json.category);
+  const base = CATEGORY_PROFILES[category];
+
+  const profile: CategoryProfile = {
+    typicalScale: json.typicalScale ?? base.typicalScale,
+    showWithPerson: json.showWithPerson ?? base.showWithPerson,
+    detailShotsRelevant: json.detailShotsRelevant ?? base.detailShotsRelevant,
+    materialFocus: json.materialFocus ?? base.materialFocus,
+    contextNeeded: json.contextNeeded ?? base.contextNeeded,
+  };
+
+  return { category, profile, source: "json" };
 }
 

@@ -1,0 +1,11 @@
+{
+  "id": "lifestyle_contextual",
+  "name": "Lifestyle im Kontext",
+  "applicableTo": ["LIFESTYLE", "AMAZON_LIFESTYLE_SHOT"],
+  "categoryHints": ["furniture", "outdoor", "kitchen", "decor"],
+  "promptBlocks": {
+    "composition": "Product placed in a realistic environment that suggests everyday use. Supporting props allowed but must not compete with the product for attention.",
+    "camera": "Wide-to-medium shot capturing environment context. Product in the visual power position (left or right third).",
+    "lighting": "Ambient, environment-appropriate lighting. Warm interior light for indoor scenes, natural daylight for outdoor. Soft shadows that ground the product."
+  }
+}

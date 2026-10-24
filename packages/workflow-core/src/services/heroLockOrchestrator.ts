@@ -18,6 +18,7 @@ export interface HeroLockResult {
     colorName: string;
     colorHex: string;
     variantId: string;
+    filePath?: string;
     status: "completed" | "failed";
     error?: string;
   }[];
@@ -122,6 +123,7 @@ export async function executeHeroLock(
         colorName: color.name,
         colorHex: color.hex,
         variantId,
+        filePath,
         status: "completed",
       });
 

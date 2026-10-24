@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { filePathToGeneratedImageUrl } from "@/lib/images/generated-public-url";
+import { workflowLabel } from "@/lib/results/workflow-labels";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
@@ -440,7 +441,9 @@ export default function ProductDetailPage() {
                       className="text-sm"
                       style={{ color: "var(--gs-text-faint)" }}
                     >
-                      {product.category}
+                      {PRODUCT_CATEGORIES.includes(product.category as typeof PRODUCT_CATEGORIES[number])
+                        ? tGen(`cat${product.category.charAt(0).toUpperCase()}${product.category.slice(1)}` as Parameters<typeof tGen>[0])
+                        : product.category}
                     </p>
                   )}
                 </div>
@@ -692,11 +695,6 @@ function generatedImageUrl(filePath: string): string {
   return filePathToGeneratedImageUrl(filePath);
 }
 
-function workflowLabel(wt: string) {
-  if (wt === "AMAZON_LIFESTYLE_SHOT") return "Lifestyle";
-  if (wt === "HERO_LOCK_RECOLOR") return "Color variant";
-  return "Product shot";
-}
 
 /* ---------- Product Colors Section ---------- */
 

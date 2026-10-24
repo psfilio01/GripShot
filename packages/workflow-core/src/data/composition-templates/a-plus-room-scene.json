@@ -1,0 +1,11 @@
+{
+  "id": "a_plus_room_scene",
+  "name": "A+ Content: Raum-Szene",
+  "applicableTo": ["A_PLUS_VISUAL"],
+  "categoryHints": ["furniture", "decor", "outdoor"],
+  "promptBlocks": {
+    "composition": "Product styled in an aspirational room or outdoor setting. Supporting decor allowed to create atmosphere. Wide aspect ratio friendly for A+ module banners.",
+    "camera": "Wide shot with the product as the clear focal point. Slight depth of field to separate product from environment.",
+    "lighting": "Natural interior or golden-hour outdoor light. Warm, inviting tones. Shadows create depth without obscuring product."
+  }
+}

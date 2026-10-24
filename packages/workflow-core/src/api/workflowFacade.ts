@@ -22,6 +22,10 @@ import { loadRuntimeInput } from "../services/runtimeInputLoader";
 import { loadGlobalHardRules, loadProductHardRules } from "../services/hardRulesLoader";
 import { buildPrompt } from "../services/promptBuilder";
 import { generateImagesWithNanoBanana } from "../services/imageGenerator";
+import {
+  ALLOWED_GEMINI_IMAGE_MODEL_IDS,
+  isAllowedGeminiImageModel,
+} from "../constants/geminiImageModels";
 import { scoreImageQuality } from "../services/qualityScorer";
 import { storeImage } from "../services/resultStorage";
 import { metadataStore } from "../services/metadataStore";
@@ -85,7 +89,18 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       generationSettings.resolution = input.resolution as typeof generationSettings.resolution;
     }
 
-    console.log(`\x1b[36m[workflow-core]\x1b[0m Generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}`);
+    let nanoImageOptions: { modelId: string } | undefined;
+    if (input.imageModel?.trim()) {
+      const mid = input.imageModel.trim();
+      if (!isAllowedGeminiImageModel(mid)) {
+        throw new Error(
+          `Unsupported image model "${mid}". Allowed: ${ALLOWED_GEMINI_IMAGE_MODEL_IDS.join(", ")}`,
+        );
+      }
+      nanoImageOptions = { modelId: mid };
+    }
+
+    console.log(`\x1b[36m[workflow-core]\x1b[0m Generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}${nanoImageOptions ? `; model=${nanoImageOptions.modelId}` : ""}`);
     if (runtimeInput) {
       console.log(`\x1b[36m[workflow-core]\x1b[0m Runtime input keys: ${Object.keys(runtimeInput).join(", ")}`);
     }
@@ -162,7 +177,12 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     console.log(`\x1b[36m[workflow-core]\x1b[0m \x1b[1m── FULL PROMPT ──\x1b[0m\n${prompt.text}\n\x1b[36m[workflow-core]\x1b[0m \x1b[1m── END PROMPT ──\x1b[0m`);
 
     // ── Generate images ──────────────────────────────────────────────
-    const generatedImages = await generateImagesWithNanoBanana(prompt, referencePaths, generationSettings);
+    const generatedImages = await generateImagesWithNanoBanana(
+      prompt,
+      referencePaths,
+      generationSettings,
+      nanoImageOptions,
+    );
 
     const variants: ImageVariant[] = [];
     for (const generated of generatedImages) {

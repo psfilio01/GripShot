@@ -3,23 +3,9 @@ import { getServerSession } from "@/lib/auth/server-session";
 import {
   getHumanModel,
   updateHumanModel,
-  deleteHumanModelDoc,
+  softDeleteHumanModelDoc,
 } from "@/lib/db/human-models";
-import {
-  usesGcsBlobStorage,
-  deleteDataObjectsWithPrefix,
-} from "@fashionmentum/workflow-core";
 import { z } from "zod";
-import { config } from "dotenv";
-import { resolve, join } from "path";
-import { rm } from "fs/promises";
-import { existsSync } from "fs";
-
-config({ path: resolve(process.cwd(), "../../.env") });
-
-function getDataRoot(): string {
-  return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
-}
 
 const PatchSchema = z.object({
   displayName: z.string().min(1).max(120).optional(),
@@ -85,16 +71,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   }
 
   try {
-    if (usesGcsBlobStorage()) {
-      await deleteDataObjectsWithPrefix(`models/${modelId}/`);
-    } else {
-      const modelDir = join(getDataRoot(), "models", modelId);
-      if (existsSync(modelDir)) {
-        await rm(modelDir, { recursive: true, force: true });
-      }
-    }
-    await deleteHumanModelDoc(session.user.workspaceId, modelId);
-    return NextResponse.json({ success: true });
+    await softDeleteHumanModelDoc(session.user.workspaceId, modelId, session.user.uid);
+    return NextResponse.json({ success: true, trashed: true });
   } catch (err) {
     console.error("Human model delete failed:", err);
     return NextResponse.json(

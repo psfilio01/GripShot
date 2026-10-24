@@ -1,0 +1,11 @@
+{
+  "id": "hero_isolated_large",
+  "name": "Freigestelltes Hero-Produkt (gross)",
+  "applicableTo": ["MAIN_IMAGE"],
+  "categoryHints": ["furniture", "outdoor", "decor"],
+  "promptBlocks": {
+    "composition": "Product centered on pure white background (#FFFFFF), shown at a natural viewing angle. Full product visible with adequate breathing room. Amazon Main Image compliant.",
+    "camera": "Slight elevation angle (15-25 degrees) to show top surface and depth. Deep depth of field, entire product in sharp focus.",
+    "lighting": "Large soft-box style lighting. Even illumination with gentle gradient shadow on floor. No reflections that obscure material details."
+  }
+}

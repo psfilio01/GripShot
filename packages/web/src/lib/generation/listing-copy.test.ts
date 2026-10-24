@@ -16,6 +16,8 @@ const mockProduct = {
   status: "active" as const,
   createdAt: ts,
   updatedAt: ts,
+  deletedAt: null,
+  deletedBy: null,
 };
 
 const mockBrand = {

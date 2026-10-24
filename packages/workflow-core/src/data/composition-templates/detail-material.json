@@ -1,0 +1,14 @@
+{
+  "id": "detail_material",
+  "name": "Detailaufnahme: Material und Textur",
+  "applicableTo": ["DETAIL_CLOSEUP"],
+  "categoryHints": [
+    "handheld", "wearable", "furniture", "kitchen",
+    "beauty", "decor", "fitness", "outdoor", "generic"
+  ],
+  "promptBlocks": {
+    "composition": "Extreme close-up focusing on material quality, texture, stitching, or finish. Fill the frame with the detail area. No full product view needed.",
+    "camera": "Macro-style shot with shallow depth of field. Sharp focus on the texture/detail zone, soft bokeh falloff.",
+    "lighting": "Raking or side-angled light to emphasise surface texture and depth. Slight specular highlights on glossy materials. Warm, natural tone."
+  }
+}

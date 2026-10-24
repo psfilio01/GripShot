@@ -25,6 +25,8 @@ export async function createBackground(
     name: input.name.trim(),
     type: input.type,
     description: (input.description ?? "").trim(),
+    deletedAt: null,
+    deletedBy: null,
     createdAt: now,
     updatedAt: now,
   });
@@ -34,7 +36,20 @@ export async function createBackground(
 export async function listBackgrounds(
   workspaceId: string,
 ): Promise<(BackgroundDoc & { id: string })[]> {
-  const snap = await collection(workspaceId).orderBy("createdAt", "desc").get();
+  const snap = await collection(workspaceId)
+    .where("deletedAt", "==", null)
+    .orderBy("createdAt", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as BackgroundDoc) }));
+}
+
+export async function listDeletedBackgrounds(
+  workspaceId: string,
+): Promise<(BackgroundDoc & { id: string })[]> {
+  const snap = await collection(workspaceId)
+    .where("deletedAt", "!=", null)
+    .orderBy("deletedAt", "desc")
+    .get();
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as BackgroundDoc) }));
 }
 
@@ -61,7 +76,30 @@ export async function updateBackground(
   await collection(workspaceId).doc(backgroundId).update(update);
 }
 
-export async function deleteBackground(
+export async function softDeleteBackground(
+  workspaceId: string,
+  backgroundId: string,
+  deletedBy: string,
+): Promise<void> {
+  await collection(workspaceId).doc(backgroundId).update({
+    deletedAt: FieldValue.serverTimestamp(),
+    deletedBy,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+export async function restoreBackground(
+  workspaceId: string,
+  backgroundId: string,
+): Promise<void> {
+  await collection(workspaceId).doc(backgroundId).update({
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+export async function hardDeleteBackground(
   workspaceId: string,
   backgroundId: string,
 ): Promise<void> {

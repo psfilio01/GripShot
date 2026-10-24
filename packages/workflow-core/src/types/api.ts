@@ -47,6 +47,11 @@ export interface StartImageJobInput {
   aspectRatio?: string;
   /** Override resolution (e.g. "2K", "4K"). Falls back to runtime JSON or default. */
   resolution?: string;
+  /**
+   * Gemini image model id (e.g. gemini-3-pro-image-preview). When omitted, uses NANOBANANA_MODEL from env.
+   * Must be an allowlisted id when set.
+   */
+  imageModel?: string;
   /** When true, runs quality scoring after generation and stores the result. */
   scoreQuality?: boolean;
   /** Pre-compiled (English) user prompt block from product settings. Injected into every workflow. */

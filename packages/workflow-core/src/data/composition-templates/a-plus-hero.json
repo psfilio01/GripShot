@@ -1,0 +1,11 @@
+{
+  "id": "a_plus_hero",
+  "name": "A+ Content: Premium Visual",
+  "applicableTo": ["A_PLUS_VISUAL"],
+  "categoryHints": ["handheld", "beauty", "wearable", "fitness", "kitchen", "generic"],
+  "promptBlocks": {
+    "composition": "Premium lifestyle visual for Amazon A+ Content. Product is hero but may include partial model (hands, silhouette) or styled props. Aspirational, editorial feel. Suitable for banner-width layouts.",
+    "camera": "Dynamic angle: slight low angle or creative 3/4 view for drama. Medium depth of field to create visual hierarchy.",
+    "lighting": "Cinematic, brand-consistent lighting. Warm highlights, controlled contrast. Subtle gradient or tonal background that complements the product color."
+  }
+}

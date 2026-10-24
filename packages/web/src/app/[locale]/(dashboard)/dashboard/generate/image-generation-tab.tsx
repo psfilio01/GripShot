@@ -15,6 +15,16 @@ const LIFESTYLE_WORKFLOW_TYPES = new Set([
   "LIFESTYLE",
 ]);
 
+const WORKFLOW_TYPE_DESC_KEYS: Record<string, string> = {
+  MAIN_IMAGE: "wtMainImageDesc",
+  NEUTRAL_PRODUCT_SHOT: "wtNeutralProductShotDesc",
+  AMAZON_LIFESTYLE_SHOT: "wtAmazonLifestyleShotDesc",
+  LIFESTYLE: "wtLifestyleDesc",
+  SCALE_REFERENCE: "wtScaleReferenceDesc",
+  DETAIL_CLOSEUP: "wtDetailCloseupDesc",
+  A_PLUS_VISUAL: "wtAPlusVisualDesc",
+};
+
 interface ProductOption {
   id: string;
   name: string;
@@ -59,7 +69,7 @@ export function ImageGenerationTab({
   const [backgrounds, setBackgrounds] = useState<BackgroundOption[]>([]);
   const [creativeFreedom, setCreativeFreedom] = useState(false);
   const [aspectRatio, setAspectRatio] = useState("4:5");
-  const [resolution, setResolution] = useState("2K");
+  const [resolution, setResolution] = useState("1K");
   const [humanModels, setHumanModels] = useState<HumanModelOption[]>([]);
   const [humanModelId, setHumanModelId] = useState("");
   const [poseDescription, setPoseDescription] = useState("");
@@ -253,6 +263,14 @@ export function ImageGenerationTab({
               <option value="DETAIL_CLOSEUP">{t("wtDetailCloseup")}</option>
               <option value="A_PLUS_VISUAL">{t("wtAPlusVisual")}</option>
             </select>
+            {WORKFLOW_TYPE_DESC_KEYS[workflowType] && (
+              <p
+                className="mt-1.5 text-xs"
+                style={{ color: "var(--gs-text-faint)" }}
+              >
+                {t(WORKFLOW_TYPE_DESC_KEYS[workflowType] as Parameters<typeof t>[0])}
+              </p>
+            )}
           </div>
         </div>
 
@@ -292,9 +310,9 @@ export function ImageGenerationTab({
               onChange={(e) => setResolution(e.target.value)}
               className="gs-input block w-full px-3 py-2 text-sm"
             >
-              <option value="2K">2K (default)</option>
+              <option value="1K">1K (default)</option>
+              <option value="2K">2K (higher detail)</option>
               <option value="4K">4K (high quality)</option>
-              <option value="1K">1K (fast preview)</option>
               <option value="512">512px (fastest)</option>
             </select>
           </div>

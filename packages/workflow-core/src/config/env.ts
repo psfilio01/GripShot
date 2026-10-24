@@ -1,9 +1,37 @@
 import dotenv from "dotenv";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { z } from "zod";
 
 dotenv.config();
+
+/**
+ * `pnpm dev` runs with cwd `packages/web`; Next.js does not load the monorepo root `.env`.
+ * Merge root `.env` only for keys still unset so `packages/web/.env.local` / Next wins.
+ */
+function mergeMonorepoRootEnvIntoProcessEnv(): void {
+  const cwd = process.cwd();
+  const posixCwd = cwd.replace(/\\/g, "/");
+  const match = posixCwd.match(/^(.*)\/packages\/[^/]+$/i);
+  const monorepoRoot = match?.[1];
+  if (!monorepoRoot) return;
+
+  const rootEnvPath = resolve(monorepoRoot, ".env");
+  if (!existsSync(rootEnvPath)) return;
+
+  try {
+    const parsed = dotenv.parse(readFileSync(rootEnvPath, "utf8"));
+    for (const [key, value] of Object.entries(parsed)) {
+      if (process.env[key] === undefined) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // Unreadable root .env should not break the app
+  }
+}
+
+mergeMonorepoRootEnvIntoProcessEnv();
 
 /**
  * When Next.js runs from `packages/web`, default `cwd + "/data"` points at
@@ -35,7 +63,10 @@ const EnvSchema = z.object({
   WORKFLOW_GCS_BUCKET: z.string().optional(),
   NANOBANANA_API_KEY: z.string().nonempty().optional(),
   NANOBANANA_BASE_URL: z.string().url().default("https://generativelanguage.googleapis.com/v1beta"),
+  /** Image generation (Custom Workflow steps, listing shots, Telegram, etc.). Must be an image-capable Gemini model. */
   NANOBANANA_MODEL: z.string().default("gemini-3.1-flash-image-preview"),
+  /** Text-only model for custom workflow plan / replan JSON (structured output). Cheaper than image models. */
+  NANOBANANA_PLANNER_MODEL: z.string().default("gemini-2.5-flash"),
   /** When "true", skip the real API call and use the reference image as output (for local testing when API is unreachable). */
   NANOBANANA_DRY_RUN: z
     .string()
@@ -48,6 +79,11 @@ export type Env = Omit<z.infer<typeof EnvSchema>, "WORKFLOW_DATA_ROOT"> & {
 };
 
 let cachedEnv: Env | null = null;
+
+/** Reset the cached env (test use only). */
+export function _resetEnvCache(): void {
+  cachedEnv = null;
+}
 
 export function getEnv(): Env {
   if (!cachedEnv) {

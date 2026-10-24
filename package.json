@@ -16,6 +16,7 @@
     "test:web": "pnpm -C packages/web test",
     "test:e2e": "pnpm -C packages/web test:e2e",
     "merge-product-folders": "node scripts/merge-product-data-folders.mjs",
+    "backfill:soft-delete": "bash scripts/backfill-soft-delete-fields.sh",
     "docker:push:cloud-run": "bash scripts/docker-build-push-cloud-run.sh",
     "deploy:cloud-run": "bash scripts/deploy-cloud-run.sh"
   },

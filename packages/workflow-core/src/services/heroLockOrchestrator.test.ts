@@ -61,6 +61,7 @@ vi.mock("../config/env", () => ({
     NANOBANANA_API_KEY: "test-key",
     NANOBANANA_BASE_URL: "https://test.example.com",
     NANOBANANA_MODEL: "gemini-2.5-flash-image",
+    NANOBANANA_PLANNER_MODEL: "gemini-2.5-flash",
   }),
 }));
 

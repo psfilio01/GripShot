@@ -18,7 +18,8 @@ Ensure a `.env` file exists (see below). The script starts an image job for `pil
 | `WORKFLOW_DATA_ROOT` | No (default: `./data`) | Absolute path to the data directory (products, reference images, brand rules, output). |
 | `NANOBANANA_API_KEY` | Yes (unless dry-run) | Google Gemini API key. Passed only as `?key=` query parameter (never in headers). Get one at [Google AI Studio](https://aistudio.google.com/apikey). |
 | `NANOBANANA_BASE_URL` | No | Gemini API base URL (default: `https://generativelanguage.googleapis.com/v1beta`). |
-| `NANOBANANA_MODEL` | No | Gemini model name (default: `gemini-2.0-flash`). For image generation use an image-capable model as in [Gemini image generation](https://ai.google.dev/gemini-api/docs/image-generation). |
+| `NANOBANANA_MODEL` | No | **Image** model (see workflow-core default). Must be image-capable; see [Gemini image generation](https://ai.google.dev/gemini-api/docs/image-generation). |
+| `NANOBANANA_PLANNER_MODEL` | No | **Text-only** model for custom workflow plan/replan JSON (default: `gemini-2.5-flash`). |
 | `NANOBANANA_DRY_RUN` | No | Set to `true` or `1` to skip the real API and use the reference image as output (for testing when the API is unreachable). |
 
 ## If you see `ENOTFOUND` or 404 for the API

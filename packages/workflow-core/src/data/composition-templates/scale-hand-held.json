@@ -1,0 +1,11 @@
+{
+  "id": "scale_hand_held",
+  "name": "Groessenreferenz: in der Hand",
+  "applicableTo": ["SCALE_REFERENCE"],
+  "categoryHints": ["handheld", "beauty", "kitchen", "wearable", "generic"],
+  "promptBlocks": {
+    "composition": "Product held in a human hand to communicate real-world scale. Clean, uncluttered composition. Hand and product are the only subjects.",
+    "camera": "Close-to-medium shot, slightly above eye-level. Product and hand both in sharp focus.",
+    "lighting": "Bright, even studio lighting. Neutral white or light grey background. Soft shadow under the hand for depth."
+  }
+}

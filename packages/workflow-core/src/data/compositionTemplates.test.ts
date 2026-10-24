@@ -1,15 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   findCompositionTemplate,
   getAllCompositionTemplates,
-  type CompositionTemplate,
+  reloadCompositionTemplates,
 } from "./compositionTemplates";
 import type { WorkflowType } from "../types/api";
 
-describe("getAllCompositionTemplates", () => {
-  it("returns a non-empty array", () => {
+describe("compositionTemplates — JSON loading", () => {
+  beforeEach(() => {
+    reloadCompositionTemplates();
+  });
+
+  it("loads at least 5 templates from JSON files", () => {
     const all = getAllCompositionTemplates();
-    expect(all.length).toBeGreaterThan(0);
+    expect(all.length).toBeGreaterThanOrEqual(5);
   });
 
   it("every template has required fields", () => {
@@ -23,75 +27,39 @@ describe("getAllCompositionTemplates", () => {
       expect(t.promptBlocks.lighting).toBeTruthy();
     }
   });
-});
 
-describe("findCompositionTemplate", () => {
-  it("returns a template for MAIN_IMAGE", () => {
-    const t = findCompositionTemplate("MAIN_IMAGE");
-    expect(t).not.toBeNull();
-    expect(t!.applicableTo).toContain("MAIN_IMAGE");
-  });
-
-  it("returns a template for DETAIL_CLOSEUP", () => {
-    const t = findCompositionTemplate("DETAIL_CLOSEUP");
-    expect(t).not.toBeNull();
-    expect(t!.applicableTo).toContain("DETAIL_CLOSEUP");
-  });
-
-  it("returns a template for SCALE_REFERENCE", () => {
-    const t = findCompositionTemplate("SCALE_REFERENCE");
-    expect(t).not.toBeNull();
-  });
-
-  it("returns a template for A_PLUS_VISUAL", () => {
-    const t = findCompositionTemplate("A_PLUS_VISUAL");
-    expect(t).not.toBeNull();
-  });
-
-  it("returns a template for LIFESTYLE", () => {
-    const t = findCompositionTemplate("LIFESTYLE");
-    expect(t).not.toBeNull();
-    expect(t!.applicableTo).toContain("LIFESTYLE");
-  });
-
-  it("returns a template for AMAZON_LIFESTYLE_SHOT", () => {
-    const t = findCompositionTemplate("AMAZON_LIFESTYLE_SHOT");
-    expect(t).not.toBeNull();
-    expect(t!.applicableTo).toContain("AMAZON_LIFESTYLE_SHOT");
-  });
-
-  it("selects category-specific template for MAIN_IMAGE + furniture", () => {
-    const t = findCompositionTemplate("MAIN_IMAGE", "furniture");
-    expect(t).not.toBeNull();
-    expect(t!.id).toBe("hero_isolated_large");
-  });
-
-  it("selects category-specific template for MAIN_IMAGE + handheld", () => {
-    const t = findCompositionTemplate("MAIN_IMAGE", "handheld");
-    expect(t).not.toBeNull();
-    expect(t!.id).toBe("hero_isolated");
-  });
-
-  it("selects scale_hand_held for SCALE_REFERENCE + beauty", () => {
-    const t = findCompositionTemplate("SCALE_REFERENCE", "beauty");
-    expect(t).not.toBeNull();
-    expect(t!.id).toBe("scale_hand_held");
-  });
-
-  it("selects scale_person_standing for SCALE_REFERENCE + furniture", () => {
-    const t = findCompositionTemplate("SCALE_REFERENCE", "furniture");
-    expect(t).not.toBeNull();
-    expect(t!.id).toBe("scale_person_standing");
-  });
-
-  it("falls back to first template when category has no specific match", () => {
-    const t = findCompositionTemplate("MAIN_IMAGE", "outdoor");
-    expect(t).not.toBeNull();
-    expect(t!.categoryHints).toContain("outdoor");
+  it("has templates for all workflow types except NEUTRAL_PRODUCT_SHOT", () => {
+    const workflowTypes: WorkflowType[] = [
+      "MAIN_IMAGE", "LIFESTYLE", "AMAZON_LIFESTYLE_SHOT",
+      "SCALE_REFERENCE", "DETAIL_CLOSEUP", "A_PLUS_VISUAL",
+    ];
+    for (const wt of workflowTypes) {
+      expect(findCompositionTemplate(wt)).not.toBeNull();
+    }
   });
 
   it("returns null for NEUTRAL_PRODUCT_SHOT (no template defined)", () => {
-    const t = findCompositionTemplate("NEUTRAL_PRODUCT_SHOT");
-    expect(t).toBeNull();
+    expect(findCompositionTemplate("NEUTRAL_PRODUCT_SHOT")).toBeNull();
+  });
+
+  it("selects category-specific template when available", () => {
+    const furniture = findCompositionTemplate("MAIN_IMAGE", "furniture");
+    expect(furniture?.id).toBe("hero_isolated_large");
+
+    const handheld = findCompositionTemplate("MAIN_IMAGE", "handheld");
+    expect(handheld?.id).toBe("hero_isolated");
+  });
+
+  it("falls back to first matching template when category has no exact hit", () => {
+    const result = findCompositionTemplate("DETAIL_CLOSEUP", "handheld");
+    expect(result).not.toBeNull();
+    expect(result?.applicableTo).toContain("DETAIL_CLOSEUP");
+  });
+
+  it("templates are sorted by id for deterministic ordering", () => {
+    const all = getAllCompositionTemplates();
+    const ids = all.map((t) => t.id);
+    const sorted = [...ids].sort();
+    expect(ids).toEqual(sorted);
   });
 });

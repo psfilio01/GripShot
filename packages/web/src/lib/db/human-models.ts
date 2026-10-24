@@ -28,7 +28,7 @@ function collection(workspaceId: string) {
 export async function listHumanModels(
   workspaceId: string,
 ): Promise<(HumanModelDoc & { id: string })[]> {
-  const snap = await collection(workspaceId).get();
+  const snap = await collection(workspaceId).where("deletedAt", "==", null).get();
   const rows = snap.docs.map((d) => ({
     id: d.id,
     ...(d.data() as HumanModelDoc),
@@ -45,6 +45,16 @@ export async function listHumanModels(
     return tb - ta;
   });
   return rows;
+}
+
+export async function listDeletedHumanModels(
+  workspaceId: string,
+): Promise<(HumanModelDoc & { id: string })[]> {
+  const snap = await collection(workspaceId)
+    .where("deletedAt", "!=", null)
+    .orderBy("deletedAt", "desc")
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as HumanModelDoc) }));
 }
 
 export async function getHumanModel(
@@ -65,6 +75,8 @@ export async function createHumanModel(
     displayName: input.displayName.trim(),
     notes: (input.notes ?? "").trim(),
     source: input.source ?? "human",
+    deletedAt: null,
+    deletedBy: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -92,7 +104,30 @@ export async function updateHumanModel(
   await collection(workspaceId).doc(modelId).update(update);
 }
 
-export async function deleteHumanModelDoc(
+export async function softDeleteHumanModelDoc(
+  workspaceId: string,
+  modelId: string,
+  deletedBy: string,
+): Promise<void> {
+  await collection(workspaceId).doc(modelId).update({
+    deletedAt: FieldValue.serverTimestamp(),
+    deletedBy,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+export async function restoreHumanModelDoc(
+  workspaceId: string,
+  modelId: string,
+): Promise<void> {
+  await collection(workspaceId).doc(modelId).update({
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+export async function hardDeleteHumanModelDoc(
   workspaceId: string,
   modelId: string,
 ): Promise<void> {

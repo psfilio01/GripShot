@@ -5,6 +5,22 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
+# Real-ESRGAN: download binary + models (~60 MB) for image upscaling
+FROM base AS realesrgan
+WORKDIR /tmp/realesrgan
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+ARG REALESRGAN_VERSION=v0.2.5.0
+# ncnn portable builds use a date stamp in the zip name, not the semver tag.
+ARG REALESRGAN_NCNN_BUILD=20220424
+RUN curl -fSL "https://github.com/xinntao/Real-ESRGAN/releases/download/${REALESRGAN_VERSION}/realesrgan-ncnn-vulkan-${REALESRGAN_NCNN_BUILD}-ubuntu.zip" -o realesrgan.zip \
+    && unzip -q realesrgan.zip \
+    && mkdir -p /opt/realesrgan/models \
+    && cp -f realesrgan-ncnn-vulkan-${REALESRGAN_NCNN_BUILD}-ubuntu/realesrgan-ncnn-vulkan /opt/realesrgan/ \
+    && cp -f realesrgan-ncnn-vulkan-${REALESRGAN_NCNN_BUILD}-ubuntu/models/* /opt/realesrgan/models/ \
+    && chmod +x /opt/realesrgan/realesrgan-ncnn-vulkan \
+    && rm -rf /tmp/realesrgan
+
 FROM base AS deps
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -54,6 +70,14 @@ ENV PORT=8080
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
+
+COPY --from=realesrgan --chown=nextjs:nodejs /opt/realesrgan /app/bin/realesrgan
+ENV REALESRGAN_BIN=/app/bin/realesrgan/realesrgan-ncnn-vulkan
+ENV REALESRGAN_MODEL_DIR=/app/bin/realesrgan/models
+
+# Vulkan/OpenMP libs needed by realesrgan-ncnn-vulkan at runtime
+RUN apt-get update && apt-get install -y --no-install-recommends libvulkan1 libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/packages/web/public ./packages/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/standalone ./

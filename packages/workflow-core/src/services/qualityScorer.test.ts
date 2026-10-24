@@ -40,6 +40,7 @@ describe("scoreImageQuality", () => {
       NANOBANANA_API_KEY: "",
       NANOBANANA_BASE_URL: "https://example.com",
       NANOBANANA_MODEL: "test",
+      NANOBANANA_PLANNER_MODEL: "gemini-2.5-flash",
       NANOBANANA_DRY_RUN: true,
     });
 
@@ -59,6 +60,7 @@ describe("scoreImageQuality", () => {
       NANOBANANA_API_KEY: undefined as unknown as string,
       NANOBANANA_BASE_URL: "https://example.com",
       NANOBANANA_MODEL: "test",
+      NANOBANANA_PLANNER_MODEL: "gemini-2.5-flash",
       NANOBANANA_DRY_RUN: false,
     });
 
@@ -74,6 +76,7 @@ describe("scoreImageQuality", () => {
       NANOBANANA_API_KEY: "test-key",
       NANOBANANA_BASE_URL: "https://api.example.com/v1beta",
       NANOBANANA_MODEL: "test",
+      NANOBANANA_PLANNER_MODEL: "gemini-2.5-flash",
       NANOBANANA_DRY_RUN: false,
     });
 
@@ -120,6 +123,7 @@ describe("scoreImageQuality", () => {
       NANOBANANA_API_KEY: "test-key",
       NANOBANANA_BASE_URL: "https://api.example.com/v1beta",
       NANOBANANA_MODEL: "test",
+      NANOBANANA_PLANNER_MODEL: "gemini-2.5-flash",
       NANOBANANA_DRY_RUN: false,
     });
 

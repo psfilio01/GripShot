@@ -25,6 +25,8 @@ export async function createProduct(input: CreateProductInput): Promise<string> 
     category: input.category,
     description: input.description,
     status: "draft",
+    deletedAt: null,
+    deletedBy: null,
     createdAt: now,
     updatedAt: now,
   });
@@ -39,7 +41,22 @@ export async function listProducts(
     .collection("workspaces")
     .doc(workspaceId)
     .collection("products")
+    .where("deletedAt", "==", null)
     .orderBy("createdAt", "desc")
+    .get();
+
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as ProductDoc) }));
+}
+
+export async function listDeletedProducts(
+  workspaceId: string,
+): Promise<(ProductDoc & { id: string })[]> {
+  const snap = await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("products")
+    .where("deletedAt", "!=", null)
+    .orderBy("deletedAt", "desc")
     .get();
 
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as ProductDoc) }));
@@ -72,7 +89,40 @@ export async function updateProduct(
     .update({ ...data, updatedAt: FieldValue.serverTimestamp() });
 }
 
-export async function deleteProduct(
+export async function softDeleteProduct(
+  workspaceId: string,
+  productId: string,
+  deletedBy: string,
+): Promise<void> {
+  await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("products")
+    .doc(productId)
+    .update({
+      deletedAt: FieldValue.serverTimestamp(),
+      deletedBy,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+}
+
+export async function restoreProduct(
+  workspaceId: string,
+  productId: string,
+): Promise<void> {
+  await getDb()
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("products")
+    .doc(productId)
+    .update({
+      deletedAt: null,
+      deletedBy: null,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+}
+
+export async function hardDeleteProduct(
   workspaceId: string,
   productId: string,
 ): Promise<void> {
