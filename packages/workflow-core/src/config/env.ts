@@ -64,7 +64,7 @@ const EnvSchema = z.object({
   NANOBANANA_API_KEY: z.string().nonempty().optional(),
   NANOBANANA_BASE_URL: z.string().url().default("https://generativelanguage.googleapis.com/v1beta"),
   /** Image generation (Custom Workflow steps, listing shots, Telegram, etc.). Must be an image-capable Gemini model. */
-  NANOBANANA_MODEL: z.string().default("gemini-3.1-flash-image-preview"),
+  NANOBANANA_MODEL: z.string().default("gemini-nano-banana-2.1"),
   /** Text-only model for custom workflow plan / replan JSON (structured output). Cheaper than image models. */
   NANOBANANA_PLANNER_MODEL: z.string().default("gemini-2.5-flash"),
   /** When "true", skip the real API call and use the reference image as output (for local testing when API is unreachable). */
@@ -101,4 +101,3 @@ export function getEnv(): Env {
 export function getWorkflowDataRoot(): string {
   return getEnv().WORKFLOW_DATA_ROOT;
 }
-

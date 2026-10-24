@@ -195,7 +195,7 @@ The same Hero Lock engine is available in Custom Workflows:
 ### Technical approach
 
 - **Scene extraction** uses `gemini-2.5-flash` with structured JSON output (`responseMimeType: "application/json"` + JSON schema) to analyze the hero image and produce a typed `SceneLock` object containing scene description, subject, product placement, composition, camera, lighting, background, protected invariants, and detected product color.
-- **Recolor generation** uses the configured image model (e.g. `gemini-3.1-flash-image-preview`) to edit the master image with an invariant-focused recolor prompt. The prompt explicitly lists elements that must not change and specifies only the target color change.
+- **Recolor generation** uses the configured image model (e.g. `gemini-nano-banana-2.1`) to edit the master image with an invariant-focused recolor prompt. The prompt explicitly lists elements that must not change and specifies only the target color change.
 - **Fallback behavior**: If the model cannot guarantee pixel-perfect invariance (which generative models cannot), the SceneLock data serves as audit metadata and prompt guidance. The system builds the strongest reliability layer possible: invariant-focused prompts, structured scene analysis, validation, lineage tracking, and per-variant status tracking.
 - **Original color skip**: If a configured color matches the detected original color, it is automatically skipped to avoid duplicate generation.
 

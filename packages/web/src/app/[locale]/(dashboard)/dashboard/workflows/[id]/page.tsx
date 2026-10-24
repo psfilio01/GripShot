@@ -974,7 +974,7 @@ export default function WorkflowDetailPage() {
                 label={t("imageApiModel")}
                 value={
                   workflow.globalSettings.imageModel ===
-                  "gemini-3-pro-image-preview"
+                  "gemini-3-pro-image"
                     ? t("imageModelPro")
                     : t("imageModelFlash")
                 }
@@ -1147,7 +1147,7 @@ export default function WorkflowDetailPage() {
                 <option value="">{t("imageModelDefault")}</option>
                 {UI_SELECTABLE_GEMINI_IMAGE_MODEL_IDS.map((mid) => (
                   <option key={mid} value={mid}>
-                    {mid === "gemini-3-pro-image-preview"
+                    {mid === "gemini-3-pro-image"
                       ? t("imageModelPro")
                       : t("imageModelFlash")}
                   </option>

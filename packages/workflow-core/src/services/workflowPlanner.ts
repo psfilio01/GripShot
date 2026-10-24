@@ -73,7 +73,7 @@ const PLAN_JSON_SCHEMA = {
               imageModel: {
                 type: "string" as const,
                 description:
-                  "Gemini image model id: gemini-3.1-flash-image-preview or gemini-3-pro-image-preview",
+                  "Gemini image model id: gemini-nano-banana-2.1 or gemini-3-pro-image",
               },
               poseDescription: {
                 type: "string" as const,

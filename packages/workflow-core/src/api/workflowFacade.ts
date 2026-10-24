@@ -24,7 +24,7 @@ import { buildPrompt } from "../services/promptBuilder";
 import { generateImagesWithNanoBanana } from "../services/imageGenerator";
 import {
   ALLOWED_GEMINI_IMAGE_MODEL_IDS,
-  isAllowedGeminiImageModel,
+  normalizeGeminiImageModel,
 } from "../constants/geminiImageModels";
 import { scoreImageQuality } from "../services/qualityScorer";
 import { storeImage } from "../services/resultStorage";
@@ -92,12 +92,13 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     let nanoImageOptions: { modelId: string } | undefined;
     if (input.imageModel?.trim()) {
       const mid = input.imageModel.trim();
-      if (!isAllowedGeminiImageModel(mid)) {
+      const normalizedModelId = normalizeGeminiImageModel(mid);
+      if (!normalizedModelId) {
         throw new Error(
           `Unsupported image model "${mid}". Allowed: ${ALLOWED_GEMINI_IMAGE_MODEL_IDS.join(", ")}`,
         );
       }
-      nanoImageOptions = { modelId: mid };
+      nanoImageOptions = { modelId: normalizedModelId };
     }
 
     console.log(`\x1b[36m[workflow-core]\x1b[0m Generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}${nanoImageOptions ? `; model=${nanoImageOptions.modelId}` : ""}`);
@@ -288,4 +289,3 @@ export async function handleFeedback(event: FeedbackEvent): Promise<HandleFeedba
     newJobIds: result.newJobIds
   };
 }
-

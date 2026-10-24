@@ -48,7 +48,7 @@ export interface StartImageJobInput {
   /** Override resolution (e.g. "2K", "4K"). Falls back to runtime JSON or default. */
   resolution?: string;
   /**
-   * Gemini image model id (e.g. gemini-3-pro-image-preview). When omitted, uses NANOBANANA_MODEL from env.
+   * Gemini image model id (e.g. gemini-3-pro-image). When omitted, uses NANOBANANA_MODEL from env.
    * Must be an allowlisted id when set.
    */
   imageModel?: string;

@@ -18,6 +18,7 @@ export { normalizeWorkflowType } from "./types/api";
 export {
   ALLOWED_GEMINI_IMAGE_MODEL_IDS,
   isAllowedGeminiImageModel,
+  normalizeGeminiImageModel,
   type AllowedGeminiImageModelId,
 } from "./constants/geminiImageModels";
 export type { SceneLock } from "./domain/sceneLock";

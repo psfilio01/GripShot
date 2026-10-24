@@ -76,7 +76,7 @@ Optional keys: `REGION`, `CLOUD_RUN_SERVICE`, `ARTIFACT_REPO`, `PROJECT_ID`, `IM
 | `WORKFLOW_DATA_ROOT` | Yes | Path to the `data/` directory (still used for `metadata.json`, brand files on disk, and as fallback when GCS is off) |
 | `WORKFLOW_GCS_BUCKET` | No | GCS bucket name (e.g. Firebase default bucket `PROJECT_ID.appspot.com`). When set, reference uploads, models, backgrounds, and generated images use this bucket with keys mirroring `data/` paths. **Recommended for Cloud Run.** |
 | `NANOBANANA_API_KEY` | Yes | Google Gemini API key |
-| `NANOBANANA_MODEL` | No | **Image** model for workflow image steps and listing generation (default: `gemini-3.1-flash-image-preview`). Must support image output; a text-only model ID will fail at runtime. |
+| `NANOBANANA_MODEL` | No | **Image** model for workflow image steps and listing generation (default: `gemini-nano-banana-2.1`). Use `gemini-3-pro-image` for the highest-quality option. A text-only model ID will fail at runtime. |
 | `NANOBANANA_PLANNER_MODEL` | No | **Text-only** model for custom workflow **plan / replan** JSON (default: `gemini-2.5-flash`). Cheaper than image models; changing `NANOBANANA_MODEL` does not change planning. |
 | `NANOBANANA_DRY_RUN` | No | Set `true` to skip API calls |
 
@@ -271,7 +271,7 @@ Set the following **server-only** env vars in the Cloud Run console (`Edit & Dep
 | `STRIPE_SECRET_KEY` | Stripe dashboard → API keys | |
 | `STRIPE_WEBHOOK_SECRET` | Stripe dashboard → Webhooks | |
 | `NANOBANANA_API_KEY` | Google AI Studio | Gemini API key for image generation |
-| `NANOBANANA_MODEL` | — | Optional; default `gemini-3.1-flash-image-preview` |
+| `NANOBANANA_MODEL` | — | Optional; default `gemini-nano-banana-2.1` |
 | `WORKFLOW_DATA_ROOT` | — | e.g. `/tmp/data` (ephemeral); prefer GCS for durability |
 | `WORKFLOW_GCS_BUCKET` | GCS | Recommended for Cloud Run — see Blob Storage section |
 | `TELEGRAM_BOT_TOKEN` | BotFather | Required for Telegram bot |

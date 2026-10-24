@@ -212,7 +212,7 @@ export async function generateImagesWithNanoBanana(
     throw new Error(
       `Gemini returned no image (${detail}). ` +
         `IMAGE_OTHER/OTHER often clears on retry with relaxed settings (already tried). ` +
-        `Try a different image model (e.g. gemini-3.1-flash-image-preview), simplify the prompt, or check reference images.`,
+        `Try a different image model (e.g. gemini-nano-banana-2.1), simplify the prompt, or check reference images.`,
     );
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
