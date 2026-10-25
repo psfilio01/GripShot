@@ -16,8 +16,8 @@ ARG REALESRGAN_NCNN_BUILD=20220424
 RUN curl -fSL "https://github.com/xinntao/Real-ESRGAN/releases/download/${REALESRGAN_VERSION}/realesrgan-ncnn-vulkan-${REALESRGAN_NCNN_BUILD}-ubuntu.zip" -o realesrgan.zip \
     && unzip -q realesrgan.zip \
     && mkdir -p /opt/realesrgan/models \
-    && cp -f realesrgan-ncnn-vulkan-${REALESRGAN_NCNN_BUILD}-ubuntu/realesrgan-ncnn-vulkan /opt/realesrgan/ \
-    && cp -f realesrgan-ncnn-vulkan-${REALESRGAN_NCNN_BUILD}-ubuntu/models/* /opt/realesrgan/models/ \
+    && cp -f realesrgan-ncnn-vulkan /opt/realesrgan/ \
+    && cp -f models/* /opt/realesrgan/models/ \
     && chmod +x /opt/realesrgan/realesrgan-ncnn-vulkan \
     && rm -rf /tmp/realesrgan
 
