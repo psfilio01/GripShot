@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
   useCallback,
+  type FormEvent,
   type MouseEvent,
 } from "react";
 import { Link } from "@/i18n/navigation";
@@ -72,6 +73,12 @@ interface ProductColor {
   hex: string;
 }
 
+interface ProductOption {
+  id: string;
+  name: string;
+  colors?: ProductColor[];
+}
+
 type StatusFilter = "all" | "neutral" | "favorite" | "rejected" | "hero_lock";
 
 export default function ResultsPage() {
@@ -85,19 +92,22 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [productNames, setProductNames] = useState<Record<string, string>>({});
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [heroTarget, setHeroTarget] = useState<{
     imageId: string;
     productId: string;
   } | null>(null);
   const [heroColors, setHeroColors] = useState<ProductColor[]>([]);
   const [heroSubmitting, setHeroSubmitting] = useState(false);
+  const [externalHeroOpen, setExternalHeroOpen] = useState(false);
+  const [externalHeroSubmitting, setExternalHeroSubmitting] = useState(false);
   const [detailImage, setDetailImage] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxOrigin, setLightboxOrigin] =
     useState<ResultsLightboxOrigin | null>(null);
   const { toast } = useToast();
-  const tGen = useTranslations("Generate");
+  const tResults = useTranslations("Results");
 
   const loadJobs = useCallback(() => {
     fetch("/api/jobs")
@@ -120,6 +130,7 @@ export default function ResultsPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d?.products) {
+          setProducts(d.products);
           const map: Record<string, string> = {};
           for (const p of d.products) {
             map[p.id] = p.name;
@@ -230,6 +241,37 @@ export default function ResultsPage() {
       setHeroSubmitting(false);
       setHeroTarget(null);
       setHeroColors([]);
+    }
+  }
+
+  async function uploadExternalHero(productId: string, image: File) {
+    setExternalHeroSubmitting(true);
+    try {
+      const body = new FormData();
+      body.set("productId", productId);
+      body.set("image", image);
+      const res = await fetch("/api/hero-lock/upload", {
+        method: "POST",
+        body,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast(data?.error ?? tResults("externalHeroError"), "error");
+        return;
+      }
+
+      toast(
+        tResults("externalHeroStarted", {
+          count: data?.expectedVariantCount ?? 0,
+        }),
+        "success",
+      );
+      setExternalHeroOpen(false);
+      loadJobs();
+    } catch {
+      toast(tResults("externalHeroError"), "error");
+    } finally {
+      setExternalHeroSubmitting(false);
     }
   }
 
@@ -416,6 +458,13 @@ export default function ResultsPage() {
             {filteredImages.length !== 1 ? "s" : ""}
             {hasFilters && ` of ${allImages.length}`}
           </p>
+          <button
+            onClick={() => setExternalHeroOpen(true)}
+            className="gs-btn-primary px-3 py-1.5 text-xs flex items-center gap-1.5"
+          >
+            <UploadIcon className="h-3.5 w-3.5" />
+            {tResults("uploadHero")}
+          </button>
           {filteredImages.length > 0 && (
             <button
               onClick={handleBulkDownload}
@@ -779,6 +828,15 @@ export default function ResultsPage() {
         />
       )}
 
+      {externalHeroOpen && (
+        <ExternalHeroUploadDialog
+          products={products}
+          loading={externalHeroSubmitting}
+          onSubmit={uploadExternalHero}
+          onCancel={() => setExternalHeroOpen(false)}
+        />
+      )}
+
       {/* Image detail panel */}
       {selectedDetail && (
         <ImageDetailPanel
@@ -803,6 +861,191 @@ export default function ResultsPage() {
         }}
         onIndexChange={setLightboxIndex}
       />
+    </div>
+  );
+}
+
+/* ---------- External Hero upload ---------- */
+
+function ExternalHeroUploadDialog({
+  products,
+  loading,
+  onSubmit,
+  onCancel,
+}: {
+  products: ProductOption[];
+  loading: boolean;
+  onSubmit: (productId: string, image: File) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("Results");
+  const [productId, setProductId] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const selectedProduct = products.find((product) => product.id === productId);
+  const colors = selectedProduct?.colors ?? [];
+
+  useEffect(() => {
+    if (!image) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(image);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [image]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!productId || !image || colors.length === 0 || loading) return;
+    void onSubmit(productId, image);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="external-hero-title"
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-lg space-y-5 rounded-2xl p-6"
+        style={{
+          background: "var(--gs-surface-raised)",
+          border: "1px solid var(--gs-border)",
+          boxShadow: "var(--gs-shadow-lg)",
+        }}
+      >
+        <div>
+          <h2
+            id="external-hero-title"
+            className="text-lg font-bold"
+            style={{ color: "var(--gs-text)" }}
+          >
+            {t("externalHeroTitle")}
+          </h2>
+          <p
+            className="mt-1 text-sm"
+            style={{ color: "var(--gs-text-muted)" }}
+          >
+            {t("externalHeroDescription")}
+          </p>
+        </div>
+
+        <label className="block space-y-1.5">
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
+            {t("externalHeroProduct")}
+          </span>
+          <select
+            value={productId}
+            onChange={(event) => setProductId(event.target.value)}
+            className="gs-input w-full px-3 py-2 text-sm"
+            required
+          >
+            <option value="">{t("externalHeroProductPlaceholder")}</option>
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {selectedProduct && colors.length === 0 && (
+          <p
+            className="rounded-xl px-3 py-2 text-sm"
+            style={{
+              color: "var(--gs-error-text)",
+              background: "var(--gs-error-bg)",
+            }}
+          >
+            {t("externalHeroNoColors")} {" "}
+            <Link
+              href={`/dashboard/products/${encodeURIComponent(productId)}#colors`}
+              className="font-semibold underline"
+            >
+              {t("externalHeroAddColors")}
+            </Link>
+          </p>
+        )}
+
+        {colors.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {colors.map((color) => (
+              <span
+                key={color.id}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs"
+                style={{
+                  background: "var(--gs-surface-inset)",
+                  color: "var(--gs-text-secondary)",
+                }}
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full border border-black/10"
+                  style={{ backgroundColor: color.hex }}
+                />
+                {color.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <label className="block space-y-1.5">
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--gs-text-secondary)" }}
+          >
+            {t("externalHeroImage")}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => setImage(event.target.files?.[0] ?? null)}
+            className="gs-input w-full px-3 py-2 text-sm"
+            required
+          />
+          <span className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+            {t("externalHeroFileHint")}
+          </span>
+        </label>
+
+        {previewUrl && (
+          <img
+            src={previewUrl}
+            alt={t("externalHeroPreview")}
+            className="max-h-56 w-full rounded-xl object-contain"
+            style={{ background: "var(--gs-surface-inset)" }}
+          />
+        )}
+
+        {colors.length > 0 && (
+          <p className="text-xs" style={{ color: "var(--gs-text-muted)" }}>
+            {t("externalHeroCreditHint", { count: colors.length })}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="gs-btn-secondary px-4 py-2 text-sm"
+          >
+            {t("externalHeroCancel")}
+          </button>
+          <button
+            type="submit"
+            disabled={!productId || !image || colors.length === 0 || loading}
+            className="gs-btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? t("externalHeroUploading") : t("externalHeroStart")}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -1044,6 +1287,24 @@ function DownloadIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+      />
+    </svg>
+  );
+}
+
+function UploadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-4.5-9L12 3m0 0L7.5 7.5M12 3v13.5"
       />
     </svg>
   );
