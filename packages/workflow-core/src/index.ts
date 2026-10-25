@@ -1,8 +1,20 @@
 export * from "./api/workflowFacade";
 export { prepareHeroLockMaster } from "./services/feedbackHandler";
 export { executeHeroLock } from "./services/heroLockOrchestrator";
+export { executeMainImageLock } from "./services/mainImageOrchestrator";
+export type { MainImageResult } from "./services/mainImageOrchestrator";
+export {
+  generateMainImageVariant,
+  normalizeConnectedLightBackground,
+} from "./services/mainImageGenerator";
+export type {
+  GeneratedMainImage,
+} from "./services/mainImageGenerator";
 export { registerExternalHeroMaster } from "./services/externalHeroMaster";
-export { deleteHeroMaster } from "./services/heroMasterDeletion";
+export {
+  deleteHeroMaster,
+  deleteTemporaryImageSource,
+} from "./services/heroMasterDeletion";
 export {
   GenerationCancelledError,
   isGenerationCancelledError,

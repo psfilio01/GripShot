@@ -12,6 +12,7 @@ describe("workflowLabel", () => {
     expect(workflowLabel("A_PLUS_VISUAL")).toBe("A+ Visual");
     expect(workflowLabel("HERO_LOCK_RECOLOR")).toBe("Color variant");
     expect(workflowLabel("EXTERNAL_HERO_UPLOAD")).toBe("External Hero");
+    expect(workflowLabel("AMAZON_MAIN_IMAGE_VARIANTS")).toBe("Amazon Main");
   });
 
   it("falls back to the raw value for unknown types", () => {
@@ -30,6 +31,7 @@ describe("workflowLabel", () => {
       "A_PLUS_VISUAL",
       "HERO_LOCK_RECOLOR",
       "EXTERNAL_HERO_UPLOAD",
+      "AMAZON_MAIN_IMAGE_VARIANTS",
     ];
     for (const key of expectedKeys) {
       expect(WORKFLOW_LABELS).toHaveProperty(key);
