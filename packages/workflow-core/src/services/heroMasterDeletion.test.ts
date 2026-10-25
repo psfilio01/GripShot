@@ -55,4 +55,13 @@ describe("deleteHeroMaster", () => {
     await expect(deleteHeroMaster("neutral")).resolves.toBeNull();
     expect(deleteStoredImage).not.toHaveBeenCalled();
   });
+
+  it("deletes a Main master and its derived variants", async () => {
+    getVariantById.mockResolvedValue({ id: "hero", status: "main_image" });
+
+    const result = await deleteHeroMaster("hero");
+
+    expect(result?.deletedImageIds).toEqual(["hero", "blue"]);
+    expect(deleteVariantsByIds).toHaveBeenCalledWith(["hero", "blue"]);
+  });
 });

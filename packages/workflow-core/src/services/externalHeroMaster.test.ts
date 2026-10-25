@@ -82,6 +82,23 @@ describe("registerExternalHeroMaster", () => {
     expect(updateJobStatus).toHaveBeenCalledWith("external-job", "completed");
   });
 
+  it("stores a Main upload as a hidden temporary source", async () => {
+    const source = await registerExternalHeroMaster({
+      productId: "product-1",
+      buffer: Buffer.from("image"),
+      extension: "png",
+      mode: "main",
+    });
+
+    expect(source).toEqual(
+      expect.objectContaining({
+        status: "main_source",
+        temporarySource: true,
+      }),
+    );
+    expect(source.heroLockId).toBeUndefined();
+  });
+
   it("marks the import job failed when storage fails", async () => {
     storeImage.mockRejectedValueOnce(new Error("storage unavailable"));
 

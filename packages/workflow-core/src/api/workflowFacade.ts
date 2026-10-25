@@ -292,6 +292,7 @@ export async function getJob(jobId: string): Promise<GetJobResult> {
     filePath: v.filePath,
     colorVariant: v.colorVariant ?? undefined,
     heroLockId: v.heroLockId,
+    mainImageId: v.mainImageId,
     colorLineage: v.colorLineage,
     qualityScore: v.qualityScore,
   }));
