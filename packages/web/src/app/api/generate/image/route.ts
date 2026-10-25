@@ -9,7 +9,12 @@ import {
   deleteFailedPendingImageGenerationsForProduct,
   deletePendingImageGeneration,
   failPendingImageGeneration,
+  isPendingImageGenerationCancelled,
 } from "@/lib/db/pending-image-generations";
+import {
+  registerGenerationCancellation,
+  releaseGenerationCancellation,
+} from "@/lib/generation/cancellation-registry";
 import { formatGenerationError } from "@/lib/errors/format-generation-error";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
@@ -71,6 +76,7 @@ export async function POST(req: NextRequest) {
 
   const startTime = Date.now();
   let pendingRequestId: string | null = null;
+  let cancellationRegistered = false;
 
   try {
     const quota = await checkQuota(session.user.workspaceId, {
@@ -124,6 +130,11 @@ export async function POST(req: NextRequest) {
       resolution: input.resolution,
     });
     pendingRequestId = requestId;
+    const signal = registerGenerationCancellation(
+      session.user.workspaceId,
+      requestId,
+    );
+    cancellationRegistered = true;
 
     const productDoc = await getProduct(
       session.user.workspaceId,
@@ -154,6 +165,13 @@ export async function POST(req: NextRequest) {
       userPromptBlock: productDoc?.userPromptBlockCompiled || undefined,
       poseDescription: input.poseDescription?.trim() || undefined,
       ...(imageModel ? { imageModel } : {}),
+    }, {
+      signal,
+      isCancelled: () =>
+        isPendingImageGenerationCancelled(
+          session.user.workspaceId,
+          requestId,
+        ),
     });
 
     const job = await getJob(result.jobId);
@@ -202,6 +220,18 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ job, requestId });
   } catch (err) {
+    const wasCancelled = pendingRequestId
+      ? await isPendingImageGenerationCancelled(
+          session.user.workspaceId,
+          pendingRequestId,
+        ).catch(() => false)
+      : false;
+    if (wasCancelled) {
+      return NextResponse.json(
+        { error: "Generation cancelled", cancelled: true },
+        { status: 409 },
+      );
+    }
     const errorMsg = formatGenerationError(err);
     log.error("Image generation failed", {
       error: errorMsg,
@@ -233,5 +263,12 @@ export async function POST(req: NextRequest) {
       { error: errorMsg },
       { status: 500 },
     );
+  } finally {
+    if (pendingRequestId && cancellationRegistered) {
+      releaseGenerationCancellation(
+        session.user.workspaceId,
+        pendingRequestId,
+      );
+    }
   }
 }

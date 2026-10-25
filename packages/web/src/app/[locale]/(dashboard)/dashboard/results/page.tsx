@@ -101,6 +101,11 @@ export default function ResultsPage() {
   const [heroSubmitting, setHeroSubmitting] = useState(false);
   const [externalHeroOpen, setExternalHeroOpen] = useState(false);
   const [externalHeroSubmitting, setExternalHeroSubmitting] = useState(false);
+  const [cancellingRequestIds, setCancellingRequestIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [deleteHeroTarget, setDeleteHeroTarget] = useState<string | null>(null);
+  const [deletingHero, setDeletingHero] = useState(false);
   const [detailImage, setDetailImage] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -168,6 +173,68 @@ export default function ResultsPage() {
       }
     } catch {
       toast("Could not dismiss", "error");
+    }
+  }
+
+  async function cancelPendingGeneration(requestId: string) {
+    setCancellingRequestIds((current) => new Set(current).add(requestId));
+    try {
+      const res = await fetch(
+        `/api/generate/image/pending/${encodeURIComponent(requestId)}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        toast(tResults("cancelRunError"), "error");
+        return;
+      }
+      setPendingImageGenerations((current) =>
+        current.filter((item) => item.requestId !== requestId),
+      );
+      toast(tResults("runCancelled"), "info");
+    } catch {
+      toast(tResults("cancelRunError"), "error");
+    } finally {
+      setCancellingRequestIds((current) => {
+        const next = new Set(current);
+        next.delete(requestId);
+        return next;
+      });
+    }
+  }
+
+  async function deleteHeroImage() {
+    if (!deleteHeroTarget) return;
+    setDeletingHero(true);
+    try {
+      const res = await fetch(
+        `/api/result-images/${encodeURIComponent(deleteHeroTarget)}`,
+        { method: "DELETE" },
+      );
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast(data?.error ?? tResults("deleteHeroError"), "error");
+        return;
+      }
+      const deletedIds = new Set<string>(data?.deletedImageIds ?? []);
+      setJobs((current) =>
+        current
+          .map((job) => ({
+            ...job,
+            images: job.images.filter((image) => !deletedIds.has(image.imageId)),
+          }))
+          .filter((job) => job.images.length > 0),
+      );
+      setDetailImage(null);
+      toast(
+        tResults("heroDeleted", { count: deletedIds.size }),
+        "success",
+      );
+      setDeleteHeroTarget(null);
+      loadJobs();
+    } catch {
+      toast(tResults("deleteHeroError"), "error");
+    } finally {
+      setDeletingHero(false);
     }
   }
 
@@ -600,6 +667,19 @@ export default function ResultsPage() {
                     ? () => dismissPendingGeneration(p.requestId)
                     : undefined
                 }
+                actionLabel={
+                  p.status === "running"
+                    ? cancellingRequestIds.has(p.requestId)
+                      ? tResults("cancellingRun")
+                      : tResults("cancelRun")
+                    : undefined
+                }
+                actionDisabled={cancellingRequestIds.has(p.requestId)}
+                onAction={
+                  p.status === "running"
+                    ? () => cancelPendingGeneration(p.requestId)
+                    : undefined
+                }
               />
             </div>
           ))}
@@ -665,6 +745,21 @@ export default function ResultsPage() {
                   >
                     <DownloadIcon className="h-4 w-4" />
                   </button>
+                  {isHeroLocked && (
+                    <button
+                      onClick={() => setDeleteHeroTarget(img.imageId)}
+                      title={tResults("deleteHero")}
+                      aria-label={tResults("deleteHero")}
+                      className="absolute top-2 right-11 rounded-lg p-1.5 opacity-80 hover:opacity-100 focus:opacity-100 transition-opacity"
+                      style={{
+                        background: "rgba(0,0,0,0.5)",
+                        backdropFilter: "blur(4px)",
+                        color: "white",
+                      }}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                   {/* Hero master badge */}
                   {isHeroLocked && (
                     <div
@@ -836,6 +931,20 @@ export default function ResultsPage() {
           onCancel={() => setExternalHeroOpen(false)}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteHeroTarget != null}
+        title={tResults("deleteHeroTitle")}
+        message={tResults("deleteHeroMessage")}
+        confirmLabel={
+          deletingHero ? tResults("deletingHero") : tResults("deleteHero")
+        }
+        variant="danger"
+        onConfirm={deleteHeroImage}
+        onCancel={() => {
+          if (!deletingHero) setDeleteHeroTarget(null);
+        }}
+      />
 
       {/* Image detail panel */}
       {selectedDetail && (
@@ -1287,6 +1396,24 @@ function DownloadIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0 1 15.916 21H8.084a2.25 2.25 0 0 1-2.244-1.327L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0V4.477c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
       />
     </svg>
   );

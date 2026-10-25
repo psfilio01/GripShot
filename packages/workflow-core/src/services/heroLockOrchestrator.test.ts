@@ -125,4 +125,16 @@ describe("executeHeroLock", () => {
     expect(result.sceneLock.detectedProductColor).toBe("sage green");
     expect(result.variantJobId).toBeTruthy();
   });
+
+  it("stops before storing the next color when cancelled", async () => {
+    let checks = 0;
+    const result = await executeHeroLock(
+      masterVariant,
+      [{ id: "c1", name: "Navy Blue", hex: "#1B2A4A" }],
+      { isCancelled: () => ++checks >= 3 },
+    );
+
+    expect(result.cancelled).toBe(true);
+    expect(result.generatedVariants).toEqual([]);
+  });
 });

@@ -2,6 +2,12 @@ export * from "./api/workflowFacade";
 export { prepareHeroLockMaster } from "./services/feedbackHandler";
 export { executeHeroLock } from "./services/heroLockOrchestrator";
 export { registerExternalHeroMaster } from "./services/externalHeroMaster";
+export { deleteHeroMaster } from "./services/heroMasterDeletion";
+export {
+  GenerationCancelledError,
+  isGenerationCancelledError,
+} from "./services/generationCancellation";
+export type { GenerationControl } from "./services/generationCancellation";
 export type { RegisterExternalHeroMasterInput } from "./services/externalHeroMaster";
 export { metadataStore } from "./services/metadataStore";
 export { extractSceneLock } from "./services/sceneExtractor";

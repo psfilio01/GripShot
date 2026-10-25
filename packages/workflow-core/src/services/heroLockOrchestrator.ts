@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { metadataStore } from "./metadataStore";
-import { storeImage } from "./resultStorage";
+import { deleteStoredImage, storeImage } from "./resultStorage";
 import { extractSceneLock } from "./sceneExtractor";
 import { generateRecolorVariant } from "./recolorGenerator";
 import type { ImageVariant } from "../domain/imageVariant";
@@ -9,6 +9,11 @@ import type { ProductColorDef } from "../types/api";
 import type { SceneLock } from "../domain/sceneLock";
 import { buildProductFromId } from "../domain/product";
 import { getEnv } from "../config/env";
+import {
+  isGenerationCancelledError,
+  throwIfGenerationCancelled,
+  type GenerationControl,
+} from "./generationCancellation";
 
 export interface HeroLockResult {
   heroLockId: string;
@@ -23,6 +28,7 @@ export interface HeroLockResult {
     error?: string;
   }[];
   skippedColors: string[];
+  cancelled?: boolean;
 }
 
 /**
@@ -35,6 +41,7 @@ export interface HeroLockResult {
 export async function executeHeroLock(
   variant: ImageVariant,
   targetColors: ProductColorDef[],
+  control?: GenerationControl,
 ): Promise<HeroLockResult> {
   const heroLockId = nanoid();
   const env = getEnv();
@@ -43,12 +50,15 @@ export async function executeHeroLock(
   const job = await metadataStore.getJob(variant.jobId);
   const workflowType = job?.workflowType ?? "UNKNOWN";
 
+  await throwIfGenerationCancelled(control);
   const sceneLock = await extractSceneLock(
     variant.filePath,
     variant.id,
     variant.productId,
     workflowType,
+    control?.signal,
   );
+  await throwIfGenerationCancelled(control);
 
   const detectedLower = (sceneLock.detectedProductColor ?? "").toLowerCase().trim();
   const colorsToGenerate: ProductColorDef[] = [];
@@ -82,16 +92,20 @@ export async function executeHeroLock(
   await metadataStore.insertJob(variantJob);
 
   const results: HeroLockResult["generatedVariants"] = [];
+  let cancelled = false;
 
   for (const color of colorsToGenerate) {
     const variantId = nanoid();
     try {
+      await throwIfGenerationCancelled(control);
       const generated = await generateRecolorVariant({
         masterImagePath: variant.filePath,
         sceneLock,
         targetColorName: color.name,
         targetColorHex: color.hex,
+        signal: control?.signal,
       });
+      await throwIfGenerationCancelled(control);
 
       const filePath = await storeImage({
         product,
@@ -101,6 +115,12 @@ export async function executeHeroLock(
         extension: generated.extension,
         buffer: generated.buffer,
       });
+      try {
+        await throwIfGenerationCancelled(control);
+      } catch (error) {
+        await deleteStoredImage(filePath);
+        throw error;
+      }
 
       const newVariant: ImageVariant = {
         id: variantId,
@@ -131,6 +151,10 @@ export async function executeHeroLock(
         `Hero: generated variant for ${color.name} (${color.hex})`,
       );
     } catch (err) {
+      if (isGenerationCancelledError(err)) {
+        cancelled = true;
+        break;
+      }
       const errorMsg = err instanceof Error ? err.message : String(err);
       console.error(
         `Hero: failed to generate variant for ${color.name}: ${errorMsg}`,
@@ -148,7 +172,7 @@ export async function executeHeroLock(
   const allSuccess = results.every((r) => r.status === "completed");
   await metadataStore.updateJobStatus(
     variantJobId,
-    allSuccess ? "completed" : "failed",
+    cancelled ? "cancelled" : allSuccess ? "completed" : "failed",
   );
 
   return {
@@ -157,5 +181,6 @@ export async function executeHeroLock(
     variantJobId,
     generatedVariants: results,
     skippedColors,
+    ...(cancelled ? { cancelled: true } : {}),
   };
 }

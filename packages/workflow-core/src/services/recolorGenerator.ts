@@ -17,6 +17,7 @@ export interface RecolorRequest {
   targetColorName: string;
   targetColorHex: string;
   aspectRatio?: string;
+  signal?: AbortSignal;
 }
 
 /**
@@ -73,6 +74,7 @@ export async function generateRecolorVariant(
     {
       headers: { "Content-Type": "application/json" },
       timeout: 240000,
+      signal: request.signal,
     },
   );
 

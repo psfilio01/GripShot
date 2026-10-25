@@ -291,7 +291,17 @@
     "externalHeroStart": "Hochladen und Farben erzeugen",
     "externalHeroUploading": "Wird gestartet…",
     "externalHeroStarted": "Hero wurde hochgeladen — bis zu {count} Farbvarianten werden jetzt erzeugt.",
-    "externalHeroError": "Externe Hero-Generierung fehlgeschlagen"
+    "externalHeroError": "Externe Hero-Generierung fehlgeschlagen",
+    "cancelRun": "Lauf abbrechen",
+    "cancellingRun": "Wird abgebrochen…",
+    "runCancelled": "Lauf wurde abgebrochen.",
+    "cancelRunError": "Lauf konnte nicht abgebrochen werden.",
+    "deleteHero": "Hero-Bild löschen",
+    "deleteHeroTitle": "Hero-Bild löschen?",
+    "deleteHeroMessage": "Das Hero-Bild und alle daraus erzeugten Farbvarianten werden dauerhaft gelöscht. Ein laufender Farbprozess wird abgebrochen.",
+    "deletingHero": "Wird gelöscht…",
+    "heroDeleted": "Hero-Bild und {count} zugehörige Bilder wurden gelöscht.",
+    "deleteHeroError": "Hero-Bild konnte nicht gelöscht werden."
   },
   "Generate": {
     "workflowType": "Workflow-Typ",

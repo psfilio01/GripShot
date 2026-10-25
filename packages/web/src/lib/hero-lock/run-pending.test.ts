@@ -4,6 +4,7 @@ const executeHeroLock = vi.fn();
 const consumeCredit = vi.fn();
 const deletePending = vi.fn();
 const failPending = vi.fn();
+const isCancelled = vi.fn();
 
 vi.mock("@fashionmentum/workflow-core", () => ({
   executeHeroLock: (...args: unknown[]) => executeHeroLock(...args),
@@ -16,6 +17,7 @@ vi.mock("@/lib/billing/quota", () => ({
 vi.mock("@/lib/db/pending-image-generations", () => ({
   deletePendingImageGeneration: (...args: unknown[]) => deletePending(...args),
   failPendingImageGeneration: (...args: unknown[]) => failPending(...args),
+  isPendingImageGenerationCancelled: (...args: unknown[]) => isCancelled(...args),
 }));
 
 import { runPendingHeroLock } from "./run-pending";
@@ -41,6 +43,7 @@ describe("runPendingHeroLock", () => {
     deletePending.mockResolvedValue(undefined);
     failPending.mockResolvedValue(undefined);
     consumeCredit.mockResolvedValue(undefined);
+    isCancelled.mockResolvedValue(false);
   });
 
   it("charges only successful variants and removes the placeholder", async () => {
@@ -82,5 +85,28 @@ describe("runPendingHeroLock", () => {
       "request-1",
       "No color variant could be generated.",
     );
+  });
+
+  it("does not start work when the run was cancelled", async () => {
+    isCancelled.mockResolvedValue(true);
+
+    await runPendingHeroLock(input);
+
+    expect(executeHeroLock).not.toHaveBeenCalled();
+    expect(consumeCredit).not.toHaveBeenCalled();
+    expect(failPending).not.toHaveBeenCalled();
+  });
+
+  it("keeps a cancelled placeholder hidden without marking it failed", async () => {
+    executeHeroLock.mockResolvedValue({
+      cancelled: true,
+      generatedVariants: [{ status: "completed" }],
+    });
+
+    await runPendingHeroLock(input);
+
+    expect(consumeCredit).toHaveBeenCalledWith("workspace-1", 1);
+    expect(deletePending).not.toHaveBeenCalled();
+    expect(failPending).not.toHaveBeenCalled();
   });
 });

@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
       workflowType: "HERO_LOCK_RECOLOR",
       kind: "hero",
       expectedVariantCount: colors.length,
+      heroMasterImageId: master.id,
     });
 
     const targetColors = colors.map((color) => ({
