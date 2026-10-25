@@ -115,6 +115,20 @@ export const metadataStore = {
       await saveStore(store);
     }
   },
+
+  async deleteVariantsByIds(variantIds: string[]): Promise<void> {
+    if (variantIds.length === 0) return;
+    const ids = new Set(variantIds);
+    const store = await loadStore();
+    const affectedJobIds = new Set(
+      store.variants.filter((variant) => ids.has(variant.id)).map((variant) => variant.jobId),
+    );
+    store.variants = store.variants.filter((variant) => !ids.has(variant.id));
+
+    const jobsWithVariants = new Set(store.variants.map((variant) => variant.jobId));
+    store.jobs = store.jobs.filter(
+      (job) => !affectedJobIds.has(job.id) || jobsWithVariants.has(job.id),
+    );
+    await saveStore(store);
+  },
 };
-
-

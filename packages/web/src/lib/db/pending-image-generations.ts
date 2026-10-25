@@ -18,7 +18,9 @@ export interface PendingImageGenerationDoc {
   kind?: "hero";
   /** Configured product colors count (upper bound; some may be skipped after scene analysis). */
   expectedVariantCount?: number;
-  status: "running" | "failed";
+  /** Hero master whose color expansion is represented by this row. */
+  heroMasterImageId?: string;
+  status: "running" | "failed" | "cancelled";
   startedAt: FirebaseFirestore.Timestamp;
   errorMessage?: string;
 }
@@ -41,6 +43,7 @@ export async function createPendingImageGeneration(
     | "resolution"
     | "kind"
     | "expectedVariantCount"
+    | "heroMasterImageId"
   >,
 ): Promise<void> {
   const payload: Record<string, unknown> = {
@@ -54,6 +57,9 @@ export async function createPendingImageGeneration(
   if (data.kind != null) payload.kind = data.kind;
   if (data.expectedVariantCount != null) {
     payload.expectedVariantCount = data.expectedVariantCount;
+  }
+  if (data.heroMasterImageId != null) {
+    payload.heroMasterImageId = data.heroMasterImageId;
   }
   await collectionRef(workspaceId).doc(requestId).set(payload);
 }
@@ -99,6 +105,56 @@ export async function failPendingImageGeneration(
   });
 }
 
+export async function cancelPendingImageGeneration(
+  workspaceId: string,
+  requestId: string,
+): Promise<"cancelled" | "already_cancelled" | "not_found" | "not_running"> {
+  const ref = collectionRef(workspaceId).doc(requestId);
+  return getDb().runTransaction(async (transaction) => {
+    const snap = await transaction.get(ref);
+    if (!snap.exists) return "not_found";
+    const data = snap.data() as PendingImageGenerationDoc;
+    if (data.status === "cancelled") return "already_cancelled";
+    if (data.status !== "running") return "not_running";
+    transaction.update(ref, {
+      status: "cancelled" as const,
+      completedAt: FieldValue.serverTimestamp(),
+    });
+    return "cancelled";
+  });
+}
+
+export async function isPendingImageGenerationCancelled(
+  workspaceId: string,
+  requestId: string,
+): Promise<boolean> {
+  const snap = await collectionRef(workspaceId).doc(requestId).get();
+  return snap.exists &&
+    (snap.data() as PendingImageGenerationDoc).status === "cancelled";
+}
+
+export async function cancelPendingHeroGenerationsForMaster(
+  workspaceId: string,
+  heroMasterImageId: string,
+): Promise<string[]> {
+  const snap = await collectionRef(workspaceId)
+    .where("heroMasterImageId", "==", heroMasterImageId)
+    .get();
+  const requestIds: string[] = [];
+  const batch = getDb().batch();
+  for (const doc of snap.docs) {
+    const data = doc.data() as PendingImageGenerationDoc;
+    if (data.status !== "running") continue;
+    requestIds.push(doc.id);
+    batch.update(doc.ref, {
+      status: "cancelled" as const,
+      completedAt: FieldValue.serverTimestamp(),
+    });
+  }
+  if (requestIds.length > 0) await batch.commit();
+  return requestIds;
+}
+
 export interface PendingImageGenerationListItem {
   requestId: string;
   productId: string;
@@ -107,6 +163,7 @@ export interface PendingImageGenerationListItem {
   resolution?: string;
   kind?: "hero";
   expectedVariantCount?: number;
+  heroMasterImageId?: string;
   status: "running" | "failed";
   startedAt: string;
   errorMessage?: string;
@@ -158,6 +215,16 @@ export async function listAndPrunePendingImageGenerations(
       }
     }
 
+    if (d.status === "cancelled") {
+      const completedMs = d.completedAt?.toMillis?.() ?? startedMs;
+      if (now - completedMs > FAILED_TTL_MS) {
+        batch.delete(doc.ref);
+        batchCount++;
+        if (batchCount >= 400) await flushBatch();
+      }
+      continue;
+    }
+
     out.push({
       requestId: doc.id,
       productId: d.productId,
@@ -166,6 +233,7 @@ export async function listAndPrunePendingImageGenerations(
       resolution: d.resolution,
       kind: d.kind,
       expectedVariantCount: d.expectedVariantCount,
+      heroMasterImageId: d.heroMasterImageId,
       status: d.status,
       startedAt: new Date(startedMs || now).toISOString(),
       errorMessage: d.errorMessage,

@@ -62,7 +62,7 @@ export interface StartImageJobInput {
 
 export interface StartImageJobResult {
   jobId: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
   /** Full prompt text used for generation (for logging/debugging). */
   promptText?: string;
   /** Number of reference images sent to Gemini. */
@@ -92,7 +92,7 @@ export interface GetJobResultImage {
 
 export interface GetJobResult {
   jobId: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
   images: GetJobResultImage[];
 }
 

@@ -27,11 +27,16 @@ import {
   normalizeGeminiImageModel,
 } from "../constants/geminiImageModels";
 import { scoreImageQuality } from "../services/qualityScorer";
-import { storeImage } from "../services/resultStorage";
+import { deleteStoredImage, storeImage } from "../services/resultStorage";
 import { metadataStore } from "../services/metadataStore";
 import type { ImageJob } from "../domain/imageJob";
 import type { ImageVariant } from "../domain/imageVariant";
 import { handleFeedbackInternal } from "../services/feedbackHandler";
+import {
+  isGenerationCancelledError,
+  throwIfGenerationCancelled,
+  type GenerationControl,
+} from "../services/generationCancellation";
 
 const USES_MODEL_REFS = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE"]);
 const USES_BACKGROUND = new Set(["AMAZON_LIFESTYLE_SHOT", "LIFESTYLE", "A_PLUS_VISUAL"]);
@@ -44,7 +49,10 @@ function pickRandomSubset<T>(arr: T[], maxCount: number): T[] {
   return shuffled.slice(0, count);
 }
 
-export async function startImageJob(input: StartImageJobInput): Promise<StartImageJobResult> {
+export async function startImageJob(
+  input: StartImageJobInput,
+  control?: GenerationControl,
+): Promise<StartImageJobResult> {
   const env = getEnv();
   const dataRoot = env.WORKFLOW_DATA_ROOT;
   const product = buildProductFromId(
@@ -66,8 +74,10 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
   };
 
   await metadataStore.insertJob(job);
+  const variants: ImageVariant[] = [];
 
   try {
+    await throwIfGenerationCancelled(control);
     // ── Common loading (all workflow types) ──────────────────────────
     const references = await loadReferenceImages(product);
     if (references.length === 0) {
@@ -89,7 +99,8 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       generationSettings.resolution = input.resolution as typeof generationSettings.resolution;
     }
 
-    let nanoImageOptions: { modelId: string } | undefined;
+    let nanoImageOptions: { modelId?: string; signal?: AbortSignal } | undefined =
+      control?.signal ? { signal: control.signal } : undefined;
     if (input.imageModel?.trim()) {
       const mid = input.imageModel.trim();
       const normalizedModelId = normalizeGeminiImageModel(mid);
@@ -98,7 +109,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
           `Unsupported image model "${mid}". Allowed: ${ALLOWED_GEMINI_IMAGE_MODEL_IDS.join(", ")}`,
         );
       }
-      nanoImageOptions = { modelId: normalizedModelId };
+      nanoImageOptions = { ...nanoImageOptions, modelId: normalizedModelId };
     }
 
     console.log(`\x1b[36m[workflow-core]\x1b[0m Generation settings: ${generationSettings.resolution} @ ${generationSettings.aspectRatio}${nanoImageOptions ? `; model=${nanoImageOptions.modelId}` : ""}`);
@@ -185,8 +196,10 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       nanoImageOptions,
     );
 
-    const variants: ImageVariant[] = [];
+    await throwIfGenerationCancelled(control);
+
     for (const generated of generatedImages) {
+      await throwIfGenerationCancelled(control);
       const imageId = nanoid();
       const filePath = await storeImage({
         product,
@@ -196,6 +209,12 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
         extension: generated.extension,
         buffer: generated.buffer
       });
+      try {
+        await throwIfGenerationCancelled(control);
+      } catch (error) {
+        await deleteStoredImage(filePath);
+        throw error;
+      }
       const variant: ImageVariant = {
         id: imageId,
         jobId,
@@ -213,6 +232,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
     if (input.scoreQuality) {
       console.log(`\x1b[36m[workflow-core]\x1b[0m Running quality scoring on ${variants.length} image(s)…`);
       for (const variant of variants) {
+        await throwIfGenerationCancelled(control);
         try {
           const score = await scoreImageQuality({
             imagePath: variant.filePath,
@@ -229,6 +249,7 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       }
     }
 
+    await throwIfGenerationCancelled(control);
     await metadataStore.updateJobStatus(jobId, "completed");
     return {
       jobId,
@@ -237,7 +258,18 @@ export async function startImageJob(input: StartImageJobInput): Promise<StartIma
       referenceImageCount: referencePaths.length,
     };
   } catch (err) {
-    await metadataStore.updateJobStatus(jobId, "failed");
+    if (isGenerationCancelledError(err) && variants.length > 0) {
+      await Promise.all(
+        variants.map((variant) => deleteStoredImage(variant.filePath)),
+      );
+      await metadataStore.deleteVariantsByIds(
+        variants.map((variant) => variant.id),
+      );
+    }
+    await metadataStore.updateJobStatus(
+      jobId,
+      isGenerationCancelledError(err) ? "cancelled" : "failed",
+    );
     throw err;
   }
 }

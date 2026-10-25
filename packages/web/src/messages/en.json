@@ -291,7 +291,17 @@
     "externalHeroStart": "Upload and generate colors",
     "externalHeroUploading": "Starting…",
     "externalHeroStarted": "Hero uploaded — up to {count} color variants are now being generated.",
-    "externalHeroError": "External Hero generation failed"
+    "externalHeroError": "External Hero generation failed",
+    "cancelRun": "Cancel run",
+    "cancellingRun": "Cancelling…",
+    "runCancelled": "Run cancelled.",
+    "cancelRunError": "Run could not be cancelled.",
+    "deleteHero": "Delete Hero image",
+    "deleteHeroTitle": "Delete Hero image?",
+    "deleteHeroMessage": "The Hero image and all color variants created from it will be permanently deleted. Any active color run will be cancelled.",
+    "deletingHero": "Deleting…",
+    "heroDeleted": "Hero image and {count} related images deleted.",
+    "deleteHeroError": "Hero image could not be deleted."
   },
   "Generate": {
     "workflowType": "Workflow type",

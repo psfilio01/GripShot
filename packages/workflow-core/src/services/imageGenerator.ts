@@ -91,6 +91,8 @@ function buildNoImageErrorDetail(
 export interface GenerateImagesWithNanoBananaOptions {
   /** When set, overrides NANOBANANA_MODEL for this call only. */
   modelId?: string;
+  /** Cancels the active Gemini HTTP request. */
+  signal?: AbortSignal;
 }
 
 export async function generateImagesWithNanoBanana(
@@ -172,6 +174,7 @@ export async function generateImagesWithNanoBanana(
         {
           headers: { "Content-Type": "application/json" },
           timeout: 240000,
+          signal: options?.signal,
         },
       );
 
@@ -215,6 +218,9 @@ export async function generateImagesWithNanoBanana(
         `Try a different image model (e.g. gemini-nano-banana-2.1), simplify the prompt, or check reference images.`,
     );
   } catch (error: unknown) {
+    if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === "ERR_CANCELED")) {
+      throw error;
+    }
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
       const data = error.response?.data;

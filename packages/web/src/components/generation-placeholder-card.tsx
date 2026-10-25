@@ -8,12 +8,18 @@ export function GenerationPlaceholderCard({
   subtitle,
   variant,
   onDismiss,
+  actionLabel,
+  onAction,
+  actionDisabled = false,
   footer,
 }: {
   title: string;
   subtitle: string;
   variant: "running" | "failed";
   onDismiss?: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
+  actionDisabled?: boolean;
   /** e.g. product name + workflow */
   footer?: string;
 }) {
@@ -88,6 +94,18 @@ export function GenerationPlaceholderCard({
           >
             <div className="gs-indeterminate-bar" />
           </div>
+        </div>
+      )}
+      {variant === "running" && actionLabel && onAction && (
+        <div className="px-3 pb-3">
+          <button
+            type="button"
+            onClick={onAction}
+            disabled={actionDisabled}
+            className="gs-btn-secondary w-full py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {actionLabel}
+          </button>
         </div>
       )}
       {footer && (

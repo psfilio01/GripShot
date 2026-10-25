@@ -23,6 +23,7 @@ export async function extractSceneLock(
   sourceAssetId: string,
   productId: string,
   outputType: string,
+  signal?: AbortSignal,
 ): Promise<SceneLock> {
   const { NANOBANANA_API_KEY, NANOBANANA_BASE_URL, NANOBANANA_DRY_RUN } =
     getEnv();
@@ -64,6 +65,7 @@ export async function extractSceneLock(
     {
       headers: { "Content-Type": "application/json" },
       timeout: 60000,
+      signal,
     },
   );
 

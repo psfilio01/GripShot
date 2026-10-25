@@ -97,3 +97,16 @@ export async function moveImage(
   await fs.move(currentPath, targetPath, { overwrite: true });
   return targetPath;
 }
+
+/** Delete a stored generated image from local disk or configured GCS storage. */
+export async function deleteStoredImage(filePath: string): Promise<void> {
+  if (usesGcsBlobStorage() && !path.isAbsolute(filePath)) {
+    await deleteDataObject(filePath);
+    return;
+  }
+
+  const absolutePath = path.isAbsolute(filePath)
+    ? filePath
+    : path.join(getEnv().WORKFLOW_DATA_ROOT, filePath);
+  await fs.remove(absolutePath);
+}

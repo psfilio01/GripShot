@@ -1,4 +1,9 @@
-export type JobStatus = "pending" | "running" | "completed" | "failed";
+export type JobStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export interface ImageJob {
   id: string;
@@ -8,4 +13,3 @@ export interface ImageJob {
   createdAt: string;
   updatedAt: string;
 }
-
