@@ -3,9 +3,10 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import {
   createPendingImageGeneration,
-  deletePendingImageGeneration,
-  failPendingImageGeneration,
+  deleteFailedPendingImageGenerationsForProduct,
 } from "@/lib/db/pending-image-generations";
+import { checkQuota } from "@/lib/billing/quota";
+import { runPendingHeroLock } from "@/lib/hero-lock/run-pending";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -42,11 +43,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "hero_lock") {
-      const { prepareHeroLockMaster, executeHeroLock } = await import(
+      const colors = targetColors!;
+      const quota = await checkQuota(session.user.workspaceId, {
+        isAdmin: session.isAdmin,
+      });
+      if (!session.isAdmin && quota.remaining < colors.length) {
+        return NextResponse.json(
+          {
+            error: "Insufficient credits",
+            needed: colors.length,
+            remaining: quota.remaining,
+          },
+          { status: 429 },
+        );
+      }
+
+      const { prepareHeroLockMaster } = await import(
         "@fashionmentum/workflow-core"
       );
 
-      const colors = targetColors!;
       const updatedVariant = await prepareHeroLockMaster({
         imageId,
         action: "hero_lock",
@@ -63,6 +78,10 @@ export async function POST(req: NextRequest) {
       const requestId = randomUUID();
       const workspaceId = session.user.workspaceId;
 
+      await deleteFailedPendingImageGenerationsForProduct(
+        workspaceId,
+        updatedVariant.productId,
+      );
       await createPendingImageGeneration(workspaceId, requestId, {
         productId: updatedVariant.productId,
         workflowType: "HERO_LOCK_RECOLOR",
@@ -70,22 +89,15 @@ export async function POST(req: NextRequest) {
         expectedVariantCount: colors.length,
       });
 
-      const masterSnapshot = { ...updatedVariant };
-      const colorsSnapshot = colors.map((c) => ({ ...c }));
-
-      after(async () => {
-        try {
-          await executeHeroLock(masterSnapshot, colorsSnapshot);
-          await deletePendingImageGeneration(workspaceId, requestId).catch(
-            () => {},
-          );
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          await failPendingImageGeneration(workspaceId, requestId, msg).catch(
-            () => {},
-          );
-        }
-      });
+      after(() =>
+        runPendingHeroLock({
+          workspaceId,
+          isAdmin: session.isAdmin,
+          requestId,
+          master: { ...updatedVariant },
+          targetColors: colors.map((color) => ({ ...color })),
+        }),
+      );
 
       const updatedImage = {
         imageId: updatedVariant.id,

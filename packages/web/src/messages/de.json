@@ -275,6 +275,24 @@
     "batchUpscaleError": "Batch-Upscale fehlgeschlagen",
     "batchUpscaleNone": "Keine Bilder zum Hochskalieren"
   },
+  "Results": {
+    "uploadHero": "Hero-Bild hochladen",
+    "externalHeroTitle": "Externes Hero-Bild hochladen",
+    "externalHeroDescription": "Wähle ein vorhandenes Produkt und lade ein fertiges Hero-Bild hoch. GripShot erhält die Szene und wendet alle hinterlegten Produktfarben über die reguläre Hero-Lock-Pipeline an.",
+    "externalHeroProduct": "Produkt",
+    "externalHeroProductPlaceholder": "Produkt auswählen",
+    "externalHeroNoColors": "Für dieses Produkt sind noch keine Farben hinterlegt.",
+    "externalHeroAddColors": "Farben hinzufügen",
+    "externalHeroImage": "Hero-Bild",
+    "externalHeroFileHint": "JPEG, PNG oder WebP, maximal 10 MB.",
+    "externalHeroPreview": "Vorschau des externen Hero-Bildes",
+    "externalHeroCreditHint": "Es werden bis zu {count} Credits benötigt; die erkannte Originalfarbe wird übersprungen und nur erfolgreiche Varianten werden berechnet.",
+    "externalHeroCancel": "Abbrechen",
+    "externalHeroStart": "Hochladen und Farben erzeugen",
+    "externalHeroUploading": "Wird gestartet…",
+    "externalHeroStarted": "Hero wurde hochgeladen — bis zu {count} Farbvarianten werden jetzt erzeugt.",
+    "externalHeroError": "Externe Hero-Generierung fehlgeschlagen"
+  },
   "Generate": {
     "workflowType": "Workflow-Typ",
     "wtNeutralProductShot": "Neutrales Produktfoto",

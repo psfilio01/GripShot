@@ -1,6 +1,8 @@
 export * from "./api/workflowFacade";
 export { prepareHeroLockMaster } from "./services/feedbackHandler";
 export { executeHeroLock } from "./services/heroLockOrchestrator";
+export { registerExternalHeroMaster } from "./services/externalHeroMaster";
+export type { RegisterExternalHeroMasterInput } from "./services/externalHeroMaster";
 export { metadataStore } from "./services/metadataStore";
 export { extractSceneLock } from "./services/sceneExtractor";
 export { scoreImageQuality } from "./services/qualityScorer";
