@@ -29,7 +29,7 @@ export async function DELETE(
     const { deleteHeroMaster } = await import("@fashionmentum/workflow-core");
     const result = await deleteHeroMaster(imageId);
     if (!result) {
-      return NextResponse.json({ error: "Master image not found" }, { status: 404 });
+      return NextResponse.json({ error: "Hero image not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -38,9 +38,9 @@ export async function DELETE(
       cancelledRequestIds,
     });
   } catch (error) {
-    console.error("Master image deletion failed:", error);
+    console.error("Hero image deletion failed:", error);
     return NextResponse.json(
-      { error: "Master image could not be deleted" },
+      { error: "Hero image could not be deleted" },
       { status: 500 },
     );
   }

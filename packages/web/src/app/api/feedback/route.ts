@@ -7,7 +7,6 @@ import {
 } from "@/lib/db/pending-image-generations";
 import { checkQuota } from "@/lib/billing/quota";
 import { runPendingHeroLock } from "@/lib/hero-lock/run-pending";
-import { runPendingMainImage } from "@/lib/main-image/run-pending";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -22,7 +21,7 @@ const TargetColorSchema = z.object({
 
 const FeedbackSchema = z.object({
   imageId: z.string().min(1),
-  action: z.enum(["favorite", "reject", "hero_lock", "main_image"]),
+  action: z.enum(["favorite", "reject", "hero_lock"]),
   targetColors: z.array(TargetColorSchema).optional(),
 });
 
@@ -36,48 +35,42 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { imageId, action, targetColors } = FeedbackSchema.parse(body);
 
-    const isMasterAction = action === "hero_lock" || action === "main_image";
-    if (isMasterAction && (!targetColors || targetColors.length === 0)) {
+    if (action === "hero_lock" && (!targetColors || targetColors.length === 0)) {
       return NextResponse.json(
-        { error: "Hero/Main requires at least one target color." },
+        { error: "Hero requires at least one target color." },
         { status: 400 },
       );
     }
 
-    if (isMasterAction) {
+    if (action === "hero_lock") {
       const colors = targetColors!;
-      const maximumOutputCount =
-        colors.length + (action === "main_image" ? 1 : 0);
       const quota = await checkQuota(session.user.workspaceId, {
         isAdmin: session.isAdmin,
       });
-      if (!session.isAdmin && quota.remaining < maximumOutputCount) {
+      if (!session.isAdmin && quota.remaining < colors.length) {
         return NextResponse.json(
           {
             error: "Insufficient credits",
-            needed: maximumOutputCount,
+            needed: colors.length,
             remaining: quota.remaining,
           },
           { status: 429 },
         );
       }
 
-      const { metadataStore, prepareHeroLockMaster } = await import(
+      const { prepareHeroLockMaster } = await import(
         "@fashionmentum/workflow-core"
       );
 
-      const updatedVariant =
-        action === "hero_lock"
-          ? await prepareHeroLockMaster({
-              imageId,
-              action: "hero_lock",
-              targetColors: colors,
-            })
-          : await metadataStore.getVariantById(imageId);
+      const updatedVariant = await prepareHeroLockMaster({
+        imageId,
+        action: "hero_lock",
+        targetColors: colors,
+      });
 
       if (!updatedVariant) {
         return NextResponse.json(
-          { error: "Image not found or could not be used as a master." },
+          { error: "Image not found or could not be set as Hero." },
           { status: 404 },
         );
       }
@@ -91,34 +84,28 @@ export async function POST(req: NextRequest) {
       );
       await createPendingImageGeneration(workspaceId, requestId, {
         productId: updatedVariant.productId,
-        workflowType:
-          action === "main_image"
-            ? "AMAZON_MAIN_IMAGE_VARIANTS"
-            : "HERO_LOCK_RECOLOR",
-        kind: action === "main_image" ? "main" : "hero",
-        expectedVariantCount: maximumOutputCount,
+        workflowType: "HERO_LOCK_RECOLOR",
+        kind: "hero",
+        expectedVariantCount: colors.length,
         heroMasterImageId: updatedVariant.id,
       });
 
-      after(() => {
-        const shared = {
+      after(() =>
+        runPendingHeroLock({
           workspaceId,
           isAdmin: session.isAdmin,
           requestId,
+          master: { ...updatedVariant },
           targetColors: colors.map((color) => ({ ...color })),
-        };
-        return action === "main_image"
-          ? runPendingMainImage({ ...shared, source: { ...updatedVariant } })
-          : runPendingHeroLock({ ...shared, master: { ...updatedVariant } });
-      });
+        }),
+      );
 
       const updatedImage = {
         imageId: updatedVariant.id,
-        status: updatedVariant.status,
+        status: updatedVariant.status as "hero_lock",
         filePath: updatedVariant.filePath,
         colorVariant: updatedVariant.colorVariant ?? undefined,
         heroLockId: updatedVariant.heroLockId,
-        mainImageId: updatedVariant.mainImageId,
       };
 
       return NextResponse.json({

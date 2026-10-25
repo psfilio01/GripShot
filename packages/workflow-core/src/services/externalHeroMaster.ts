@@ -10,12 +10,11 @@ export interface RegisterExternalHeroMasterInput {
   productId: string;
   buffer: Buffer;
   extension: "jpg" | "png" | "webp";
-  mode?: "hero" | "main";
 }
 
 /**
- * Persists a user-uploaded image as a Hero master or a temporary Main source
- * so both flows can use the existing Scene Lock and recolor pipeline.
+ * Persists a user-uploaded image as a regular Hero master so the existing
+ * Scene Lock and recolor pipeline can process it without a separate code path.
  */
 export async function registerExternalHeroMaster(
   input: RegisterExternalHeroMasterInput,
@@ -52,12 +51,10 @@ export async function registerExternalHeroMaster(
       id: imageId,
       jobId,
       productId: input.productId,
-      status: input.mode === "main" ? "main_source" : "hero_lock",
+      status: "hero_lock",
       filePath,
       createdAt: now,
-      ...(input.mode === "main"
-        ? { temporarySource: true }
-        : { heroLockId: imageId }),
+      heroLockId: imageId,
     };
     await metadataStore.insertVariant(variant);
     await metadataStore.updateJobStatus(jobId, "completed");

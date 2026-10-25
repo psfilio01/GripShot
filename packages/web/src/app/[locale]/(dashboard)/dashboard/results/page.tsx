@@ -32,7 +32,7 @@ interface PendingImageGeneration {
   status: "running" | "failed";
   startedAt: string;
   errorMessage?: string;
-  kind?: "hero" | "main";
+  kind?: "hero";
   expectedVariantCount?: number;
 }
 
@@ -49,7 +49,6 @@ interface JobImage {
   status: string;
   filePath: string;
   heroLockId?: string;
-  mainImageId?: string;
   qualityScore?: QualityScoreData;
   colorLineage?: {
     parentVariantId: string;
@@ -80,13 +79,7 @@ interface ProductOption {
   colors?: ProductColor[];
 }
 
-type StatusFilter =
-  | "all"
-  | "neutral"
-  | "favorite"
-  | "rejected"
-  | "hero_lock"
-  | "main_image";
+type StatusFilter = "all" | "neutral" | "favorite" | "rejected" | "hero_lock";
 
 export default function ResultsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -103,7 +96,6 @@ export default function ResultsPage() {
   const [heroTarget, setHeroTarget] = useState<{
     imageId: string;
     productId: string;
-    mode: "hero" | "main";
   } | null>(null);
   const [heroColors, setHeroColors] = useState<ProductColor[]>([]);
   const [heroSubmitting, setHeroSubmitting] = useState(false);
@@ -268,12 +260,8 @@ export default function ResultsPage() {
     }
   }
 
-  async function openHeroDialog(
-    imageId: string,
-    productId: string,
-    mode: "hero" | "main" = "hero",
-  ) {
-    setHeroTarget({ imageId, productId, mode });
+  async function openHeroDialog(imageId: string, productId: string) {
+    setHeroTarget({ imageId, productId });
     try {
       const res = await fetch(`/api/products/${productId}/colors`);
       if (res.ok) {
@@ -296,7 +284,7 @@ export default function ResultsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageId: heroTarget.imageId,
-          action: heroTarget.mode === "main" ? "main_image" : "hero_lock",
+          action: "hero_lock",
           targetColors: heroColors.map((c) => ({
             id: c.id,
             name: c.name,
@@ -306,27 +294,16 @@ export default function ResultsPage() {
       });
       if (res.ok) {
         toast(
-          heroTarget.mode === "main"
-            ? tResults("mainStarted", { count: heroColors.length + 1 })
-            : `Hero started — up to ${heroColors.length} color variant(s) will appear here when ready. You can keep working.`,
+          `Hero started — up to ${heroColors.length} color variant(s) will appear here when ready. You can keep working.`,
           "success",
         );
         loadJobs();
       } else {
         const data = await res.json().catch(() => null);
-        toast(
-          data?.error ??
-            (heroTarget.mode === "main"
-              ? tResults("mainError")
-              : "Hero failed"),
-          "error",
-        );
+        toast(data?.error ?? "Hero failed", "error");
       }
     } catch {
-      toast(
-        heroTarget.mode === "main" ? tResults("mainError") : "Hero failed",
-        "error",
-      );
+      toast("Hero failed", "error");
     } finally {
       setHeroSubmitting(false);
       setHeroTarget(null);
@@ -334,17 +311,12 @@ export default function ResultsPage() {
     }
   }
 
-  async function uploadExternalHero(
-    productId: string,
-    image: File,
-    mode: "hero" | "main",
-  ) {
+  async function uploadExternalHero(productId: string, image: File) {
     setExternalHeroSubmitting(true);
     try {
       const body = new FormData();
       body.set("productId", productId);
       body.set("image", image);
-      body.set("mode", mode);
       const res = await fetch("/api/hero-lock/upload", {
         method: "POST",
         body,
@@ -356,24 +328,15 @@ export default function ResultsPage() {
       }
 
       toast(
-        mode === "main"
-          ? tResults("mainStarted", {
-              count: data?.expectedVariantCount ?? 0,
-            })
-          : tResults("externalHeroStarted", {
-              count: data?.expectedVariantCount ?? 0,
-            }),
+        tResults("externalHeroStarted", {
+          count: data?.expectedVariantCount ?? 0,
+        }),
         "success",
       );
       setExternalHeroOpen(false);
       loadJobs();
     } catch {
-      toast(
-        mode === "main"
-          ? tResults("mainError")
-          : tResults("externalHeroError"),
-        "error",
-      );
+      toast(tResults("externalHeroError"), "error");
     } finally {
       setExternalHeroSubmitting(false);
     }
@@ -405,14 +368,8 @@ export default function ResultsPage() {
 
   const filteredImages = useMemo(() => {
     let result = allImages;
-    if (statusFilter !== "all") {
-      result = result.filter((img) =>
-        statusFilter === "main_image"
-          ? img.status === "main_image" ||
-            img.colorLineage?.generationMethod === "main_image_recolor"
-          : img.status === statusFilter,
-      );
-    }
+    if (statusFilter !== "all")
+      result = result.filter((img) => img.status === statusFilter);
     if (productFilter !== "all")
       result = result.filter((img) => img.productId === productFilter);
     if (typeFilter !== "all")
@@ -530,7 +487,6 @@ export default function ResultsPage() {
     { value: "neutral", label: "Neutral" },
     { value: "favorite", label: "Favorites" },
     { value: "hero_lock", label: "Hero" },
-    { value: "main_image", label: "Main" },
     { value: "rejected", label: "Rejected" },
   ];
 
@@ -689,14 +645,10 @@ export default function ResultsPage() {
                   p.status === "running"
                     ? p.kind === "hero"
                       ? "Hero variants…"
-                      : p.kind === "main"
-                        ? tResults("mainGenerating")
-                        : "Generating…"
+                      : "Generating…"
                     : p.kind === "hero"
                       ? "Hero failed"
-                      : p.kind === "main"
-                        ? tResults("mainFailed")
-                        : "Generation failed"
+                      : "Generation failed"
                 }
                 subtitle={
                   p.status === "running"
@@ -706,11 +658,7 @@ export default function ResultsPage() {
                             ? ` (up to ${p.expectedVariantCount})`
                             : ""
                         }. You can keep working; new images appear here when ready.`
-                      : p.kind === "main"
-                        ? tResults("mainGeneratingDescription", {
-                            count: p.expectedVariantCount ?? 0,
-                          })
-                        : "Waiting for Gemini to return images. You can start more runs from Generate."
+                      : "Waiting for Gemini to return images. You can start more runs from Generate."
                     : (p.errorMessage ?? "Something went wrong.")
                 }
                 footer={`${productNames[p.productId] ?? p.productId} · ${workflowLabel(p.workflowType)}`}
@@ -738,9 +686,6 @@ export default function ResultsPage() {
           {filteredImages.map((img, gridIndex) => {
             const derivedCount = variantsByParent.get(img.imageId)?.length ?? 0;
             const isHeroLocked = img.status === "hero_lock";
-            const isMainImage = img.status === "main_image";
-            const isMainColorVariant =
-              img.colorLineage?.generationMethod === "main_image_recolor";
             const isColorVariant = !!img.colorLineage;
 
             const openFromClick = (e: MouseEvent<HTMLImageElement>) => {
@@ -764,7 +709,7 @@ export default function ResultsPage() {
                 key={img.imageId}
                 className="gs-card group overflow-hidden"
                 style={
-                  isHeroLocked || isMainImage
+                  isHeroLocked
                     ? {
                         borderColor: "var(--gs-accent)",
                         boxShadow:
@@ -800,19 +745,11 @@ export default function ResultsPage() {
                   >
                     <DownloadIcon className="h-4 w-4" />
                   </button>
-                  {(isHeroLocked || isMainImage) && (
+                  {isHeroLocked && (
                     <button
                       onClick={() => setDeleteHeroTarget(img.imageId)}
-                      title={
-                        isMainImage
-                          ? tResults("deleteMain")
-                          : tResults("deleteHero")
-                      }
-                      aria-label={
-                        isMainImage
-                          ? tResults("deleteMain")
-                          : tResults("deleteHero")
-                      }
+                      title={tResults("deleteHero")}
+                      aria-label={tResults("deleteHero")}
                       className="absolute top-2 right-11 rounded-lg p-1.5 opacity-80 hover:opacity-100 focus:opacity-100 transition-opacity"
                       style={{
                         background: "rgba(0,0,0,0.5)",
@@ -838,18 +775,6 @@ export default function ResultsPage() {
                       Hero
                     </div>
                   )}
-                  {isMainImage && (
-                    <div
-                      className="absolute top-2 left-2 rounded-lg px-2 py-1 text-[10px] font-bold tracking-wide uppercase flex items-center gap-1"
-                      style={{
-                        background: "#2563eb",
-                        color: "white",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                      }}
-                    >
-                      Main
-                    </div>
-                  )}
                   {/* Color variant swatch */}
                   {isColorVariant && img.colorLineage && (
                     <div
@@ -866,7 +791,6 @@ export default function ResultsPage() {
                           backgroundColor: img.colorLineage.targetColorHex,
                         }}
                       />
-                      {isMainColorVariant ? "Main · " : ""}
                       {img.colorLineage.targetColorName}
                     </div>
                   )}
@@ -919,7 +843,7 @@ export default function ResultsPage() {
                     <QualityIssuesList issues={img.qualityScore.issues} />
                   )}
                   {/* Details link for Hero master or color variant images */}
-                  {(isHeroLocked || isMainImage || isColorVariant) && (
+                  {(isHeroLocked || isColorVariant) && (
                     <button
                       onClick={() => setDetailImage(img.imageId)}
                       className="w-full text-xs py-1 rounded-lg transition"
@@ -932,7 +856,7 @@ export default function ResultsPage() {
                     </button>
                   )}
                   {img.status === "neutral" && (
-                    <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => handleFeedback(img.imageId, "favorite")}
                         className="flex-1 rounded-lg py-1.5 text-xs font-medium transition"
@@ -944,20 +868,6 @@ export default function ResultsPage() {
                         }}
                       >
                         ♥ Favorite
-                      </button>
-                      <button
-                        onClick={() =>
-                          openHeroDialog(img.imageId, img.productId, "main")
-                        }
-                        className="flex-1 rounded-lg py-1.5 text-xs font-bold transition"
-                        style={{
-                          background: "#2563eb",
-                          color: "white",
-                          border: "none",
-                        }}
-                        title={tResults("mainActionHint")}
-                      >
-                        Main
                       </button>
                       <button
                         onClick={() =>
@@ -991,18 +901,6 @@ export default function ResultsPage() {
                       </button>
                     </div>
                   )}
-                  {isHeroLocked && (
-                    <button
-                      onClick={() =>
-                        openHeroDialog(img.imageId, img.productId, "main")
-                      }
-                      className="w-full rounded-lg py-1.5 text-xs font-bold transition"
-                      style={{ background: "#2563eb", color: "white" }}
-                      title={tResults("mainActionHint")}
-                    >
-                      {tResults("createAmazonMain")}
-                    </button>
-                  )}
                 </div>
               </div>
             );
@@ -1015,7 +913,6 @@ export default function ResultsPage() {
         <HeroConfirmDialog
           colors={heroColors}
           loading={heroSubmitting}
-          mode={heroTarget.mode}
           productId={heroTarget.productId}
           productName={productNames[heroTarget.productId] ?? heroTarget.productId}
           onConfirm={executeHero}
@@ -1087,17 +984,12 @@ function ExternalHeroUploadDialog({
 }: {
   products: ProductOption[];
   loading: boolean;
-  onSubmit: (
-    productId: string,
-    image: File,
-    mode: "hero" | "main",
-  ) => Promise<void>;
+  onSubmit: (productId: string, image: File) => Promise<void>;
   onCancel: () => void;
 }) {
   const t = useTranslations("Results");
   const [productId, setProductId] = useState("");
   const [image, setImage] = useState<File | null>(null);
-  const [mode, setMode] = useState<"hero" | "main">("hero");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const selectedProduct = products.find((product) => product.id === productId);
   const colors = selectedProduct?.colors ?? [];
@@ -1115,7 +1007,7 @@ function ExternalHeroUploadDialog({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!productId || !image || colors.length === 0 || loading) return;
-    void onSubmit(productId, image, mode);
+    void onSubmit(productId, image);
   }
 
   return (
@@ -1149,40 +1041,6 @@ function ExternalHeroUploadDialog({
             {t("externalHeroDescription")}
           </p>
         </div>
-
-        <fieldset className="space-y-2">
-          <legend
-            className="text-sm font-medium"
-            style={{ color: "var(--gs-text-secondary)" }}
-          >
-            {t("uploadMode")}
-          </legend>
-          <div className="grid grid-cols-2 gap-2">
-            {(["hero", "main"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setMode(value)}
-                className="rounded-xl px-3 py-2 text-sm font-semibold transition"
-                style={
-                  mode === value
-                    ? { background: "var(--gs-accent)", color: "white" }
-                    : {
-                        background: "var(--gs-surface-inset)",
-                        color: "var(--gs-text-secondary)",
-                      }
-                }
-              >
-                {value === "hero" ? t("uploadModeHero") : t("uploadModeMain")}
-              </button>
-            ))}
-          </div>
-          {mode === "main" && (
-            <p className="text-xs" style={{ color: "var(--gs-text-muted)" }}>
-              {t("uploadModeMainDescription")}
-            </p>
-          )}
-        </fieldset>
 
         <label className="block space-y-1.5">
           <span
@@ -1275,9 +1133,7 @@ function ExternalHeroUploadDialog({
 
         {colors.length > 0 && (
           <p className="text-xs" style={{ color: "var(--gs-text-muted)" }}>
-            {mode === "main"
-              ? t("mainCreditHint", { count: colors.length + 1 })
-              : t("externalHeroCreditHint", { count: colors.length })}
+            {t("externalHeroCreditHint", { count: colors.length })}
           </p>
         )}
 
@@ -1295,11 +1151,7 @@ function ExternalHeroUploadDialog({
             disabled={!productId || !image || colors.length === 0 || loading}
             className="gs-btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading
-              ? t("externalHeroUploading")
-              : mode === "main"
-                ? t("mainStart")
-                : t("externalHeroStart")}
+            {loading ? t("externalHeroUploading") : t("externalHeroStart")}
           </button>
         </div>
       </form>
@@ -1312,7 +1164,6 @@ function ExternalHeroUploadDialog({
 function HeroConfirmDialog({
   colors,
   loading,
-  mode,
   productId,
   productName,
   onConfirm,
@@ -1320,7 +1171,6 @@ function HeroConfirmDialog({
 }: {
   colors: ProductColor[];
   loading: boolean;
-  mode: "hero" | "main";
   productId: string;
   productName: string;
   onConfirm: () => void;
@@ -1346,19 +1196,9 @@ function HeroConfirmDialog({
   return (
     <ConfirmDialog
       open
-      title={mode === "main" ? "Amazon Main-Bild erstellen" : "Activate Hero"}
-      message={
-        mode === "main"
-          ? `Der Hintergrund wird auf reines Weiß gesetzt, der Kontaktschatten bleibt erhalten. Anschließend entstehen bis zu ${colors.length} Farbvarianten (${colors.map((c) => c.name).join(", ")}). Das Ergebnis wird nicht automatisch visuell freigegeben und kann danach geprüft oder gelöscht werden.`
-          : `This sets the selected image as the Hero master and starts up to ${colors.length} color variant${colors.length > 1 ? "s" : ""} (${colors.map((c) => c.name).join(", ")}). Generation runs in the background; colors matching the original are skipped automatically.`
-      }
-      confirmLabel={
-        loading
-          ? "Starting…"
-          : mode === "main"
-            ? "Main-Bilder erstellen"
-            : `Start ${colors.length} variant${colors.length > 1 ? "s" : ""}`
-      }
+      title="Activate Hero"
+      message={`This sets the selected image as the Hero master and starts up to ${colors.length} color variant${colors.length > 1 ? "s" : ""} (${colors.map((c) => c.name).join(", ")}). Generation runs in the background; colors matching the original are skipped automatically.`}
+      confirmLabel={loading ? "Starting…" : `Start ${colors.length} variant${colors.length > 1 ? "s" : ""}`}
       variant="default"
       onConfirm={onConfirm}
       onCancel={onCancel}
@@ -1399,7 +1239,6 @@ function ImageDetailPanel({
   onClose: () => void;
 }) {
   const isHeroLocked = image.status === "hero_lock";
-  const isMainImage = image.status === "main_image";
   const isColorVariant = !!image.colorLineage;
   const parentImage = isColorVariant
     ? allImages.find((i) => i.imageId === image.colorLineage!.parentVariantId)
@@ -1442,50 +1281,6 @@ function ImageDetailPanel({
           {isHeroLocked && (
             <>
               <DetailRow label="Role" value="Master asset (Hero)" />
-              <DetailRow
-                label="Color variants"
-                value={
-                  variants.length > 0
-                    ? `${variants.length} generated`
-                    : "None yet"
-                }
-              />
-              {variants.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {variants.map((v) => (
-                    <span
-                      key={v.imageId}
-                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                      style={{
-                        background: "var(--gs-surface-inset)",
-                        color: "var(--gs-text-secondary)",
-                      }}
-                    >
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{
-                          backgroundColor:
-                            v.colorLineage?.targetColorHex ?? "#ccc",
-                        }}
-                      />
-                      {v.colorLineage?.targetColorName ?? "Unknown"}
-                      <span className="text-[9px] opacity-60">
-                        ({v.status})
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {isMainImage && (
-            <>
-              <DetailRow label="Role" value="Master asset (Main)" />
-              <DetailRow
-                label="Background"
-                value="Generated on pure white; visual approval by user"
-              />
               <DetailRow
                 label="Color variants"
                 value={
@@ -1679,11 +1474,6 @@ function ImageStatusBadge({ status }: { status: string }) {
             "linear-gradient(135deg, var(--gs-accent), var(--gs-accent-hover))",
           color: "white",
         };
-      case "main_image":
-        return {
-          background: "#2563eb",
-          color: "white",
-        };
       default:
         return {
           background: "var(--gs-surface-inset)",
@@ -1692,8 +1482,7 @@ function ImageStatusBadge({ status }: { status: string }) {
     }
   };
 
-  const label =
-    status === "hero_lock" ? "Hero" : status === "main_image" ? "Main" : status;
+  const label = status === "hero_lock" ? "Hero" : status;
 
   return (
     <span

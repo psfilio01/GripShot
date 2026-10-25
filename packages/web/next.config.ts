@@ -37,7 +37,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@fashionmentum/workflow-core"],
-  serverExternalPackages: ["@google-cloud/storage", "sharp"],
+  serverExternalPackages: ["@google-cloud/storage"],
   outputFileTracingRoot: resolve(__dirname, "../../"),
   async headers() {
     return [
