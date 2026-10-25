@@ -90,9 +90,6 @@ export const metadataStore = {
       if (status === "hero_lock") {
         v.heroLockId = variantId;
       }
-      if (status === "main_image") {
-        v.mainImageId = variantId;
-      }
       await saveStore(store);
     }
   },

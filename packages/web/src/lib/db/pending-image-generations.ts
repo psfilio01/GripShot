@@ -14,11 +14,11 @@ export interface PendingImageGenerationDoc {
   workflowType: string;
   aspectRatio?: string;
   resolution?: string;
-  /** Set when pending row is for a Hero/Main variant pipeline (not standard Generate). */
-  kind?: "hero" | "main";
+  /** Set when pending row is for Hero color-variant pipeline (not standard Generate). */
+  kind?: "hero";
   /** Configured product colors count (upper bound; some may be skipped after scene analysis). */
   expectedVariantCount?: number;
-  /** Hero/Main source whose expansion is represented by this row. */
+  /** Hero master whose color expansion is represented by this row. */
   heroMasterImageId?: string;
   status: "running" | "failed" | "cancelled";
   startedAt: FirebaseFirestore.Timestamp;
@@ -161,7 +161,7 @@ export interface PendingImageGenerationListItem {
   workflowType: string;
   aspectRatio?: string;
   resolution?: string;
-  kind?: "hero" | "main";
+  kind?: "hero";
   expectedVariantCount?: number;
   heroMasterImageId?: string;
   status: "running" | "failed";

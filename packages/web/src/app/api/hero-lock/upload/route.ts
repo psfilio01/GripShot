@@ -8,7 +8,6 @@ import {
 } from "@/lib/db/pending-image-generations";
 import { getProduct } from "@/lib/db/products";
 import { runPendingHeroLock } from "@/lib/hero-lock/run-pending";
-import { runPendingMainImage } from "@/lib/main-image/run-pending";
 import { detectUploadedImageType } from "@/lib/images/uploaded-image-type";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -23,8 +22,6 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const productIdEntry = formData.get("productId");
     const imageEntry = formData.get("image");
-    const modeEntry = formData.get("mode");
-    const mode = modeEntry === "main" ? "main" : "hero";
     const productId =
       typeof productIdEntry === "string" ? productIdEntry.trim() : "";
 
@@ -66,12 +63,11 @@ export async function POST(req: NextRequest) {
     const quota = await checkQuota(session.user.workspaceId, {
       isAdmin: session.isAdmin,
     });
-    const maximumOutputCount = colors.length + (mode === "main" ? 1 : 0);
-    if (!session.isAdmin && quota.remaining < maximumOutputCount) {
+    if (!session.isAdmin && quota.remaining < colors.length) {
       return NextResponse.json(
         {
           error: "Insufficient credits",
-          needed: maximumOutputCount,
+          needed: colors.length,
           remaining: quota.remaining,
         },
         { status: 429 },
@@ -94,7 +90,6 @@ export async function POST(req: NextRequest) {
       productId,
       buffer,
       extension: imageType.extension,
-      mode,
     });
 
     const requestId = randomUUID();
@@ -104,10 +99,9 @@ export async function POST(req: NextRequest) {
     );
     await createPendingImageGeneration(session.user.workspaceId, requestId, {
       productId,
-      workflowType:
-        mode === "main" ? "AMAZON_MAIN_IMAGE_VARIANTS" : "HERO_LOCK_RECOLOR",
-      kind: mode,
-      expectedVariantCount: maximumOutputCount,
+      workflowType: "HERO_LOCK_RECOLOR",
+      kind: "hero",
+      expectedVariantCount: colors.length,
       heroMasterImageId: master.id,
     });
 
@@ -117,24 +111,21 @@ export async function POST(req: NextRequest) {
       hex: color.hex,
     }));
 
-    after(() => {
-      const shared = {
+    after(() =>
+      runPendingHeroLock({
         workspaceId: session.user.workspaceId,
         isAdmin: session.isAdmin,
         requestId,
+        master,
         targetColors,
-      };
-      return mode === "main"
-        ? runPendingMainImage({ ...shared, source: master })
-        : runPendingHeroLock({ ...shared, master });
-    });
+      }),
+    );
 
     return NextResponse.json(
       {
         requestId,
-        expectedVariantCount: maximumOutputCount,
+        expectedVariantCount: colors.length,
         masterImageId: master.id,
-        mode,
       },
       { status: 202 },
     );

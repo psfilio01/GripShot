@@ -25,9 +25,7 @@ export async function GET(req: NextRequest) {
     const results = [];
 
     for (const job of jobs.slice(0, 50)) {
-      const variants = (await metadataStore.listVariantsForJob(job.id)).filter(
-        (variant) => !variant.temporarySource && variant.status !== "main_source",
-      );
+      const variants = await metadataStore.listVariantsForJob(job.id);
       results.push({
         jobId: job.id,
         productId: job.productId,
@@ -39,7 +37,6 @@ export async function GET(req: NextRequest) {
           status: v.status,
           filePath: v.filePath,
           heroLockId: v.heroLockId,
-          mainImageId: v.mainImageId,
           colorLineage: v.colorLineage,
           qualityScore: v.qualityScore,
         })),

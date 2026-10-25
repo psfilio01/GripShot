@@ -71,18 +71,10 @@ export interface StartImageJobResult {
 
 export interface GetJobResultImage {
   imageId: string;
-  status:
-    | "neutral"
-    | "favorite"
-    | "rejected"
-    | "variant"
-    | "hero_lock"
-    | "main_image"
-    | "main_source";
+  status: "neutral" | "favorite" | "rejected" | "variant" | "hero_lock";
   filePath: string;
   colorVariant?: string | null;
   heroLockId?: string;
-  mainImageId?: string;
   colorLineage?: {
     parentVariantId: string;
     targetColorName: string;
@@ -104,7 +96,7 @@ export interface GetJobResult {
   images: GetJobResultImage[];
 }
 
-export type FeedbackAction = "favorite" | "reject" | "hero_lock" | "main_image";
+export type FeedbackAction = "favorite" | "reject" | "hero_lock";
 
 export interface ProductColorDef {
   id: string;
