@@ -3,7 +3,10 @@ export { prepareHeroLockMaster } from "./services/feedbackHandler";
 export { executeHeroLock } from "./services/heroLockOrchestrator";
 export { executeMainImageLock } from "./services/mainImageOrchestrator";
 export type { MainImageResult } from "./services/mainImageOrchestrator";
-export { generateMainImageVariant } from "./services/mainImageGenerator";
+export {
+  generateMainImageVariant,
+  normalizeConnectedLightBackground,
+} from "./services/mainImageGenerator";
 export type {
   GeneratedMainImage,
 } from "./services/mainImageGenerator";
