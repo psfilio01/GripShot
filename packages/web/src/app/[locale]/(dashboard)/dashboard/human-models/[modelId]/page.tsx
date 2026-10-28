@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { ZoomableImage } from "@/components/zoomable-image";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { uploadImagesSequentially } from "@/lib/images/upload-client";
 
 interface ModelData {
   id: string;
@@ -63,22 +64,15 @@ export default function HumanModelDetailPage() {
   async function handleUpload(files: FileList | File[]) {
     setUploading(true);
     try {
-      const formData = new FormData();
-      for (const f of Array.from(files)) formData.append("files", f);
-      const res = await fetch(
+      await uploadImagesSequentially(
         `/api/human-models/${encodeURIComponent(modelId)}/images`,
-        { method: "POST", body: formData },
+        files,
       );
-      if (res.ok) {
-        toast("Photos uploaded", "success");
-        await loadImages();
-      } else {
-        const err = await res.json().catch(() => null);
-        toast(err?.error ?? "Upload failed", "error");
-      }
-    } catch {
-      toast("Upload failed", "error");
+      toast("Photos uploaded", "success");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Upload failed", "error");
     } finally {
+      await loadImages().catch(() => {});
       setUploading(false);
     }
   }
@@ -250,7 +244,7 @@ export default function HumanModelDetailPage() {
           <code className="text-[10px] px-1 rounded" style={{ background: "var(--gs-surface-inset)" }}>
             data/models/{modelId}/reference/
           </code>
-          . Use 1–3 consistent shots for best results.
+          . Use 1–3 consistent shots for best results. JPEG, PNG, or WebP — max 25 MB and 25 megapixels each.
         </p>
 
         <input

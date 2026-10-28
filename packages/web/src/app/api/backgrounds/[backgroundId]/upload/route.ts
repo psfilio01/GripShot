@@ -5,11 +5,9 @@ import { resolve, join } from "path";
 import { mkdir, writeFile } from "fs/promises";
 import { config } from "dotenv";
 import { usesGcsBlobStorage, putDataObject } from "@fashionmentum/workflow-core";
+import { getSingleImageUpload, imageUploadFileName, ImageUploadError, readImageUploadFormData, validateImageUpload } from "@/lib/images/upload-validation";
 
 config({ path: resolve(process.cwd(), "../../.env") });
-
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
@@ -30,34 +28,16 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   try {
-    const formData = await req.formData();
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return NextResponse.json(
-        { error: `Unsupported type: ${file.type}. Use JPEG, PNG, or WebP.` },
-        { status: 400 },
-      );
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File exceeds 10 MB limit." },
-        { status: 400 },
-      );
-    }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const formData = await readImageUploadFormData(req);
+    const file = getSingleImageUpload(formData, "file");
+    const { buffer, imageType } = await validateImageUpload(file);
+    const safeName = imageUploadFileName(file.name, imageType.extension);
 
     if (usesGcsBlobStorage()) {
       await putDataObject(
         `backgrounds/${backgroundId}/${safeName}`,
         buffer,
-        file.type,
+        imageType.contentType,
       );
     } else {
       const dir = join(getDataRoot(), "backgrounds", backgroundId);
@@ -70,6 +50,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       filename: safeName,
     });
   } catch (err) {
+    if (err instanceof ImageUploadError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error("Background upload failed:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

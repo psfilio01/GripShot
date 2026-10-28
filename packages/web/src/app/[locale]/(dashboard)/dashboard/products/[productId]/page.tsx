@@ -12,6 +12,7 @@ import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { ProductRecolorFields } from "@/components/product-recolor-fields";
+import { uploadImagesSequentially } from "@/lib/images/upload-client";
 
 const PRODUCT_CATEGORIES = [
   "handheld", "wearable", "furniture", "outdoor",
@@ -137,26 +138,13 @@ export default function ProductDetailPage() {
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      for (const file of Array.from(files)) {
-        formData.append("files", file);
-      }
-      formData.append("category", uploadCategory);
-
-      const res = await fetch(`/api/products/${productId}/images`, {
-        method: "POST",
-        body: formData,
+      await uploadImagesSequentially(`/api/products/${productId}/images`, files, {
+        category: uploadCategory,
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Upload failed");
-      }
-
-      await loadImages();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
+      await loadImages().catch(() => {});
       setUploading(false);
     }
   }
@@ -571,7 +559,7 @@ export default function ProductDetailPage() {
               : "Drop images here or click to browse"}
           </p>
           <p className="mt-1 text-xs" style={{ color: "var(--gs-text-faint)" }}>
-            JPEG, PNG, or WebP — max 10 MB each
+            JPEG, PNG, or WebP — max 25 MB and 25 megapixels each
           </p>
         </div>
 

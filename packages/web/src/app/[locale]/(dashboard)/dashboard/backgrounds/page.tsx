@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, useCallback, useRef } from "react"
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { useToast } from "@/components/toast";
+import { assertImageUploadSize } from "@/lib/images/upload-limits";
 
 interface BackgroundRow {
   id: string;
@@ -144,6 +145,7 @@ export default function BackgroundsPage() {
     if (!uploadName.trim() || !uploadFile) return;
     setUploading(true);
     try {
+      assertImageUploadSize(uploadFile);
       const createRes = await fetch("/api/backgrounds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -372,7 +374,7 @@ export default function BackgroundsPage() {
             Upload background
           </h2>
           <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
-            Upload your own background image (JPEG, PNG, or WebP, max 10 MB).
+            Upload your own background image (JPEG, PNG, or WebP, max 25 MB and 25 megapixels).
           </p>
           <div>
             <label

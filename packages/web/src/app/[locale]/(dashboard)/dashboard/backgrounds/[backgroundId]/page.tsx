@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { assertImageUploadSize } from "@/lib/images/upload-limits";
 
 interface BackgroundData {
   id: string;
@@ -123,6 +124,7 @@ export default function BackgroundDetailPage() {
   async function handleUploadNew(file: File) {
     setUploading(true);
     try {
+      assertImageUploadSize(file);
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch(`/api/backgrounds/${backgroundId}/upload`, {
@@ -137,8 +139,8 @@ export default function BackgroundDetailPage() {
         const err = await res.json().catch(() => null);
         toast(err?.error ?? "Upload failed", "error");
       }
-    } catch {
-      toast("Upload failed", "error");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Upload failed", "error");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -228,6 +230,10 @@ export default function BackgroundDetailPage() {
           />
         </label>
       </div>
+
+      <p className="text-xs" style={{ color: "var(--gs-text-faint)" }}>
+        JPEG, PNG, or WebP — max 25 MB and 25 megapixels.
+      </p>
 
       {/* Details card */}
       <div className="gs-card-static p-6 space-y-4">

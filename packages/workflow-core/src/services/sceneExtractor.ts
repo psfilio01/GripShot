@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getEnv } from "../config/env";
 import { readImageFileForProcessing } from "./imageFileRead";
+import { withGeminiImageParts } from "./geminiImageTransport";
 import type { ProductRecolorPolicy } from "../types/api";
 import { buildRecolorPolicyPrompt, hasRecolorCorrection } from "./recolorPolicy";
 import {
@@ -42,7 +43,6 @@ export async function extractSceneLock(
   const { buffer, ext: extRaw } = await readImageFileForProcessing(imagePath);
   const ext = extRaw.toLowerCase();
   const mimeType = MIME_BY_EXT[ext] ?? "image/jpeg";
-  const base64 = buffer.toString("base64");
 
   const textModel = "gemini-2.5-flash";
   const url = `${NANOBANANA_BASE_URL}/models/${textModel}:generateContent?key=${NANOBANANA_API_KEY}`;
@@ -60,28 +60,31 @@ export async function extractSceneLock(
   const { recolorRules: _recolorRulesSchema, ...originalProperties } = SCENE_LOCK_JSON_SCHEMA.properties;
   const responseSchema = hasPolicyContext ? SCENE_LOCK_JSON_SCHEMA : { ...SCENE_LOCK_JSON_SCHEMA, properties: originalProperties };
 
-  const response = await axios.post(
+  const generationConfig = { responseMimeType: "application/json", responseSchema };
+  const response = await withGeminiImageParts([{ buffer, mimeType }], {
+    apiKey: NANOBANANA_API_KEY,
+    baseUrl: NANOBANANA_BASE_URL,
+    signal,
+    requestOverheadBytes: Buffer.byteLength(JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig })),
+  }, (imageParts) => axios.post(
     url,
     {
       contents: [
         {
           parts: [
             { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64 } },
+            ...imageParts,
           ],
         },
       ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema,
-      },
+      generationConfig,
     },
     {
       headers: { "Content-Type": "application/json" },
       timeout: 60000,
       signal,
     },
-  );
+  ));
 
   const textPart = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!textPart) {

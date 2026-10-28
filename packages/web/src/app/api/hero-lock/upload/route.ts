@@ -9,9 +9,7 @@ import {
 import { getProduct } from "@/lib/db/products";
 import { runPendingHeroLock } from "@/lib/hero-lock/run-pending";
 import { snapshotProductRecolorSettings } from "@/lib/hero-lock/product-settings";
-import { detectUploadedImageType } from "@/lib/images/uploaded-image-type";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+import { getSingleImageUpload, ImageUploadError, readImageUploadFormData, validateImageUpload } from "@/lib/images/upload-validation";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession();
@@ -20,27 +18,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const formData = await req.formData();
+    const formData = await readImageUploadFormData(req);
     const productIdEntry = formData.get("productId");
-    const imageEntry = formData.get("image");
+    const imageEntry = getSingleImageUpload(formData, "image");
     const productId =
       typeof productIdEntry === "string" ? productIdEntry.trim() : "";
 
     if (!productId) {
       return NextResponse.json(
         { error: "Select a product." },
-        { status: 400 },
-      );
-    }
-    if (!(imageEntry instanceof File) || imageEntry.size === 0) {
-      return NextResponse.json(
-        { error: "Select an image file." },
-        { status: 400 },
-      );
-    }
-    if (imageEntry.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "The image exceeds the 10 MB limit." },
         { status: 400 },
       );
     }
@@ -75,14 +61,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const buffer = Buffer.from(await imageEntry.arrayBuffer());
-    const imageType = detectUploadedImageType(buffer);
-    if (!imageType) {
-      return NextResponse.json(
-        { error: "Unsupported image. Use a valid JPEG, PNG, or WebP file." },
-        { status: 400 },
-      );
-    }
+    const { buffer, imageType } = await validateImageUpload(imageEntry);
 
     const { registerExternalHeroMaster } = await import(
       "@fashionmentum/workflow-core"
@@ -128,6 +107,9 @@ export async function POST(req: NextRequest) {
       { status: 202 },
     );
   } catch (error) {
+    if (error instanceof ImageUploadError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("External Hero upload failed:", error);
     return NextResponse.json(
       {

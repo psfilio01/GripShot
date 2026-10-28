@@ -316,7 +316,7 @@
     "externalHeroNoColors": "This product has no colors configured.",
     "externalHeroAddColors": "Add colors",
     "externalHeroImage": "Hero image",
-    "externalHeroFileHint": "JPEG, PNG or WebP, up to 10 MB.",
+    "externalHeroFileHint": "JPEG, PNG or WebP, up to 25 MB and 25 megapixels.",
     "externalHeroPreview": "Preview of the external Hero image",
     "externalHeroCreditHint": "Up to {count} credits will be used; matching original colors are skipped and only successful variants are charged.",
     "externalHeroCancel": "Cancel",

@@ -9,7 +9,7 @@ import { getEnv } from "../config/env";
 import type { MainImageMetrics } from "../domain/imageVariant";
 import { GenerationCancelledError, throwIfGenerationCancelled, type GenerationControl } from "./generationCancellation";
 
-const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
+const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 const MAX_QUEUE = 8;
 const WORKER_TIMEOUT_MS = 8 * 60 * 1000;
 const PNG_HEADER = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -88,7 +88,7 @@ export async function runMainImageWorker(
   preserveShadow: boolean,
   control?: GenerationControl,
 ): Promise<{ buffer: Buffer; metrics: MainImageMetrics; sourceSha256: string }> {
-  if (!source.length || source.length > MAX_SOURCE_BYTES) throw new Error("Main images must be non-empty and no larger than 10 MB.");
+  if (!source.length || source.length > MAX_SOURCE_BYTES) throw new Error("Main images must be non-empty and no larger than 25 MB.");
   const release = await acquireWorker(control);
   let temporaryDirectory: string | undefined;
   try {
