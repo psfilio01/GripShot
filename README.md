@@ -176,7 +176,7 @@ Create **Models** in the dashboard with a display name and optional notes. Uploa
 
 ### Verbindliche Farbregeln und weiße Mainbilder
 
-Unter **Produkt → Farbregeln für Hero** lassen sich alle sichtbaren Produktteile an die Zielfarbe binden sowie konkrete Ausnahmen und Hinweise hinterlegen. Bei einem einfarbigen Ball gilt das auch für den Ventileinsatz; natürliche Schatten im Luftloch bleiben erhalten. Hinweise je Produktfarbe werden ebenfalls berücksichtigt. Ohne Regeln bleibt die bisherige Hero-Prompt-Pipeline unverändert. Jede Farbe wird weiterhin vom selben Hero abgeleitet, nicht von der vorherigen Farbvariante.
+Unter **Produkt → Regeln für Farbvarianten** lassen sich alle sichtbaren Produktteile an die Zielfarbe binden sowie konkrete Ausnahmen und Hinweise hinterlegen. Bei einem einfarbigen Ball gilt das auch für den Ventileinsatz; natürliche Schatten im Luftloch bleiben erhalten. Hinweise je Produktfarbe werden ebenfalls berücksichtigt. Ohne Regeln bleibt die bisherige Hero-Prompt-Pipeline unverändert. Jede Farbe wird weiterhin vom selben Hero abgeleitet, nicht von der vorherigen Farbvariante.
 
 Nach der Farbgenerierung kann jedes passende Ergebnis separat über **Mainbild · Hintergrund weiß** aufbereitet werden. Die lokale CPU-Freistellung erstellt eine unabhängige PNG-Kopie ohne zusätzliche Gemini-Anfrage oder Bild-Credits. **Main → Original / Main vergleichen** öffnet die Sichtprüfung. Produkt- und Bodenschatten werden getrennt behandelt. Freier Hintergrund wird auf RGB 255/255/255 gesetzt; erkannte undurchsichtige Produktpixel bleiben unverändert. Die numerische Prüfung ersetzt nicht die Kontrolle der Produktkontur und ist keine Amazon-Zertifizierung.
 

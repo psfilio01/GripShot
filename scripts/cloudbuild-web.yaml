@@ -31,6 +31,18 @@ steps:
       - -t
       - ${_IMAGE}
       - .
+  # Verify the final image as its non-root runtime user (not only the build stage).
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - run
+      - --rm
+      - --entrypoint
+      - /opt/main-image/.venv/bin/python
+      - ${_IMAGE}
+      - /opt/main-image/worker/worker.py
+      - --self-test
+      - --model
+      - /opt/main-image/models/birefnet.onnx
 images:
   - ${_IMAGE}
 timeout: 1800s

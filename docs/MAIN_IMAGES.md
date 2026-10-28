@@ -2,7 +2,7 @@
 
 ## Bedienung
 
-1. Produkt öffnen, **Farbregeln für Hero** speichern. Für einen einfarbigen Ball die Option aktivieren, dass alle sichtbaren Bestandteile der Zielfarbe folgen.
+1. Produkt öffnen, **Regeln für Farbvarianten** speichern. Für einen einfarbigen Ball die Option aktivieren, dass alle sichtbaren Bestandteile der Zielfarbe folgen.
 2. Ergänzender Beispielhinweis: „Ballkörper, Ventileinsatz und Ventilrand haben dieselbe jeweilige Zielfarbe. Kein schwarzer Kunststoffeinsatz. Öffnung, Tiefe, Logo, Nähte und Oberflächenstruktur beibehalten; natürliche Schatten in der Öffnung erhalten.“
 3. Bei Bedarf pro Farbe eine Ausnahme in den Farbnotizen ergänzen. Diese gelten für die betreffende Variante. Allgemeine Bildanweisungen werden in der vorhandenen Szenenanalyse auf relevante Material-/Farbfakten beschränkt; Licht- oder Hintergrundänderungen gehören nicht in den Recolor-Schritt.
 4. Hero wählen oder hochladen und Farben generieren. Jede Variante verwendet denselben Hero. Mit Korrekturregeln wird auch die erkannte Originalfarbe verarbeitet, damit z. B. ein weißer Ball mit falschem schwarzem Ventil korrigiert werden kann. Die normale Gemini-Abrechnung bleibt bestehen.
