@@ -29,7 +29,7 @@ MODEL_URL = "https://github.com/danielgatis/rembg/releases/download/v0.0.0/BiRef
 # SHA256-hashed for the cache key and output provenance.
 MODEL_MD5 = "4fab47adc4ff364be1713e97b7e66334"
 MODEL_SHA256 = "5600024376f572a557870a5eb0afb1e5961636bef4e1e22132025467d0f03333"
-MAX_BYTES = 10 * 1024 * 1024
+MAX_BYTES = 25 * 1024 * 1024
 MAX_PIXELS = 25_000_000
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 
@@ -81,7 +81,7 @@ def download_model(directory: Path) -> Path:
 
 def load_source(path: Path) -> tuple[Image.Image, str]:
     if path.stat().st_size > MAX_BYTES:
-        raise UnsupportedImage("Image exceeds the 10 MB limit.")
+        raise UnsupportedImage("Image exceeds the 25 MB limit.")
     with Image.open(path) as opened:
         if opened.width * opened.height > MAX_PIXELS:
             raise UnsupportedImage("Image exceeds the 25 megapixel limit.")

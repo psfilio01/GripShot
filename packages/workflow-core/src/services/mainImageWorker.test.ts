@@ -61,8 +61,15 @@ describe("Main image worker orchestration", () => {
     const firstArgs = mocks.spawn.mock.calls[0][1] as string[];
     expect(await fs.pathExists(firstArgs[firstArgs.indexOf("--input") + 1])).toBe(false);
   });
-  it("rejects oversized inputs before launching inference", async () => {
-    await expect(runMainImageWorker(Buffer.alloc(10 * 1024 * 1024 + 1), true)).rejects.toThrow("10 MB");
+  it("accepts the full 25 MiB limit without changing the source bytes", async () => {
+    const source = Buffer.alloc(25 * 1024 * 1024, 0x61);
+    const result = await runMainImageWorker(source, true);
+    expect(result.sourceSha256).toBe(hash(source));
+    expect(mocks.spawn).toHaveBeenCalledTimes(1);
+  });
+  it("rejects empty and oversized inputs before launching inference", async () => {
+    await expect(runMainImageWorker(Buffer.alloc(0), true)).rejects.toThrow("25 MB");
+    await expect(runMainImageWorker(Buffer.alloc(25 * 1024 * 1024 + 1), true)).rejects.toThrow("25 MB");
     expect(mocks.spawn).not.toHaveBeenCalled();
   });
   it("kills active inference when cancelled and releases the queue", async () => {

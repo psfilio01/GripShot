@@ -2,6 +2,7 @@ import axios from "axios";
 import { createHash } from "node:crypto";
 import { getEnv } from "../config/env";
 import { readImageFileForProcessing } from "./imageFileRead";
+import { withGeminiImageParts } from "./geminiImageTransport";
 import type { SceneLock } from "../domain/sceneLock";
 import type { GeneratedImage } from "./imageGenerator";
 import type { ProductRecolorPolicy } from "../types/api";
@@ -56,7 +57,6 @@ export async function generateRecolorVariant(
   const { buffer, ext: extRaw } = await readImageFileForProcessing(request.masterImagePath);
   const ext = extRaw.toLowerCase();
   const mimeType = MIME_BY_EXT[ext] ?? "image/jpeg";
-  const base64 = buffer.toString("base64");
 
   const prompt = buildRecolorPrompt(request);
   const url = `${NANOBANANA_BASE_URL}/models/${NANOBANANA_MODEL}:generateContent?key=${NANOBANANA_API_KEY}`;
@@ -65,28 +65,34 @@ export async function generateRecolorVariant(
     ? { aspectRatio: request.aspectRatio }
     : undefined;
 
-  const response = await axios.post(
+  const generationConfig = {
+    responseModalities: ["TEXT", "IMAGE"],
+    ...(imageConfig && { imageConfig }),
+  };
+  const response = await withGeminiImageParts([{ buffer, mimeType }], {
+    apiKey: NANOBANANA_API_KEY,
+    baseUrl: NANOBANANA_BASE_URL,
+    signal: request.signal,
+    requestOverheadBytes: Buffer.byteLength(JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig })),
+  }, (imageParts) => axios.post(
     url,
     {
       contents: [
         {
           parts: [
             { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64 } },
+            ...imageParts,
           ],
         },
       ],
-      generationConfig: {
-        responseModalities: ["TEXT", "IMAGE"],
-        ...(imageConfig && { imageConfig }),
-      },
+      generationConfig,
     },
     {
       headers: { "Content-Type": "application/json" },
       timeout: 240000,
       signal: request.signal,
     },
-  );
+  ));
 
   const outParts = response.data?.candidates?.[0]?.content?.parts ?? [];
   console.log(

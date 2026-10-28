@@ -43,7 +43,7 @@ vendor/main-image/.venv/bin/python scripts/main-image/worker.py \
 
 Use `--no-shadow` for a complete white cutout, or `--mask-preview mask.png` to
 inspect the inferred coverage. Contact-shadow preservation is the default.
-`--threads` defaults to 2. The worker rejects source files over 10 MiB or 25 MP
+`--threads` defaults to 2. The worker rejects source files over 25 MiB or 25 MP
 before full decoding. It applies EXIF orientation and converts embedded color
 profiles to sRGB before processing; preservation metrics refer to those decoded,
 normalized source pixels.

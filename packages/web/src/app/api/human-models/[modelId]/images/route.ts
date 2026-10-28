@@ -5,6 +5,7 @@ import { config } from "dotenv";
 import { resolve, join, extname } from "path";
 import { mkdir, readdir, stat, writeFile, unlink } from "fs/promises";
 import { existsSync } from "fs";
+import { getSingleImageUpload, imageUploadFileName, ImageUploadError, readImageUploadFormData, validateImageUpload } from "@/lib/images/upload-validation";
 import {
   usesGcsBlobStorage,
   putDataObject,
@@ -15,9 +16,6 @@ import {
 } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
-
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
@@ -107,52 +105,23 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   try {
-    const formData = await req.formData();
-    const files = formData.getAll("files");
-    if (files.length === 0) {
-      return NextResponse.json(
-        { error: "No files provided" },
-        { status: 400 },
-      );
+    const formData = await readImageUploadFormData(req);
+    const entry = getSingleImageUpload(formData, "files");
+    const { buffer, imageType } = await validateImageUpload(entry);
+    const safeName = imageUploadFileName(entry.name, imageType.extension);
+    if (usesGcsBlobStorage()) {
+      await putDataObject(`${gcsRefPrefix(modelId)}${safeName}`, buffer, imageType.contentType);
+    } else {
+      const dir = refDirFor(modelId);
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, safeName), buffer);
     }
-
-    const uploaded: string[] = [];
-
-    for (const entry of files) {
-      if (!(entry instanceof File)) continue;
-      if (!ALLOWED_TYPES.has(entry.type)) {
-        return NextResponse.json(
-          {
-            error: `Unsupported file type: ${entry.type}. Use JPEG, PNG, or WebP.`,
-          },
-          { status: 400 },
-        );
-      }
-      if (entry.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          { error: `File ${entry.name} exceeds 10 MB limit.` },
-          { status: 400 },
-        );
-      }
-      const buffer = Buffer.from(await entry.arrayBuffer());
-      const safeName = entry.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-
-      if (usesGcsBlobStorage()) {
-        await putDataObject(
-          `${gcsRefPrefix(modelId)}${safeName}`,
-          buffer,
-          entry.type,
-        );
-      } else {
-        const dir = refDirFor(modelId);
-        await mkdir(dir, { recursive: true });
-        await writeFile(join(dir, safeName), buffer);
-      }
-      uploaded.push(safeName);
-    }
-
+    const uploaded = [safeName];
     return NextResponse.json({ uploaded, count: uploaded.length });
   } catch (err) {
+    if (err instanceof ImageUploadError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error("Model reference upload failed:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Upload failed" },

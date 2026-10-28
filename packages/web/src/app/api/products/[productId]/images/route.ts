@@ -18,11 +18,10 @@ import {
   isValidCategory,
   type ImageCategory,
 } from "@/lib/images/categories";
+import { getSingleImageUpload, imageUploadFileName, ImageUploadError, readImageUploadFormData, validateImageUpload } from "@/lib/images/upload-validation";
 
 config({ path: resolve(process.cwd(), "../../.env") });
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const METADATA_FILE = ".metadata.json";
 
 function getDataRoot(): string {
@@ -167,62 +166,33 @@ export async function POST(
   }
 
   try {
-    const formData = await req.formData();
-    const files = formData.getAll("files");
+    const formData = await readImageUploadFormData(req);
+    const entry = getSingleImageUpload(formData, "files");
     const categoryRaw = formData.get("category") as string | null;
     const category: ImageCategory =
       categoryRaw && isValidCategory(categoryRaw)
         ? categoryRaw
         : DEFAULT_CATEGORY;
 
-    if (files.length === 0) {
-      return NextResponse.json(
-        { error: "No files provided" },
-        { status: 400 },
-      );
-    }
-
+    const { buffer, imageType } = await validateImageUpload(entry);
+    const safeName = imageUploadFileName(entry.name, imageType.extension);
     const metadata = await readMetadata(productId);
-    const uploaded: string[] = [];
-
-    for (const entry of files) {
-      if (!(entry instanceof File)) continue;
-
-      if (!ALLOWED_TYPES.has(entry.type)) {
-        return NextResponse.json(
-          {
-            error: `Unsupported file type: ${entry.type}. Use JPEG, PNG, or WebP.`,
-          },
-          { status: 400 },
-        );
-      }
-
-      if (entry.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          { error: `File ${entry.name} exceeds 10 MB limit.` },
-          { status: 400 },
-        );
-      }
-
-      const buffer = Buffer.from(await entry.arrayBuffer());
-      const safeName = entry.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-
-      if (usesGcsBlobStorage()) {
-        const key = `${gcsRefPrefix(productId)}${safeName}`;
-        await putDataObject(key, buffer, entry.type);
-      } else {
-        const refDir = refDirFor(productId);
-        await mkdir(refDir, { recursive: true });
-        await writeFile(join(refDir, safeName), buffer);
-      }
-
-      metadata[safeName] = { category };
-      uploaded.push(safeName);
+    if (usesGcsBlobStorage()) {
+      const key = `${gcsRefPrefix(productId)}${safeName}`;
+      await putDataObject(key, buffer, imageType.contentType);
+    } else {
+      const refDir = refDirFor(productId);
+      await mkdir(refDir, { recursive: true });
+      await writeFile(join(refDir, safeName), buffer);
     }
-
+    const uploaded = [safeName];
+    metadata[safeName] = { category };
     await writeMetadata(productId, metadata);
     return NextResponse.json({ uploaded, count: uploaded.length, category });
   } catch (err) {
+    if (err instanceof ImageUploadError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     console.error("Image upload failed:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Upload failed" },

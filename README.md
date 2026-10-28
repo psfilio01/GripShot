@@ -186,7 +186,7 @@ When an Amazon seller finds a generated image they love, they typically need the
 
 1. **Configure product colors** — On the product detail page, define colors with name, hex code, optional notes, and SKU.
 2. **Activate Hero** — In the Results dashboard, click **Hero** on any neutral image. The image becomes the Hero master; variant generation **runs in the background** (same pattern as standard image generation). A **placeholder card** appears until variants are ready; you can keep working elsewhere.
-3. **Or upload an external Hero** — Click **Upload Hero image** in Results, select an existing product, and upload a JPEG, PNG, or WebP file (up to 10 MB). The upload is registered as the Hero master and enters the same background pipeline.
+3. **Or upload an external Hero** — Click **Upload Hero image** in Results, select an existing product, and upload a JPEG, PNG, or WebP file (up to 25 MB / 25 megapixels). The upload is registered as the Hero master and enters the same background pipeline.
 4. **Automatic recolor generation** — The system extracts a structured "SceneLock" (image DNA) from the master, then generates same-scene variants for each configured color — keeping pose, composition, lighting, background, and styling identical. Only the product color changes.
 5. **Lineage tracking** — Every variant stores its parent master ID, target color, generation method, and status. The dashboard shows clear lineage: which image is the master and which are derived variants.
 
@@ -433,7 +433,8 @@ In development, logs are colorized with timestamps and scoped labels. In product
 
 ## Product reference images
 
-- Upload JPEG, PNG, or WebP reference images (max 10 MB each) via drag-and-drop or file picker
+- Upload JPEG, PNG, or WebP reference images (max 25 MB / 25 megapixels each) via drag-and-drop or file picker
+- Multiple selected images upload one at a time; originals are not recompressed. Large Gemini reference payloads use the Files API. See [upload limits and transport](docs/IMAGE_UPLOADS.md).
 - **Image categories**: primary, logo, packaging, angle, detail, other — assignable during upload or inline on each image
 - Category metadata stored in `.metadata.json` alongside images (backward compatible with uncategorized images)
 - Images are stored in `data/products/<productId>/reference/` — directly used by the workflow-core engine

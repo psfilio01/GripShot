@@ -13,6 +13,7 @@ Eine Änderung von Produkt-Referenzbildern ersetzt kein bereits ausgewähltes He
 
 ## Was die lokale Aufbereitung prüft
 
+- Maximal 25 MiB pro Quelldatei und 25 Megapixel. Diese Grenze gilt unabhängig von der komprimierten Dateigröße; die PNG-Ausgabe bleibt in Originalauflösung. Details zu Uploads und Gemini-Transport: [Bild-Uploads](IMAGE_UPLOADS.md).
 - Fest gepinntes BiRefNet-lite-Modell, lokales ONNX CPU-Inferencing. Kein Foto wird dafür an einen Freistell-API-Anbieter übertragen.
 - Unterstützter Ausgangspunkt: ein einzelnes, vollständig sichtbares, opakes Produkt auf hellem, ruhigem Studiohintergrund. Transparente Produkte, durchscheinende Materialien, komplexe Szenen und unsichere Masken sind nicht zuverlässig unterstützt.
 - Produktmaske plus schmaler weicher Rand; gemessener Kontaktschatten wird separat auf Weiß übertragen. Es wird kein neues Produkt oder künstlicher Schlagschatten generiert.

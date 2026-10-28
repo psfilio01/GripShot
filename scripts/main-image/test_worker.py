@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 from PIL import Image
@@ -91,6 +92,40 @@ class CompositorTests(unittest.TestCase):
             path.write_bytes(b"not-the-model")
             with self.assertRaisesRegex(ValueError, "checksum"):
                 worker.verify_model(path)
+
+    def test_source_above_old_limit_keeps_full_resolution_and_pixels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "large.png"
+            # Uncompressed 12 MiB PNG: no inference, external service or fixture download.
+            source = Image.new("RGB", (2048, 2048), (123, 45, 67))
+            source.save(path, compress_level=0)
+            self.assertGreater(path.stat().st_size, 10 * 1024 * 1024)
+            loaded, digest = worker.load_source(path)
+            self.assertEqual(loaded.size, source.size)
+            self.assertEqual(loaded.tobytes(), source.tobytes())
+            self.assertEqual(digest, worker.file_digest(path))
+
+    def test_25_mib_boundary_and_pixel_guard_before_decoding(self):
+        self.assertEqual(worker.MAX_BYTES, 25 * 1024 * 1024)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "source.png"
+            Image.new("RGB", (64, 64), "white").save(path)
+            with patch.object(Path, "stat", return_value=MagicMock(st_size=worker.MAX_BYTES)):
+                self.assertEqual(worker.load_source(path)[0].size, (64, 64))
+            with path.open("ab") as stream:
+                stream.truncate(worker.MAX_BYTES + 1)
+            with patch.object(worker.Image, "open") as image_open:
+                with self.assertRaisesRegex(worker.UnsupportedImage, "25 MB"):
+                    worker.load_source(path)
+                image_open.assert_not_called()
+            # A compact file can still expand to an excessive decoded image.
+            path.write_bytes(b"small-header")
+            with patch.object(worker.Image, "open") as image_open:
+                opened = image_open.return_value.__enter__.return_value
+                opened.width, opened.height = 5001, 5000
+                with self.assertRaisesRegex(worker.UnsupportedImage, "25 megapixel"):
+                    worker.load_source(path)
+                opened.load.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ import { ResultsSkeleton } from "@/components/skeleton";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { GenerationPlaceholderCard } from "@/components/generation-placeholder-card";
 import { MainImageDialog, type MainImageInfo } from "@/components/main-image-dialog";
+import { assertImageUploadSize } from "@/lib/images/upload-limits";
 
 interface PendingImageGeneration {
   requestId: string;
@@ -320,6 +321,7 @@ export default function ResultsPage() {
   async function uploadExternalHero(productId: string, image: File) {
     setExternalHeroSubmitting(true);
     try {
+      assertImageUploadSize(image);
       const body = new FormData();
       body.set("productId", productId);
       body.set("image", image);
@@ -341,8 +343,8 @@ export default function ResultsPage() {
       );
       setExternalHeroOpen(false);
       loadJobs();
-    } catch {
-      toast(tResults("externalHeroError"), "error");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : tResults("externalHeroError"), "error");
     } finally {
       setExternalHeroSubmitting(false);
     }
