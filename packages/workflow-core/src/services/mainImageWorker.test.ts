@@ -28,8 +28,9 @@ describe("Main image worker orchestration", () => {
       resolveSpawn = () => {
         void (async () => {
           const source = await fs.readFile(index("--input"));
+          const model = await fs.readFile(index("--model"));
           await fs.writeFile(index("--output"), png);
-          await fs.writeJson(index("--metrics"), { version: "v1", model: "test-model", modelSha256: hash("model-v1"), sourceSha256: hash(source), width: 64, height: 64, requiresReview: true, checks: { pureWhiteBackground: true, opaqueProductUnchanged: true }, warnings: [] });
+          await fs.writeJson(index("--metrics"), { version: "v1", model: "test-model", modelSha256: hash(model), sourceSha256: hash(source), width: 64, height: 64, requiresReview: true, checks: { pureWhiteBackground: true, opaqueProductUnchanged: true }, warnings: [] });
           child.emit("close", 0);
         })();
       };
@@ -51,6 +52,11 @@ describe("Main image worker orchestration", () => {
     await fs.writeFile(join(directory, "worker.py"), "worker-v2-changed");
     await runMainImageWorker(source, true);
     expect(mocks.spawn).toHaveBeenCalledTimes(3);
+    await fs.writeFile(join(directory, "model.onnx"), "model-v2-changed");
+    await runMainImageWorker(source, true);
+    expect(mocks.spawn).toHaveBeenCalledTimes(4);
+    await runMainImageWorker(Buffer.from("changed-source"), true);
+    expect(mocks.spawn).toHaveBeenCalledTimes(5);
     // Unique temporary sources are deleted even when the derived cache is retained.
     const firstArgs = mocks.spawn.mock.calls[0][1] as string[];
     expect(await fs.pathExists(firstArgs[firstArgs.indexOf("--input") + 1])).toBe(false);
