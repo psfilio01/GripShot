@@ -93,7 +93,7 @@ ENV REALESRGAN_MODEL_DIR=/app/bin/realesrgan/models
 RUN apt-get update && apt-get install -y --no-install-recommends libvulkan1 libgomp1 python3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=mainimage /opt/main-image /opt/main-image
+COPY --from=mainimage --chown=nextjs:nodejs /opt/main-image /opt/main-image
 ENV MAIN_IMAGE_PYTHON=/opt/main-image/.venv/bin/python \
     MAIN_IMAGE_WORKER_PATH=/opt/main-image/worker/worker.py \
     MAIN_IMAGE_MODEL_PATH=/opt/main-image/models/birefnet.onnx
