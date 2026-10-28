@@ -75,8 +75,17 @@ describe("large-image transport in every Gemini pipeline", () => {
     expect(result.provenance?.sourceSha256).toHaveLength(64);
     expect(generatedRequests[0].contents[0].parts[0].text).toBe(buildRecolorPrompt(recolor));
     expect(generatedRequests[0].contents[0].parts[1]).toHaveProperty("file_data");
-    expect(generatedRequests[0].generationConfig).toEqual({ responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: "1:1" } });
+    expect(generatedRequests[0].generationConfig).toEqual({ responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: "1:1", imageSize: "4K" } });
     expect(axios.delete).toHaveBeenCalledOnce();
+  });
+
+  it("requests native 4K Hero output and otherwise retains the master ratio", async () => {
+    const result = await generateRecolorVariant({ ...recolor, aspectRatio: undefined });
+    expect(result.buffer.toString()).toBe("generated");
+    expect(generatedRequests[0].generationConfig).toEqual({
+      responseModalities: ["TEXT", "IMAGE"],
+      imageConfig: { imageSize: "4K" },
+    });
   });
 
   it("bounds aggregate product/background/model references while retaining their order", async () => {

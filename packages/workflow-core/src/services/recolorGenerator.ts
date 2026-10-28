@@ -61,13 +61,18 @@ export async function generateRecolorVariant(
   const prompt = buildRecolorPrompt(request);
   const url = `${NANOBANANA_BASE_URL}/models/${NANOBANANA_MODEL}:generateContent?key=${NANOBANANA_API_KEY}`;
 
-  const imageConfig = request.aspectRatio
-    ? { aspectRatio: request.aspectRatio }
-    : undefined;
+  // Hero variants are selling assets, not previews. Nano Banana defaults to
+  // 1K (928×1152 at 4:5); explicitly request its native 4K output instead
+  // of trying to upscale the 1K result afterward. If an aspect ratio is not
+  // supplied, Gemini keeps the reference image's native ratio.
+  const imageConfig = {
+    ...(request.aspectRatio ? { aspectRatio: request.aspectRatio } : {}),
+    imageSize: "4K",
+  };
 
   const generationConfig = {
     responseModalities: ["TEXT", "IMAGE"],
-    ...(imageConfig && { imageConfig }),
+    imageConfig,
   };
   const response = await withGeminiImageParts([{ buffer, mimeType }], {
     apiKey: NANOBANANA_API_KEY,
