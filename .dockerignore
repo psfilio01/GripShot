@@ -10,3 +10,9 @@ test-results
 .pnpm-store
 .git
 Archive.zip
+vendor
+__pycache__
+**/.env.deploy
+**/.env
+**/.env.local
+**/*firebase-adminsdk*.json

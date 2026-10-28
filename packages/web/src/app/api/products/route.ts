@@ -9,6 +9,8 @@ const CreateProductSchema = z.object({
   name: z.string().min(1).max(200),
   category: z.string().max(200).default(""),
   description: z.string().max(2000).default(""),
+  recolorAllComponents: z.boolean().optional(),
+  recolorInstructions: z.string().max(2000).optional(),
 });
 
 export async function POST(req: NextRequest) {

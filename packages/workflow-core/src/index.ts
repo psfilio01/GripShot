@@ -3,6 +3,8 @@ export { prepareHeroLockMaster } from "./services/feedbackHandler";
 export { executeHeroLock } from "./services/heroLockOrchestrator";
 export { registerExternalHeroMaster } from "./services/externalHeroMaster";
 export { deleteHeroMaster } from "./services/heroMasterDeletion";
+export { createMainImage, deleteMainImage } from "./services/mainImageService";
+export type { MainImageMetadata, MainImageMetrics, ImageVariant } from "./domain/imageVariant";
 export {
   GenerationCancelledError,
   isGenerationCancelledError,
@@ -33,8 +35,10 @@ export type { SceneLock } from "./domain/sceneLock";
 export type { QualityScore, QualityScorerInput } from "./domain/qualityScore";
 export type { CompositionTemplate } from "./data/compositionTemplates";
 export type { ProductCategory, CategoryProfile, CategoryProfileJson, LoadedCategoryProfile } from "./domain/product";
-export type { HeroLockResult } from "./services/heroLockOrchestrator";
-export type { ProductColorDef, StartImageJobInput, WorkflowType } from "./types/api";
+export type { HeroLockResult, HeroLockOptions } from "./services/heroLockOrchestrator";
+export type { ProductColorDef, ProductRecolorPolicy, StartImageJobInput, WorkflowType } from "./types/api";
+export { buildRecolorPrompt } from "./services/recolorGenerator";
+export { buildRecolorPolicyPrompt } from "./services/recolorPolicy";
 export { resolveChosenModelId } from "./services/modelLoader";
 export { formatGoogleGenerativeLanguageApiError } from "./utils/googleGenerativeLanguageError";
 export { planWorkflow, replanStep } from "./services/workflowPlanner";

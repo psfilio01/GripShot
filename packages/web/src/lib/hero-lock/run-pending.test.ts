@@ -72,6 +72,14 @@ describe("runPendingHeroLock", () => {
     expect(deletePending).toHaveBeenCalled();
   });
 
+  it("passes the captured product color rules and notes to the core", async () => {
+    executeHeroLock.mockResolvedValue({ generatedVariants: [{ status: "completed" }] });
+    const recolorPolicy = { allComponentsFollowTargetColor: true, instructions: "Valve follows target color." };
+    const targetColors = [{ id: "white", name: "White", hex: "#FFFFFF", notes: "No black insert." }];
+    await runPendingHeroLock({ ...input, targetColors, recolorPolicy });
+    expect(executeHeroLock).toHaveBeenCalledWith(input.master, targetColors, expect.objectContaining({ recolorPolicy }));
+  });
+
   it("marks the placeholder failed when no variant succeeds", async () => {
     executeHeroLock.mockResolvedValue({
       generatedVariants: [{ status: "failed" }],

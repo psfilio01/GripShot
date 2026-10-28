@@ -11,6 +11,7 @@ import { workflowLabel } from "@/lib/results/workflow-labels";
 import { useToast } from "@/components/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
+import { ProductRecolorFields } from "@/components/product-recolor-fields";
 
 const PRODUCT_CATEGORIES = [
   "handheld", "wearable", "furniture", "outdoor",
@@ -40,6 +41,8 @@ interface ProductData {
   brandId: string;
   userPromptBlockRaw?: string;
   userPromptBlockCompiled?: string;
+  recolorAllComponents?: boolean;
+  recolorInstructions?: string;
 }
 
 interface ImageData {
@@ -656,6 +659,15 @@ export default function ProductDetailPage() {
       {/* Product Colors */}
       <ProductColorsSection productId={productId} />
 
+      <RecolorRulesSection
+        productId={productId}
+        initialAllComponents={product.recolorAllComponents ?? false}
+        initialInstructions={product.recolorInstructions ?? ""}
+        onSaved={(recolorAllComponents, recolorInstructions) =>
+          setProduct((current) => current ? { ...current, recolorAllComponents, recolorInstructions } : current)
+        }
+      />
+
       {/* Custom Image Instructions */}
       <UserPromptBlockSection
         productId={productId}
@@ -922,7 +934,7 @@ function ProductColorsSection({ productId }: { productId: string }) {
                 }}
               />
               {editId === c.id ? (
-                <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 flex flex-wrap items-center gap-2">
                   <input
                     type="text"
                     value={editData.name}
@@ -935,6 +947,15 @@ function ProductColorsSection({ productId }: { productId: string }) {
                     onChange={(e) => setEditData((d) => ({ ...d, hex: e.target.value }))}
                     className="gs-input px-2 py-1 text-sm w-24 font-mono"
                     maxLength={7}
+                  />
+                  <input
+                    type="text"
+                    aria-label="Color notes"
+                    value={editData.notes}
+                    onChange={(event) => setEditData((current) => ({ ...current, notes: event.target.value }))}
+                    placeholder="Color/component instructions"
+                    maxLength={500}
+                    className="gs-input px-2 py-1 text-sm min-w-48 flex-1"
                   />
                   <button onClick={saveEdit} className="text-xs font-medium" style={{ color: "var(--gs-accent-text)" }}>
                     Save
@@ -997,6 +1018,69 @@ function ProductColorsSection({ productId }: { productId: string }) {
           </p>
         </div>
       )}
+    </section>
+  );
+}
+
+function RecolorRulesSection({
+  productId,
+  initialAllComponents,
+  initialInstructions,
+  onSaved,
+}: {
+  productId: string;
+  initialAllComponents: boolean;
+  initialInstructions: string;
+  onSaved: (allComponents: boolean, instructions: string) => void;
+}) {
+  const t = useTranslations("Generate");
+  const { toast } = useToast();
+  const [allComponents, setAllComponents] = useState(initialAllComponents);
+  const [instructions, setInstructions] = useState(initialInstructions);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setAllComponents(initialAllComponents);
+    setInstructions(initialInstructions);
+  }, [initialAllComponents, initialInstructions]);
+  const changed = allComponents !== initialAllComponents || instructions !== initialInstructions;
+
+  async function save() {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recolorAllComponents: allComponents, recolorInstructions: instructions.trim() }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error ?? t("recolorSaveFailed"));
+      }
+      onSaved(allComponents, instructions.trim());
+      toast(t("recolorSaved"), "success");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t("recolorSaveFailed"), "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-base font-semibold" style={{ color: "var(--gs-text)" }}>{t("recolorTitle")}</h2>
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "var(--gs-surface)", border: "1px solid var(--gs-border)" }}>
+        <ProductRecolorFields
+          allComponents={allComponents}
+          instructions={instructions}
+          onAllComponentsChange={setAllComponents}
+          onInstructionsChange={setInstructions}
+        />
+        <div className="flex justify-end">
+          <button className="gs-btn-primary px-4 py-1.5 text-sm" disabled={saving || !changed} onClick={save}>
+            {saving ? t("recolorSaving") : t("recolorSave")}
+          </button>
+        </div>
+      </div>
     </section>
   );
 }
@@ -1125,7 +1209,7 @@ function UserPromptBlockSection({
           )}
           <button
             onClick={handleSave}
-            disabled={saving || !rawText.trim() || (!hasChanged && !justSaved === false)}
+            disabled={saving || !hasChanged}
             className="gs-btn-primary px-4 py-1.5 text-sm"
           >
             {saving ? t("userPromptBlockSaving") : t("userPromptBlockSave")}

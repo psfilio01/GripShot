@@ -2,15 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
-import { resolve, isAbsolute } from "path";
+import { resolve, isAbsolute, sep } from "path";
 import { config } from "dotenv";
 import archiver from "archiver";
+import { z } from "zod";
+import { listProducts } from "@/lib/db/products";
 import {
   usesGcsBlobStorage,
   getDataObjectBuffer,
 } from "@fashionmentum/workflow-core";
 
 config({ path: resolve(process.cwd(), "../../.env") });
+
+const downloadSchema = z.object({
+  status: z.enum(["neutral", "favorite", "rejected", "variant", "hero_lock"]).optional(),
+  productId: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/).optional(),
+  imageIds: z.array(z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)).min(1).max(500).optional(),
+}).strict();
 
 function getDataRoot(): string {
   return process.env.WORKFLOW_DATA_ROOT ?? resolve(process.cwd(), "../../data");
@@ -23,12 +31,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const status = body.status as string | undefined;
-    const productId = body.productId as string | undefined;
+    const parsed = downloadSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: "Invalid download selection" }, { status: 400 });
+    const { status, productId, imageIds } = parsed.data;
+    const selectedIds = imageIds ? new Set(imageIds) : null;
 
     const { metadataStore } = await import("@fashionmentum/workflow-core");
     let jobs = await metadataStore.listJobs();
+    const products = await listProducts(session.user.workspaceId);
+    const productIds = new Set(products.map((product) => product.id));
+    jobs = jobs.filter((job) => productIds.has(job.productId));
 
     if (productId) {
       jobs = jobs.filter((j) => j.productId === productId);
@@ -40,14 +52,15 @@ export async function POST(req: NextRequest) {
     for (const job of jobs) {
       const variants = await metadataStore.listVariantsForJob(job.id);
       for (const v of variants) {
+        if (selectedIds && !selectedIds.has(v.id)) continue;
         if (status && v.status !== status) continue;
 
         let buffer: Buffer | null = null;
         if (usesGcsBlobStorage() && !isAbsolute(v.filePath)) {
           buffer = await getDataObjectBuffer(v.filePath);
         } else {
-          const absPath = resolve(v.filePath);
-          if (!absPath.startsWith(resolve(dataRoot)) || !existsSync(absPath)) {
+          const absPath = resolve(dataRoot, v.filePath);
+          if (!absPath.startsWith(resolve(dataRoot) + sep) || !existsSync(absPath)) {
             continue;
           }
           buffer = await readFile(absPath);

@@ -8,6 +8,8 @@ const UpdateProductSchema = z.object({
   brandId: z.string().min(1).max(200).optional(),
   category: z.string().max(200).optional(),
   description: z.string().max(2000).optional(),
+  recolorAllComponents: z.boolean().optional(),
+  recolorInstructions: z.string().max(2000).optional(),
   status: z.enum(["draft", "active", "archived"]).optional(),
 });
 

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/empty-state";
+import { ProductRecolorFields } from "@/components/product-recolor-fields";
 
 const PRODUCT_CATEGORIES = [
   "handheld", "wearable", "furniture", "outdoor",
@@ -178,6 +179,8 @@ function CreateProductForm({
   const [brandId, setBrandId] = useState(brands[0]?.id ?? "");
   const [category, setCategory] = useState("generic");
   const [description, setDescription] = useState("");
+  const [recolorAllComponents, setRecolorAllComponents] = useState(false);
+  const [recolorInstructions, setRecolorInstructions] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -190,7 +193,7 @@ function CreateProductForm({
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brandId, name, category, description }),
+        body: JSON.stringify({ brandId, name, category, description, recolorAllComponents, recolorInstructions }),
       });
 
       if (!res.ok) {
@@ -289,6 +292,13 @@ function CreateProductForm({
           placeholder="Brief product description for AI context..."
         />
       </div>
+
+      <ProductRecolorFields
+        allComponents={recolorAllComponents}
+        instructions={recolorInstructions}
+        onAllComponentsChange={setRecolorAllComponents}
+        onInstructionsChange={setRecolorInstructions}
+      />
 
       {error && (
         <p

@@ -14,6 +14,8 @@ export interface SceneLock {
   lightingNotes: string;
   backgroundNotes: string;
   protectedInvariants: string[];
+  /** Color/component facts extracted from product settings, never scene changes. */
+  recolorRules?: string[];
   editableTargetFields: string[];
   detectedProductColor: string | null;
   extractedAt: string;
@@ -103,6 +105,11 @@ export const SCENE_LOCK_JSON_SCHEMA = {
       items: { type: "string" as const },
       description:
         "List of visual elements that must NOT change in color variants: model pose, camera angle, lighting, background, logo placement, product geometry",
+    },
+    recolorRules: {
+      type: "array" as const,
+      items: { type: "string" as const },
+      description: "Only product component/material color relationships explicitly stated in the supplied product instructions. Exclude lighting, background, camera, shape, composition, text and pose changes. Empty when none are supplied.",
     },
   },
   required: [

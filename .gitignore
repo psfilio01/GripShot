@@ -16,6 +16,7 @@ test-results/
 
 # Real-ESRGAN binary (downloaded via scripts/setup-realesrgan.sh)
 vendor/
+__pycache__/
 
 # Accidental local archives (do not commit)
 Archive.zip

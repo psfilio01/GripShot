@@ -1,8 +1,12 @@
 import axios from "axios";
+import { createHash } from "node:crypto";
 import { getEnv } from "../config/env";
 import { readImageFileForProcessing } from "./imageFileRead";
 import type { SceneLock } from "../domain/sceneLock";
 import type { GeneratedImage } from "./imageGenerator";
+import type { ProductRecolorPolicy } from "../types/api";
+import { buildRecolorPolicyPrompt } from "./recolorPolicy";
+import type { RecolorProvenance } from "../domain/imageVariant";
 
 const MIME_BY_EXT: Record<string, string> = {
   jpg: "image/jpeg",
@@ -16,8 +20,14 @@ export interface RecolorRequest {
   sceneLock: SceneLock;
   targetColorName: string;
   targetColorHex: string;
+  targetColorNotes?: string;
+  recolorPolicy?: ProductRecolorPolicy;
   aspectRatio?: string;
   signal?: AbortSignal;
+}
+
+export interface GeneratedRecolorImage extends GeneratedImage {
+  provenance?: RecolorProvenance;
 }
 
 /**
@@ -26,7 +36,7 @@ export interface RecolorRequest {
  */
 export async function generateRecolorVariant(
   request: RecolorRequest,
-): Promise<GeneratedImage> {
+): Promise<GeneratedRecolorImage> {
   const {
     NANOBANANA_API_KEY,
     NANOBANANA_BASE_URL,
@@ -104,16 +114,39 @@ export async function generateRecolorVariant(
   return {
     buffer: Buffer.from(outData, "base64"),
     extension: outExt,
+    provenance: buildRecolorProvenance(request, buffer, NANOBANANA_MODEL, prompt),
   };
 }
 
-function buildRecolorPrompt(request: RecolorRequest): string {
+export function buildRecolorProvenance(
+  request: RecolorRequest,
+  source: Buffer,
+  imageModel: string,
+  prompt: string,
+): RecolorProvenance {
+  const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
+  const rules = {
+    policy: { ...request.recolorPolicy },
+    targetColorNotes: request.targetColorNotes ?? "",
+    extractedRules: [...(request.sceneLock.recolorRules ?? [])],
+  };
+  return {
+    sourceSha256: hash(source),
+    imageModel,
+    promptSha256: hash(prompt),
+    rulesSha256: hash(JSON.stringify(rules)),
+    rules,
+  };
+}
+
+export function buildRecolorPrompt(request: RecolorRequest): string {
   const { sceneLock, targetColorName, targetColorHex } = request;
   const fromColor = sceneLock.detectedProductColor ?? "the current color";
 
   const invariants = sceneLock.protectedInvariants.length > 0
     ? sceneLock.protectedInvariants.join(", ")
     : "model pose, camera angle, lighting, background, product geometry, logo placement";
+  const policyPrompt = buildRecolorPolicyPrompt(request.recolorPolicy, request.targetColorNotes, sceneLock.recolorRules);
 
   return [
     `Edit this product image to change ONLY the product color from ${fromColor} to ${targetColorName} (${targetColorHex}).`,
@@ -130,6 +163,7 @@ function buildRecolorPrompt(request: RecolorRequest): string {
     `Color: ${targetColorName}`,
     `Hex: ${targetColorHex}`,
     "",
+    ...(policyPrompt ? [policyPrompt, ""] : []),
     "The result should look like the exact same photograph taken of the exact same scene,",
     "but with the product manufactured in a different color.",
   ].join("\n");

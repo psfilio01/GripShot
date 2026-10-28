@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server-session";
 import { listAndPrunePendingImageGenerations } from "@/lib/db/pending-image-generations";
+import { listProducts } from "@/lib/db/products";
 import { config } from "dotenv";
 import { resolve } from "path";
 
@@ -17,7 +18,8 @@ export async function GET(req: NextRequest) {
   try {
     const { metadataStore } = await import("@fashionmentum/workflow-core");
 
-    let jobs = await metadataStore.listJobs();
+    const allowedProductIds = new Set((await listProducts(session.user.workspaceId)).map((product) => product.id));
+    let jobs = (await metadataStore.listJobs()).filter((job) => allowedProductIds.has(job.productId));
     if (productIdFilter) {
       jobs = jobs.filter((j) => j.productId === productIdFilter);
     }
@@ -39,6 +41,7 @@ export async function GET(req: NextRequest) {
           heroLockId: v.heroLockId,
           colorLineage: v.colorLineage,
           qualityScore: v.qualityScore,
+          mainImage: v.mainImage,
         })),
       });
     }

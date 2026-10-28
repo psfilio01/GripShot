@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/pending-image-generations";
 import { getProduct } from "@/lib/db/products";
 import { runPendingHeroLock } from "@/lib/hero-lock/run-pending";
+import { snapshotProductRecolorSettings } from "@/lib/hero-lock/product-settings";
 import { detectUploadedImageType } from "@/lib/images/uploaded-image-type";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -105,11 +106,7 @@ export async function POST(req: NextRequest) {
       heroMasterImageId: master.id,
     });
 
-    const targetColors = colors.map((color) => ({
-      id: color.id,
-      name: color.name,
-      hex: color.hex,
-    }));
+    const { targetColors, recolorPolicy } = snapshotProductRecolorSettings(product);
 
     after(() =>
       runPendingHeroLock({
@@ -118,6 +115,7 @@ export async function POST(req: NextRequest) {
         requestId,
         master,
         targetColors,
+        recolorPolicy,
       }),
     );
 

@@ -8,6 +8,8 @@ export interface CreateProductInput {
   name: string;
   category: string;
   description: string;
+  recolorAllComponents?: boolean;
+  recolorInstructions?: string;
 }
 
 export async function createProduct(input: CreateProductInput): Promise<string> {
@@ -24,6 +26,8 @@ export async function createProduct(input: CreateProductInput): Promise<string> 
     brandId: input.brandId,
     category: input.category,
     description: input.description,
+    recolorAllComponents: input.recolorAllComponents ?? false,
+    recolorInstructions: input.recolorInstructions?.trim() ?? "",
     status: "draft",
     deletedAt: null,
     deletedBy: null,

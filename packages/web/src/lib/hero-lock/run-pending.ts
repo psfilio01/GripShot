@@ -8,7 +8,7 @@ import {
   registerGenerationCancellation,
   releaseGenerationCancellation,
 } from "@/lib/generation/cancellation-registry";
-import type { executeHeroLock } from "@fashionmentum/workflow-core";
+import type { executeHeroLock, ProductRecolorPolicy } from "@fashionmentum/workflow-core";
 
 type HeroMaster = Parameters<typeof executeHeroLock>[0];
 type HeroTargetColors = Parameters<typeof executeHeroLock>[1];
@@ -19,6 +19,7 @@ interface RunPendingHeroLockInput {
   requestId: string;
   master: HeroMaster;
   targetColors: HeroTargetColors;
+  recolorPolicy?: ProductRecolorPolicy;
 }
 
 /** Run Hero Lock after the HTTP response and keep quota/pending state consistent. */
@@ -37,6 +38,7 @@ export async function runPendingHeroLock(
     const result = await executeHeroLock(input.master, input.targetColors, {
       signal,
       isCancelled,
+      recolorPolicy: input.recolorPolicy,
     });
     const successCount = result.generatedVariants.filter(
       (variant) => variant.status === "completed",

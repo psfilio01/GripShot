@@ -67,6 +67,8 @@ vi.mock("../config/env", () => ({
 
 import { executeHeroLock } from "./heroLockOrchestrator";
 import type { ImageVariant } from "../domain/imageVariant";
+import { extractSceneLock } from "./sceneExtractor";
+import { generateRecolorVariant } from "./recolorGenerator";
 
 describe("executeHeroLock", () => {
   const masterVariant: ImageVariant = {
@@ -124,6 +126,28 @@ describe("executeHeroLock", () => {
     expect(result.sceneLock).toBeTruthy();
     expect(result.sceneLock.detectedProductColor).toBe("sage green");
     expect(result.variantJobId).toBeTruthy();
+  });
+
+  it("corrects a matching body color when the product's component colors need applying", async () => {
+    const recolorPolicy = { allComponentsFollowTargetColor: true, instructions: "Valve follows target color." };
+    const result = await executeHeroLock(masterVariant, [
+      { id: "sage", name: "Sage Green", hex: "#8F9D6A", notes: "No black valve." },
+    ], { recolorPolicy });
+    expect(result.skippedColors).toEqual([]);
+    expect(result.generatedVariants).toHaveLength(1);
+    expect(extractSceneLock).toHaveBeenCalledWith(masterVariant.filePath, masterVariant.id, masterVariant.productId, "AMAZON_LIFESTYLE_SHOT", undefined, recolorPolicy);
+    expect(generateRecolorVariant).toHaveBeenCalledWith(expect.objectContaining({
+      recolorPolicy,
+      targetColorNotes: "No black valve.",
+    }));
+  });
+
+  it("does not skip same-color corrections from existing image instructions", async () => {
+    const scene = await vi.mocked(extractSceneLock).getMockImplementation()!();
+    vi.mocked(extractSceneLock).mockResolvedValueOnce({ ...scene, recolorRules: ["Valve shares the body color."] });
+    const result = await executeHeroLock(masterVariant, [{ id: "sage", name: "Sage Green", hex: "#8F9D6A" }]);
+    expect(result.generatedVariants).toHaveLength(1);
+    expect(result.skippedColors).toEqual([]);
   });
 
   it("stops before storing the next color when cancelled", async () => {

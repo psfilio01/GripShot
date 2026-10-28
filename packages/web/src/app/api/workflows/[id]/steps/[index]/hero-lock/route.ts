@@ -9,6 +9,7 @@ import { getProduct } from "@/lib/db/products";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { z } from "zod";
 import type { WorkflowStepColorVariant } from "@/lib/db/types";
+import { snapshotProductRecolorSettings } from "@/lib/hero-lock/product-settings";
 
 const HeroLockSchema = z.object({
   productId: z.string().min(1),
@@ -103,13 +104,9 @@ export async function POST(
       createdAt: new Date().toISOString(),
     };
 
-    const targetColors = colors.map((c) => ({
-      id: c.id,
-      name: c.name,
-      hex: c.hex,
-    }));
+    const { targetColors, recolorPolicy } = snapshotProductRecolorSettings(product);
 
-    const result = await executeHeroLock(syntheticVariant, targetColors);
+    const result = await executeHeroLock(syntheticVariant, targetColors, { recolorPolicy });
 
     const colorVariants: WorkflowStepColorVariant[] = result.generatedVariants.map(
       (v) => ({

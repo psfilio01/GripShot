@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ResultsSkeleton } from "@/components/skeleton";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { GenerationPlaceholderCard } from "@/components/generation-placeholder-card";
+import { MainImageDialog, type MainImageInfo } from "@/components/main-image-dialog";
 
 interface PendingImageGeneration {
   requestId: string;
@@ -32,7 +33,7 @@ interface PendingImageGeneration {
   status: "running" | "failed";
   startedAt: string;
   errorMessage?: string;
-  kind?: "hero";
+  kind?: "hero" | "main";
   expectedVariantCount?: number;
 }
 
@@ -49,6 +50,7 @@ interface JobImage {
   status: string;
   filePath: string;
   heroLockId?: string;
+  mainImage?: MainImageInfo;
   qualityScore?: QualityScoreData;
   colorLineage?: {
     parentVariantId: string;
@@ -79,7 +81,7 @@ interface ProductOption {
   colors?: ProductColor[];
 }
 
-type StatusFilter = "all" | "neutral" | "favorite" | "rejected" | "hero_lock";
+type StatusFilter = "all" | "neutral" | "favorite" | "rejected" | "hero_lock" | "main";
 
 export default function ResultsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -106,6 +108,9 @@ export default function ResultsPage() {
   );
   const [deleteHeroTarget, setDeleteHeroTarget] = useState<string | null>(null);
   const [deletingHero, setDeletingHero] = useState(false);
+  const [mainTarget, setMainTarget] = useState<string | null>(null);
+  const [mainBusy, setMainBusy] = useState(false);
+  const [deleteMainTarget, setDeleteMainTarget] = useState<string | null>(null);
   const [detailImage, setDetailImage] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -113,6 +118,7 @@ export default function ResultsPage() {
     useState<ResultsLightboxOrigin | null>(null);
   const { toast } = useToast();
   const tResults = useTranslations("Results");
+  const tMain = useTranslations("MainImage");
 
   const loadJobs = useCallback(() => {
     fetch("/api/jobs")
@@ -342,6 +348,51 @@ export default function ResultsPage() {
     }
   }
 
+  async function createMainImage(preserveShadow: boolean) {
+    if (!mainTarget || mainBusy) return;
+    setMainBusy(true);
+    try {
+      const response = await fetch("/api/main-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageId: mainTarget, preserveShadow }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error ?? tMain("failed"));
+      toast(tMain("started"), "success");
+      setMainTarget(null);
+      setStatusFilter("all");
+      setTypeFilter("all");
+      loadJobs();
+    } catch (error) {
+      toast(error instanceof Error ? error.message : tMain("failed"), "error");
+    } finally {
+      setMainBusy(false);
+    }
+  }
+
+  async function updateMainImage(imageId: string, action: "review" | "delete") {
+    if (mainBusy) return;
+    setMainBusy(true);
+    try {
+      const response = await fetch(`/api/main-image/${encodeURIComponent(imageId)}`, {
+        method: action === "delete" ? "DELETE" : "PATCH",
+        headers: { "Content-Type": "application/json" },
+        ...(action === "review" ? { body: JSON.stringify({ reviewed: true }) } : {}),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error ?? tMain("failed"));
+      toast(tMain(action === "delete" ? "deleted" : "approved"), "success");
+      setMainTarget(null);
+      setDeleteMainTarget(null);
+      loadJobs();
+    } catch (error) {
+      toast(error instanceof Error ? error.message : tMain("failed"), "error");
+    } finally {
+      setMainBusy(false);
+    }
+  }
+
   const allImages = useMemo(
     () =>
       jobs.flatMap((j) =>
@@ -368,7 +419,8 @@ export default function ResultsPage() {
 
   const filteredImages = useMemo(() => {
     let result = allImages;
-    if (statusFilter !== "all")
+    if (statusFilter === "main") result = result.filter((img) => !!img.mainImage);
+    else if (statusFilter !== "all")
       result = result.filter((img) => img.status === statusFilter);
     if (productFilter !== "all")
       result = result.filter((img) => img.productId === productFilter);
@@ -379,8 +431,10 @@ export default function ResultsPage() {
 
   /** In-flight / failed image jobs from Firestore (only when not filtering by image status). */
   const filteredPending = useMemo(() => {
-    if (statusFilter !== "all") return [];
-    let list = pendingImageGenerations;
+    if (statusFilter !== "all" && statusFilter !== "main") return [];
+    let list = statusFilter === "main"
+      ? pendingImageGenerations.filter((p) => p.kind === "main")
+      : pendingImageGenerations;
     if (productFilter !== "all")
       list = list.filter((p) => p.productId === productFilter);
     if (typeFilter !== "all")
@@ -423,6 +477,10 @@ export default function ResultsPage() {
   const selectedDetail = detailImage
     ? allImages.find((i) => i.imageId === detailImage) ?? null
     : null;
+  const selectedMain = allImages.find((img) => img.imageId === mainTarget);
+  const mainSource = selectedMain?.mainImage
+    ? allImages.find((img) => img.imageId === selectedMain.mainImage?.sourceVariantId)
+    : selectedMain;
 
   function imageUrl(filePath: string): string {
     return filePathToGeneratedImageUrl(filePath);
@@ -450,8 +508,8 @@ export default function ResultsPage() {
   async function handleBulkDownload() {
     setDownloading(true);
     try {
-      const body: Record<string, string> = {};
-      if (statusFilter !== "all") body.status = statusFilter;
+      const body: Record<string, unknown> = { imageIds: filteredImages.map((image) => image.imageId) };
+      if (statusFilter !== "all" && statusFilter !== "main") body.status = statusFilter;
       if (productFilter !== "all") body.productId = productFilter;
 
       const res = await fetch("/api/download", {
@@ -487,6 +545,7 @@ export default function ResultsPage() {
     { value: "neutral", label: "Neutral" },
     { value: "favorite", label: "Favorites" },
     { value: "hero_lock", label: "Hero" },
+    { value: "main", label: "Main" },
     { value: "rejected", label: "Rejected" },
   ];
 
@@ -507,7 +566,7 @@ export default function ResultsPage() {
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--gs-text-muted)" }}>
             Browse, filter, and manage your generated images. In-progress runs
-            appear as placeholders until Gemini returns.
+            appear as placeholders until processing completes.
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
@@ -643,16 +702,22 @@ export default function ResultsPage() {
                 variant={p.status === "running" ? "running" : "failed"}
                 title={
                   p.status === "running"
-                    ? p.kind === "hero"
+                    ? p.kind === "main"
+                      ? tMain("running")
+                      : p.kind === "hero"
                       ? "Hero variants…"
                       : "Generating…"
-                    : p.kind === "hero"
+                    : p.kind === "main"
+                      ? tMain("failed")
+                      : p.kind === "hero"
                       ? "Hero failed"
                       : "Generation failed"
                 }
                 subtitle={
                   p.status === "running"
-                    ? p.kind === "hero"
+                    ? p.kind === "main"
+                      ? tMain("runningDescription")
+                      : p.kind === "hero"
                       ? `Creating color variants from your Hero image${
                           p.expectedVariantCount != null
                             ? ` (up to ${p.expectedVariantCount})`
@@ -722,7 +787,7 @@ export default function ResultsPage() {
                   <img
                     src={imageUrl(img.filePath)}
                     alt={`${img.productId} — ${img.imageId.slice(0, 6)}`}
-                    className={`aspect-[4/5] w-full object-cover ${resultsLightboxThumbClass}`}
+                    className={`aspect-[4/5] w-full ${img.mainImage ? "object-contain bg-white" : "object-cover"} ${resultsLightboxThumbClass}`}
                     tabIndex={0}
                     role="button"
                     title="View large — arrow keys browse the gallery"
@@ -842,6 +907,19 @@ export default function ResultsPage() {
                   {img.qualityScore != null && img.qualityScore.issues.length > 0 && (
                     <QualityIssuesList issues={img.qualityScore.issues} />
                   )}
+                  {img.mainImage ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium" style={{ color: img.mainImage.reviewed ? "var(--gs-success-text)" : "var(--gs-accent-text)" }}>
+                        {tMain(img.mainImage.reviewed ? "approvedBadge" : "draftBadge")}
+                      </p>
+                      <div className="flex gap-2">
+                        <button className="gs-btn-secondary flex-1 py-1.5 text-xs" onClick={() => setMainTarget(img.imageId)}>{tMain("compare")}</button>
+                        <button className="gs-btn-secondary p-2" onClick={() => setDeleteMainTarget(img.imageId)} aria-label={tMain("delete")} title={tMain("delete")}><TrashIcon className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                  ) : img.status !== "rejected" && (
+                    <button className="gs-btn-secondary w-full py-1.5 text-xs" onClick={() => setMainTarget(img.imageId)}>{tMain("create")}</button>
+                  )}
                   {/* Details link for Hero master or color variant images */}
                   {(isHeroLocked || isColorVariant) && (
                     <button
@@ -855,7 +933,7 @@ export default function ResultsPage() {
                       View details
                     </button>
                   )}
-                  {img.status === "neutral" && (
+                  {img.status === "neutral" && !img.mainImage && (
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => handleFeedback(img.imageId, "favorite")}
@@ -909,6 +987,29 @@ export default function ResultsPage() {
       )}
 
       {/* Hero confirmation dialog */}
+      {selectedMain && (
+        <MainImageDialog
+          key={selectedMain.imageId}
+          sourceUrl={mainSource ? imageUrl(mainSource.filePath) : undefined}
+          resultUrl={selectedMain.mainImage ? imageUrl(selectedMain.filePath) : undefined}
+          reviewed={selectedMain.mainImage?.reviewed}
+          warnings={Array.isArray(selectedMain.mainImage?.metrics?.warnings) ? selectedMain.mainImage.metrics.warnings.filter((warning): warning is string => typeof warning === "string") : []}
+          busy={mainBusy}
+          onCreate={createMainImage}
+          onReview={() => updateMainImage(selectedMain.imageId, "review")}
+          onClose={() => { if (!mainBusy) setMainTarget(null); }}
+        />
+      )}
+      <ConfirmDialog
+        open={deleteMainTarget != null}
+        title={tMain("deleteTitle")}
+        message={tMain("deleteDescription")}
+        confirmLabel={tMain(mainBusy ? "working" : "delete")}
+        cancelLabel={tMain("close")}
+        variant="danger"
+        onConfirm={() => { if (deleteMainTarget) void updateMainImage(deleteMainTarget, "delete"); }}
+        onCancel={() => { if (!mainBusy) setDeleteMainTarget(null); }}
+      />
       {heroTarget && (
         <HeroConfirmDialog
           colors={heroColors}

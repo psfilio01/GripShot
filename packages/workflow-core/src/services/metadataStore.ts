@@ -116,6 +116,17 @@ export const metadataStore = {
     }
   },
 
+  async setMainImageReviewed(variantId: string, reviewed: boolean): Promise<ImageVariant | null> {
+    const store = await loadStore();
+    const variant = store.variants.find((item) => item.id === variantId);
+    if (!variant?.mainImage) return null;
+    variant.mainImage.reviewed = reviewed;
+    if (reviewed) variant.mainImage.reviewedAt = new Date().toISOString();
+    else delete variant.mainImage.reviewedAt;
+    await saveStore(store);
+    return variant;
+  },
+
   async deleteVariantsByIds(variantIds: string[]): Promise<void> {
     if (variantIds.length === 0) return;
     const ids = new Set(variantIds);
