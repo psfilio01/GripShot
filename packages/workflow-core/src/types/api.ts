@@ -102,6 +102,17 @@ export interface ProductColorDef {
   id: string;
   name: string;
   hex: string;
+  /** Color-specific material/component instructions, never scene changes. */
+  notes?: string;
+}
+
+/** Immutable product settings captured when a recolor run starts. */
+export interface ProductRecolorPolicy {
+  allComponentsFollowTargetColor?: boolean;
+  /** Explicit color/component instructions; applied within the locked scene. */
+  instructions?: string;
+  /** Existing general image instructions: extract only color/component facts. */
+  productInstructions?: string;
 }
 
 export interface FeedbackEvent {

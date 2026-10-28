@@ -54,6 +54,13 @@ gcloud run deploy "${CLOUD_RUN_SERVICE}" \
   --region "${REGION}" \
   --platform managed \
   --allow-unauthenticated \
-  --port 8080
+  --port 8080 \
+  --memory 16Gi \
+  --cpu 4 \
+  --timeout 600 \
+  --concurrency 8 \
+  --min-instances 0 \
+  --max-instances 1 \
+  --no-cpu-throttling
 
 echo "Done. Service URL should match NEXT_PUBLIC_APP_URL (or update .env.deploy and redeploy)."

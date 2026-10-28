@@ -12,6 +12,7 @@ describe("workflowLabel", () => {
     expect(workflowLabel("A_PLUS_VISUAL")).toBe("A+ Visual");
     expect(workflowLabel("HERO_LOCK_RECOLOR")).toBe("Color variant");
     expect(workflowLabel("EXTERNAL_HERO_UPLOAD")).toBe("External Hero");
+    expect(workflowLabel("MAIN_WHITE_BACKGROUND")).toBe("Main · white background");
   });
 
   it("falls back to the raw value for unknown types", () => {

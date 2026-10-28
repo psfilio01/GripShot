@@ -7,6 +7,8 @@ import {
 } from "@/lib/db/pending-image-generations";
 import { checkQuota } from "@/lib/billing/quota";
 import { runPendingHeroLock } from "@/lib/hero-lock/run-pending";
+import { getProduct } from "@/lib/db/products";
+import { snapshotProductRecolorSettings } from "@/lib/hero-lock/product-settings";
 import { z } from "zod";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -43,7 +45,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "hero_lock") {
-      const colors = targetColors!;
+      const { prepareHeroLockMaster, metadataStore } = await import("@fashionmentum/workflow-core");
+      const sourceVariant = await metadataStore.getVariantById(imageId);
+      const product = sourceVariant
+        ? await getProduct(session.user.workspaceId, sourceVariant.productId)
+        : null;
+      if (!sourceVariant || !product || product.deletedAt) {
+        return NextResponse.json({ error: "Image or product not found." }, { status: 404 });
+      }
+      const requestedIds = targetColors!.map((color) => color.id);
+      if (requestedIds.some((id) => !product.colors?.some((color) => color.id === id))) {
+        return NextResponse.json({ error: "Product colors changed. Reload and try again." }, { status: 400 });
+      }
+      const { targetColors: colors, recolorPolicy } = snapshotProductRecolorSettings(product, requestedIds);
       const quota = await checkQuota(session.user.workspaceId, {
         isAdmin: session.isAdmin,
       });
@@ -57,10 +71,6 @@ export async function POST(req: NextRequest) {
           { status: 429 },
         );
       }
-
-      const { prepareHeroLockMaster } = await import(
-        "@fashionmentum/workflow-core"
-      );
 
       const updatedVariant = await prepareHeroLockMaster({
         imageId,
@@ -97,6 +107,7 @@ export async function POST(req: NextRequest) {
           requestId,
           master: { ...updatedVariant },
           targetColors: colors.map((color) => ({ ...color })),
+          recolorPolicy,
         }),
       );
 

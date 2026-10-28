@@ -96,7 +96,10 @@ export async function compileUserPromptBlock(
     `outfit/clothing choices, workflow-specific overrides, text overlays.\n` +
     `4. If conflicts are found, remove the conflicting parts from the compiled text ` +
     `and list each issue (in the user's original language so they can understand).\n` +
-    `5. Output a clean, refined English prompt block.\n\n` +
+    `5. Preserve product facts about component/material colors and color-dependent exceptions verbatim in meaning. ` +
+    `For example, "the valve follows the target color" and "no black valve insert" are allowed product color rules, even when described as recoloring instructions. ` +
+    `Preserve the distinction between material color and natural dark shadows in holes/cavities.\n` +
+    `6. Output a clean, refined English prompt block.\n\n` +
     `User's custom instructions:\n"${trimmed}"`;
 
   const textModel = "gemini-2.5-flash";

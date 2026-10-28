@@ -86,6 +86,10 @@ export interface ProductDoc extends SoftDeleteFields {
   userPromptBlockRaw?: string;
   /** Compiled English prompt block, validated by Gemini. Used in generation. */
   userPromptBlockCompiled?: string;
+  /** Apply each target color to all visible physical product components. */
+  recolorAllComponents?: boolean;
+  /** Color/component facts and exceptions for Hero variants. */
+  recolorInstructions?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

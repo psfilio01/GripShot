@@ -8,6 +8,7 @@ export const WORKFLOW_LABELS: Record<string, string> = {
   A_PLUS_VISUAL: "A+ Visual",
   HERO_LOCK_RECOLOR: "Color variant",
   EXTERNAL_HERO_UPLOAD: "External Hero",
+  MAIN_WHITE_BACKGROUND: "Main · white background",
 };
 
 export function workflowLabel(wt: string): string {

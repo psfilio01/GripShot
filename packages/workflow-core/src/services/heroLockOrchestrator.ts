@@ -5,7 +5,8 @@ import { extractSceneLock } from "./sceneExtractor";
 import { generateRecolorVariant } from "./recolorGenerator";
 import type { ImageVariant } from "../domain/imageVariant";
 import type { ImageJob } from "../domain/imageJob";
-import type { ProductColorDef } from "../types/api";
+import type { ProductColorDef, ProductRecolorPolicy } from "../types/api";
+import { hasRecolorCorrection } from "./recolorPolicy";
 import type { SceneLock } from "../domain/sceneLock";
 import { buildProductFromId } from "../domain/product";
 import { getEnv } from "../config/env";
@@ -38,10 +39,14 @@ export interface HeroLockResult {
  * 3. Generate a recolor variant for each remaining color
  * 4. Store all variants with lineage metadata
  */
+export interface HeroLockOptions extends GenerationControl {
+  recolorPolicy?: ProductRecolorPolicy;
+}
+
 export async function executeHeroLock(
   variant: ImageVariant,
   targetColors: ProductColorDef[],
-  control?: GenerationControl,
+  control?: HeroLockOptions,
 ): Promise<HeroLockResult> {
   const heroLockId = nanoid();
   const env = getEnv();
@@ -57,6 +62,7 @@ export async function executeHeroLock(
     variant.productId,
     workflowType,
     control?.signal,
+    control?.recolorPolicy,
   );
   await throwIfGenerationCancelled(control);
 
@@ -66,7 +72,7 @@ export async function executeHeroLock(
 
   for (const color of targetColors) {
     const nameLower = color.name.toLowerCase().trim();
-    if (detectedLower && nameLower === detectedLower) {
+    if (detectedLower && nameLower === detectedLower && !hasRecolorCorrection(control?.recolorPolicy, color.notes, sceneLock.recolorRules)) {
       skippedColors.push(color.name);
     } else {
       colorsToGenerate.push(color);
@@ -103,6 +109,8 @@ export async function executeHeroLock(
         sceneLock,
         targetColorName: color.name,
         targetColorHex: color.hex,
+        targetColorNotes: color.notes,
+        recolorPolicy: control?.recolorPolicy,
         signal: control?.signal,
       });
       await throwIfGenerationCancelled(control);
@@ -135,6 +143,7 @@ export async function executeHeroLock(
           targetColorName: color.name,
           targetColorHex: color.hex,
           generationMethod: "hero_lock_recolor",
+          ...(generated.provenance ? { provenance: generated.provenance } : {}),
         },
       };
 

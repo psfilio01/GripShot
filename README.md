@@ -174,6 +174,14 @@ Create **Models** in the dashboard with a display name and optional notes. Uploa
 
 ## Hero — color-locked variant generation
 
+### Verbindliche Farbregeln und weiße Mainbilder
+
+Unter **Produkt → Farbregeln für Hero** lassen sich alle sichtbaren Produktteile an die Zielfarbe binden sowie konkrete Ausnahmen und Hinweise hinterlegen. Bei einem einfarbigen Ball gilt das auch für den Ventileinsatz; natürliche Schatten im Luftloch bleiben erhalten. Hinweise je Produktfarbe werden ebenfalls berücksichtigt. Ohne Regeln bleibt die bisherige Hero-Prompt-Pipeline unverändert. Jede Farbe wird weiterhin vom selben Hero abgeleitet, nicht von der vorherigen Farbvariante.
+
+Nach der Farbgenerierung kann jedes passende Ergebnis separat über **Mainbild · Hintergrund weiß** aufbereitet werden. Die lokale CPU-Freistellung erstellt eine unabhängige PNG-Kopie ohne zusätzliche Gemini-Anfrage oder Bild-Credits. **Main → Original / Main vergleichen** öffnet die Sichtprüfung. Produkt- und Bodenschatten werden getrennt behandelt. Freier Hintergrund wird auf RGB 255/255/255 gesetzt; erkannte undurchsichtige Produktpixel bleiben unverändert. Die numerische Prüfung ersetzt nicht die Kontrolle der Produktkontur und ist keine Amazon-Zertifizierung.
+
+Einmalig lokal: Python 3.11–3.13 installieren, dann `pnpm setup:main-image`. Anschließend wie gewohnt `pnpm build:core && pnpm dev`. Modell und Python-Umgebung liegen im ignorierten `vendor/main-image/` und werden nicht von Next.js gebündelt. Details zu Grenzen, Modell, Tests und Deployment: [Mainbild-Betrieb](docs/MAIN_IMAGES.md).
+
 When an Amazon seller finds a generated image they love, they typically need the same creative in every product color. **Hero** solves this:
 
 1. **Configure product colors** — On the product detail page, define colors with name, hex code, optional notes, and SKU.

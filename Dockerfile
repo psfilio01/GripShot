@@ -1,9 +1,21 @@
 # Cloud Run: linux/amd64. On Apple Silicon use scripts/docker-build-push-cloud-run.sh
 # so the registry gets a single-arch manifest (Buildx attestations break Cloud Run).
-FROM --platform=linux/amd64 node:22-slim AS base
+FROM --platform=linux/amd64 node:22-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+
+# CPU-only segmentation lives in a Python process, outside Next's native module
+# bundler. Model weights are pinned and baked in: no runtime downloads.
+FROM base AS mainimage
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+COPY scripts/main-image /opt/main-image/worker
+RUN python3 -m venv /opt/main-image/.venv \
+    && /opt/main-image/.venv/bin/pip install --no-cache-dir -r /opt/main-image/worker/requirements.txt \
+    && /opt/main-image/.venv/bin/python /opt/main-image/worker/worker.py --download-model --model-dir /opt/main-image/models \
+    && /opt/main-image/.venv/bin/python -m unittest discover -s /opt/main-image/worker -p 'test_*.py' \
+    && /opt/main-image/.venv/bin/python /opt/main-image/worker/worker.py --self-test --model /opt/main-image/models/birefnet.onnx
 
 # Real-ESRGAN: download binary + models (~60 MB) for image upscaling
 FROM base AS realesrgan
@@ -67,17 +79,24 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV WORKFLOW_DATA_ROOT=/app/data
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 nextjs && \
+    mkdir -p /app/data && chown nextjs:nodejs /app/data
 
 COPY --from=realesrgan --chown=nextjs:nodejs /opt/realesrgan /app/bin/realesrgan
 ENV REALESRGAN_BIN=/app/bin/realesrgan/realesrgan-ncnn-vulkan
 ENV REALESRGAN_MODEL_DIR=/app/bin/realesrgan/models
 
 # Vulkan/OpenMP libs needed by realesrgan-ncnn-vulkan at runtime
-RUN apt-get update && apt-get install -y --no-install-recommends libvulkan1 libgomp1 \
+RUN apt-get update && apt-get install -y --no-install-recommends libvulkan1 libgomp1 python3 \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=mainimage /opt/main-image /opt/main-image
+ENV MAIN_IMAGE_PYTHON=/opt/main-image/.venv/bin/python \
+    MAIN_IMAGE_WORKER_PATH=/opt/main-image/worker/worker.py \
+    MAIN_IMAGE_MODEL_PATH=/opt/main-image/models/birefnet.onnx
 
 COPY --from=builder /app/packages/web/public ./packages/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/standalone ./

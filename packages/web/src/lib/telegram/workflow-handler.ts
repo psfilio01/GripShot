@@ -25,6 +25,7 @@ import {
 import { listHumanModels, getHumanModel } from "@/lib/db/human-models";
 import { listBackgrounds, getBackground } from "@/lib/db/backgrounds";
 import { listProducts, getProduct } from "@/lib/db/products";
+import { snapshotProductRecolorSettings } from "@/lib/hero-lock/product-settings";
 import { matchProductForWorkflow } from "./workflow-product-match";
 import { checkQuota, consumeCredit } from "@/lib/billing/quota";
 import { isAllowedGeminiImageModel } from "@fashionmentum/workflow-core";
@@ -1283,13 +1284,9 @@ async function handleGenerateColors(
       createdAt: new Date().toISOString(),
     };
 
-    const targetColors = colors.map((c) => ({
-      id: c.id,
-      name: c.name,
-      hex: c.hex,
-    }));
+    const { targetColors, recolorPolicy } = snapshotProductRecolorSettings(fullProduct!);
 
-    const result = await executeHeroLock(syntheticVariant, targetColors);
+    const result = await executeHeroLock(syntheticVariant, targetColors, { recolorPolicy });
 
     const colorVariants = result.generatedVariants.map((v) => ({
       colorId: targetColors.find((c) => c.name === v.colorName)?.id ?? v.variantId,

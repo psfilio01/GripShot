@@ -15,11 +15,12 @@ export interface PendingImageGenerationDoc {
   aspectRatio?: string;
   resolution?: string;
   /** Set when pending row is for Hero color-variant pipeline (not standard Generate). */
-  kind?: "hero";
+  kind?: "hero" | "main";
   /** Configured product colors count (upper bound; some may be skipped after scene analysis). */
   expectedVariantCount?: number;
   /** Hero master whose color expansion is represented by this row. */
   heroMasterImageId?: string;
+  mainSourceImageId?: string;
   status: "running" | "failed" | "cancelled";
   startedAt: FirebaseFirestore.Timestamp;
   errorMessage?: string;
@@ -44,6 +45,7 @@ export async function createPendingImageGeneration(
     | "kind"
     | "expectedVariantCount"
     | "heroMasterImageId"
+    | "mainSourceImageId"
   >,
 ): Promise<void> {
   const payload: Record<string, unknown> = {
@@ -61,6 +63,7 @@ export async function createPendingImageGeneration(
   if (data.heroMasterImageId != null) {
     payload.heroMasterImageId = data.heroMasterImageId;
   }
+  if (data.mainSourceImageId != null) payload.mainSourceImageId = data.mainSourceImageId;
   await collectionRef(workspaceId).doc(requestId).set(payload);
 }
 
@@ -161,9 +164,10 @@ export interface PendingImageGenerationListItem {
   workflowType: string;
   aspectRatio?: string;
   resolution?: string;
-  kind?: "hero";
+  kind?: "hero" | "main";
   expectedVariantCount?: number;
   heroMasterImageId?: string;
+  mainSourceImageId?: string;
   status: "running" | "failed";
   startedAt: string;
   errorMessage?: string;
@@ -234,6 +238,7 @@ export async function listAndPrunePendingImageGenerations(
       kind: d.kind,
       expectedVariantCount: d.expectedVariantCount,
       heroMasterImageId: d.heroMasterImageId,
+      mainSourceImageId: d.mainSourceImageId,
       status: d.status,
       startedAt: new Date(startedMs || now).toISOString(),
       errorMessage: d.errorMessage,
