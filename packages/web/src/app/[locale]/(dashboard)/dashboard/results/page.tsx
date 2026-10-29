@@ -36,6 +36,7 @@ interface PendingImageGeneration {
   errorMessage?: string;
   kind?: "hero" | "main";
   expectedVariantCount?: number;
+  heroColorName?: string;
 }
 
 interface QualityScoreData {
@@ -109,6 +110,11 @@ export default function ResultsPage() {
   );
   const [deleteHeroTarget, setDeleteHeroTarget] = useState<string | null>(null);
   const [deletingHero, setDeletingHero] = useState(false);
+  const [regenerateTarget, setRegenerateTarget] = useState<{
+    imageId: string;
+    colorName: string;
+  } | null>(null);
+  const [regeneratingColor, setRegeneratingColor] = useState(false);
   const [mainTarget, setMainTarget] = useState<string | null>(null);
   const [mainBusy, setMainBusy] = useState(false);
   const [deleteMainTarget, setDeleteMainTarget] = useState<string | null>(null);
@@ -315,6 +321,30 @@ export default function ResultsPage() {
       setHeroSubmitting(false);
       setHeroTarget(null);
       setHeroColors([]);
+    }
+  }
+
+  async function regenerateColorVariant() {
+    if (!regenerateTarget || regeneratingColor) return;
+    setRegeneratingColor(true);
+    try {
+      const response = await fetch("/api/hero-lock/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageId: regenerateTarget.imageId }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        toast(data?.error ?? tResults("regenerateError"), "error");
+        return;
+      }
+      toast(tResults("regenerateStarted", { color: regenerateTarget.colorName }), "success");
+      setRegenerateTarget(null);
+      loadJobs();
+    } catch {
+      toast(tResults("regenerateError"), "error");
+    } finally {
+      setRegeneratingColor(false);
     }
   }
 
@@ -707,7 +737,9 @@ export default function ResultsPage() {
                     ? p.kind === "main"
                       ? tMain("running")
                       : p.kind === "hero"
-                      ? "Hero variants…"
+                      ? p.heroColorName
+                        ? tResults("regeneratingColor", { color: p.heroColorName })
+                        : "Hero variants…"
                       : "Generating…"
                     : p.kind === "main"
                       ? tMain("failed")
@@ -720,7 +752,9 @@ export default function ResultsPage() {
                     ? p.kind === "main"
                       ? tMain("runningDescription")
                       : p.kind === "hero"
-                      ? `Creating color variants from your Hero image${
+                      ? p.heroColorName
+                        ? tResults("regeneratingColorDescription")
+                        : `Creating color variants from your Hero image${
                           p.expectedVariantCount != null
                             ? ` (up to ${p.expectedVariantCount})`
                             : ""
@@ -922,6 +956,17 @@ export default function ResultsPage() {
                   ) : img.status !== "rejected" && (
                     <button className="gs-btn-secondary w-full py-1.5 text-xs" onClick={() => setMainTarget(img.imageId)}>{tMain("create")}</button>
                   )}
+                  {isColorVariant && !img.mainImage && img.colorLineage && (
+                    <button
+                      className="gs-btn-secondary w-full py-1.5 text-xs"
+                      onClick={() => setRegenerateTarget({
+                        imageId: img.imageId,
+                        colorName: img.colorLineage!.targetColorName,
+                      })}
+                    >
+                      ↻ {tResults("regenerateColor")}
+                    </button>
+                  )}
                   {/* Details link for Hero master or color variant images */}
                   {(isHeroLocked || isColorVariant) && (
                     <button
@@ -1046,6 +1091,18 @@ export default function ResultsPage() {
         onConfirm={deleteHeroImage}
         onCancel={() => {
           if (!deletingHero) setDeleteHeroTarget(null);
+        }}
+      />
+      <ConfirmDialog
+        open={regenerateTarget != null}
+        title={tResults("regenerateTitle")}
+        message={tResults("regenerateMessage", {
+          color: regenerateTarget?.colorName ?? "",
+        })}
+        confirmLabel={tResults(regeneratingColor ? "regenerating" : "regenerateColor")}
+        onConfirm={regenerateColorVariant}
+        onCancel={() => {
+          if (!regeneratingColor) setRegenerateTarget(null);
         }}
       />
 

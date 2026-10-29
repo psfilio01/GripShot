@@ -20,6 +20,7 @@ interface RunPendingHeroLockInput {
   master: HeroMaster;
   targetColors: HeroTargetColors;
   recolorPolicy?: ProductRecolorPolicy;
+  regeneratedFromVariantId?: string;
 }
 
 /** Run Hero Lock after the HTTP response and keep quota/pending state consistent. */
@@ -39,6 +40,7 @@ export async function runPendingHeroLock(
       signal,
       isCancelled,
       recolorPolicy: input.recolorPolicy,
+      regeneratedFromVariantId: input.regeneratedFromVariantId,
     });
     const successCount = result.generatedVariants.filter(
       (variant) => variant.status === "completed",

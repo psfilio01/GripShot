@@ -333,7 +333,15 @@
     "deleteHeroMessage": "The Hero image and all color variants created from it will be permanently deleted. Any active color run will be cancelled.",
     "deletingHero": "Deleting…",
     "heroDeleted": "Hero image and {count} related images deleted.",
-    "deleteHeroError": "Hero image could not be deleted."
+    "deleteHeroError": "Hero image could not be deleted.",
+    "regenerateColor": "Regenerate color",
+    "regenerateTitle": "Regenerate this color variant?",
+    "regenerateMessage": "A new {color} variant will be generated from the original Hero image. The current version stays available for comparison. One credit is used only if the new image succeeds.",
+    "regenerateStarted": "Regenerating {color} from the Hero image.",
+    "regenerating": "Regenerating…",
+    "regeneratingColor": "Regenerating {color}…",
+    "regeneratingColorDescription": "Creating one fresh color variant from the original Hero image. You can keep working; the new version will appear here when ready.",
+    "regenerateError": "Color variant could not be regenerated."
   },
   "Generate": {
     "workflowType": "Workflow type",

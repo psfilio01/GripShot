@@ -41,6 +41,8 @@ export interface HeroLockResult {
  */
 export interface HeroLockOptions extends GenerationControl {
   recolorPolicy?: ProductRecolorPolicy;
+  /** Marks a single-color retry while retaining the Hero master as the true source. */
+  regeneratedFromVariantId?: string;
 }
 
 export async function executeHeroLock(
@@ -142,7 +144,12 @@ export async function executeHeroLock(
           parentVariantId: variant.id,
           targetColorName: color.name,
           targetColorHex: color.hex,
-          generationMethod: "hero_lock_recolor",
+          generationMethod: control?.regeneratedFromVariantId
+            ? "hero_lock_regenerate"
+            : "hero_lock_recolor",
+          ...(control?.regeneratedFromVariantId
+            ? { regeneratedFromVariantId: control.regeneratedFromVariantId }
+            : {}),
           ...(generated.provenance ? { provenance: generated.provenance } : {}),
         },
       };
