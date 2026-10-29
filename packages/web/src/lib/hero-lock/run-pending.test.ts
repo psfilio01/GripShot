@@ -80,6 +80,16 @@ describe("runPendingHeroLock", () => {
     expect(executeHeroLock).toHaveBeenCalledWith(input.master, targetColors, expect.objectContaining({ recolorPolicy }));
   });
 
+  it("passes the previous variant id only for a single-color retry", async () => {
+    executeHeroLock.mockResolvedValue({ generatedVariants: [{ status: "completed" }] });
+    await runPendingHeroLock({ ...input, regeneratedFromVariantId: "old-blue" });
+    expect(executeHeroLock).toHaveBeenCalledWith(
+      input.master,
+      input.targetColors,
+      expect.objectContaining({ regeneratedFromVariantId: "old-blue" }),
+    );
+  });
+
   it("marks the placeholder failed when no variant succeeds", async () => {
     executeHeroLock.mockResolvedValue({
       generatedVariants: [{ status: "failed" }],

@@ -333,7 +333,15 @@
     "deleteHeroMessage": "Das Hero-Bild und alle daraus erzeugten Farbvarianten werden dauerhaft gelöscht. Ein laufender Farbprozess wird abgebrochen.",
     "deletingHero": "Wird gelöscht…",
     "heroDeleted": "Hero-Bild und {count} zugehörige Bilder wurden gelöscht.",
-    "deleteHeroError": "Hero-Bild konnte nicht gelöscht werden."
+    "deleteHeroError": "Hero-Bild konnte nicht gelöscht werden.",
+    "regenerateColor": "Farbe neu generieren",
+    "regenerateTitle": "Diese Farbvariante neu generieren?",
+    "regenerateMessage": "Eine neue Variante in {color} wird vom ursprünglichen Hero-Bild erzeugt. Die aktuelle Version bleibt zum Vergleich erhalten. Ein Credit wird nur bei erfolgreichem neuen Bild verwendet.",
+    "regenerateStarted": "{color} wird vom Hero-Bild neu generiert.",
+    "regenerating": "Wird neu generiert…",
+    "regeneratingColor": "{color} wird neu generiert…",
+    "regeneratingColorDescription": "Eine neue Farbvariante wird vom ursprünglichen Hero-Bild erstellt. Du kannst weiterarbeiten; die neue Version erscheint hier, sobald sie fertig ist.",
+    "regenerateError": "Farbvariante konnte nicht neu generiert werden."
   },
   "Generate": {
     "workflowType": "Workflow-Typ",

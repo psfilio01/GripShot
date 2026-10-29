@@ -69,6 +69,7 @@ import { executeHeroLock } from "./heroLockOrchestrator";
 import type { ImageVariant } from "../domain/imageVariant";
 import { extractSceneLock } from "./sceneExtractor";
 import { generateRecolorVariant } from "./recolorGenerator";
+import { metadataStore } from "./metadataStore";
 
 describe("executeHeroLock", () => {
   const masterVariant: ImageVariant = {
@@ -160,5 +161,23 @@ describe("executeHeroLock", () => {
 
     expect(result.cancelled).toBe(true);
     expect(result.generatedVariants).toEqual([]);
+  });
+
+  it("marks a single-color retry while keeping the Hero master as its parent", async () => {
+    await executeHeroLock(
+      masterVariant,
+      [{ id: "rose", name: "Soft Rose", hex: "#EAB0C3" }],
+      { regeneratedFromVariantId: "old-rose-variant" },
+    );
+
+    expect(metadataStore.insertVariant).toHaveBeenCalledWith(
+      expect.objectContaining({
+        colorLineage: expect.objectContaining({
+          parentVariantId: masterVariant.id,
+          generationMethod: "hero_lock_regenerate",
+          regeneratedFromVariantId: "old-rose-variant",
+        }),
+      }),
+    );
   });
 });

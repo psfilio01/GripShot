@@ -20,6 +20,9 @@ export interface PendingImageGenerationDoc {
   expectedVariantCount?: number;
   /** Hero master whose color expansion is represented by this row. */
   heroMasterImageId?: string;
+  /** A single existing color image is being retried from its Hero master. */
+  regeneratedFromImageId?: string;
+  heroColorName?: string;
   mainSourceImageId?: string;
   status: "running" | "failed" | "cancelled";
   startedAt: FirebaseFirestore.Timestamp;
@@ -45,6 +48,8 @@ export async function createPendingImageGeneration(
     | "kind"
     | "expectedVariantCount"
     | "heroMasterImageId"
+    | "regeneratedFromImageId"
+    | "heroColorName"
     | "mainSourceImageId"
   >,
 ): Promise<void> {
@@ -63,6 +68,10 @@ export async function createPendingImageGeneration(
   if (data.heroMasterImageId != null) {
     payload.heroMasterImageId = data.heroMasterImageId;
   }
+  if (data.regeneratedFromImageId != null) {
+    payload.regeneratedFromImageId = data.regeneratedFromImageId;
+  }
+  if (data.heroColorName != null) payload.heroColorName = data.heroColorName;
   if (data.mainSourceImageId != null) payload.mainSourceImageId = data.mainSourceImageId;
   await collectionRef(workspaceId).doc(requestId).set(payload);
 }
@@ -158,6 +167,19 @@ export async function cancelPendingHeroGenerationsForMaster(
   return requestIds;
 }
 
+/** Prevents an accidental second click from starting two retries of the same image. */
+export async function hasRunningHeroColorRegeneration(
+  workspaceId: string,
+  sourceImageId: string,
+): Promise<boolean> {
+  const snap = await collectionRef(workspaceId)
+    .where("regeneratedFromImageId", "==", sourceImageId)
+    .get();
+  return snap.docs.some(
+    (doc) => (doc.data() as PendingImageGenerationDoc).status === "running",
+  );
+}
+
 export interface PendingImageGenerationListItem {
   requestId: string;
   productId: string;
@@ -167,6 +189,8 @@ export interface PendingImageGenerationListItem {
   kind?: "hero" | "main";
   expectedVariantCount?: number;
   heroMasterImageId?: string;
+  regeneratedFromImageId?: string;
+  heroColorName?: string;
   mainSourceImageId?: string;
   status: "running" | "failed";
   startedAt: string;
@@ -238,6 +262,8 @@ export async function listAndPrunePendingImageGenerations(
       kind: d.kind,
       expectedVariantCount: d.expectedVariantCount,
       heroMasterImageId: d.heroMasterImageId,
+      regeneratedFromImageId: d.regeneratedFromImageId,
+      heroColorName: d.heroColorName,
       mainSourceImageId: d.mainSourceImageId,
       status: d.status,
       startedAt: new Date(startedMs || now).toISOString(),

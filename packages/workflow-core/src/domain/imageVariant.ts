@@ -11,7 +11,9 @@ export interface ColorLineage {
   parentVariantId: string;
   targetColorName: string;
   targetColorHex: string;
-  generationMethod: "hero_lock_recolor";
+  generationMethod: "hero_lock_recolor" | "hero_lock_regenerate";
+  /** Existing color variant that was retried. The parent remains the immutable Hero master. */
+  regeneratedFromVariantId?: string;
   provenance?: RecolorProvenance;
 }
 
